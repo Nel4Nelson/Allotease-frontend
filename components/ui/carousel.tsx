@@ -187,7 +187,7 @@ function CarouselPrevious({
       className={cn(
         "absolute size-12 rounded-full border border-[#FF5B00]",
         orientation === "horizontal"
-          ? "top-1/2 md:-left-20 -left-12 -translate-y-1/2"
+          ? "top-1/2 md:-left-18 -left-12 -translate-y-1/2"
           : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
         className
       )}

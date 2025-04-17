@@ -48,7 +48,7 @@ const icons: SocialIcon[] = [
 
 const Footer = () => {
   return (
-    <div className="mx-4 py-8 p-2 md:p-8 bg-[#2F4F4F] text-white rounded-2xl">
+    <div className="mx-4 my-4 py-8 p-2 md:p-8 bg-[#2F4F4F] text-white rounded-2xl">
       {/* Logo Section */}
       <div className="mb-6">
         <Link href="/" className="flex items-center">

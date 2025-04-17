@@ -8,7 +8,7 @@ const NavBar = () => {
   const [showSearch, setShowSearch] = useState(false);
 
   return (
-    <div className="flex items-center gap-1 justify-between px-4 py-2 sm:py-4 border">
+    <div className="flex items-center gap-1 justify-between px-4 md:px-8 py-2 sm:py-4 border font-source">
       <div className="flex items-center gap-2 md:gap-10">
         <Image
           src="images/logo.svg"

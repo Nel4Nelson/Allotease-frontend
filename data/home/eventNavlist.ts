@@ -1,4 +1,4 @@
-import { EventNav } from "@/types/EventNav";
+import { EventNav } from "@/types/home/EventNav";
 
 export const eventNavLists: EventNav[] = [
   {
