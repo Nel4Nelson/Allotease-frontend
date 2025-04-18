@@ -1,4 +1,4 @@
-import { AvailableEvent } from "@/types/home/AvailableEvent";
+import { AvailableEvent } from "@/types/home/EventTypes.ts";
 
 export const availableEventsList: AvailableEvent[] = [
   {
