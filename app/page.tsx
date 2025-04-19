@@ -1,8 +1,8 @@
 import NavBar from "@/components/layouts/NavBar";
 import "./globals.css";
-import Hero from "./components/Hero";
-import Event from "./components/Event";
-import { FeaturedSection } from "./components/FeaturedSection";
+import Hero from "./components/layouts/Hero";
+import Events from "./components/layouts/Events";
+import { FeaturedSection } from "./components/layouts/FeaturedSection";
 import Footer from "@/components/layouts/Footer";
 
 export default function Home() {
@@ -10,10 +10,9 @@ export default function Home() {
     <div className="">
       <NavBar />
       <Hero />
-      <Event />
-      <FeaturedSection/>
-      <Footer/>
+      <Events />
+      <FeaturedSection />
+      <Footer />
     </div>
   );
 }
-
