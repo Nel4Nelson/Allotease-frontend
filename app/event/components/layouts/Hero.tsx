@@ -1,6 +1,6 @@
 import Image from "next/image";
 import React from "react";
-import Counter from "./ui/Counter";
+import Counter from "../ui/Counter";
 import { Earth } from "lucide-react";
 
 const Hero = () => {

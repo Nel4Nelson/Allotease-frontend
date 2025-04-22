@@ -1,24 +1,16 @@
 "use client";
 
 import { availableEventsList } from "@/data/home/availableEventsLists";
-import { eventNavLists } from "@/data/home/eventNavlist";
-import Link from "next/link";
 import React, { useState } from "react";
-import { Combobox } from "./ui/ComboBox";
+import { Combobox } from "../ui/ComboBox";
 import { EventCardList } from "@/components/layouts/EventCardList";
+import EventsNavList from "@/components/layouts/EventsNavList";
 
-const Event = () => {
-  // State to track the active link
-  const [activeLink, setActiveLink] = useState<number | null>(0);
-
-  // Handle click to set active link
-  const handleLinkClick = (index: number) => {
-    setActiveLink(index);
-  };
+const Events = () => {
+  
 
   const [visibleCount, setVisibleCount] = useState(6); // 6 items initially
   const initialVisibleCount = 6;
-
 
   const handleSeeMore = () => {
     if (visibleCount >= availableEventsList.length) {
@@ -32,26 +24,7 @@ const Event = () => {
 
   return (
     <div className="px-4 md:px-8">
-      <div>
-        <ul className="border border-[#8AAEA433 flex items-center justify-around w-[15rem] rounded-lg h-[40px]">
-          {eventNavLists.map((eventNavList, i) => (
-            <li key={i}>
-              <Link
-                href={eventNavList.link}
-                onClick={() => handleLinkClick(i)} // Set active link on click
-              >
-                <h2
-                  className={`font-semibold ${
-                    activeLink === i ? "text-[#1F2024]" : "text-[#71727A]"
-                  }`} // Change text color based on active link
-                >
-                  {eventNavList.name}
-                </h2>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
+      <EventsNavList />
 
       <div>
         <div className="mt-8">
@@ -106,4 +79,4 @@ const Event = () => {
   );
 };
 
-export default Event;
+export default Events;

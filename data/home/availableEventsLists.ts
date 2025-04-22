@@ -1,6 +1,6 @@
-import { AvailableEvent } from "@/types/home/EventTypes.ts";
+import {  EventCard } from "@/types/home/EventTypes.ts";
 
-export const availableEventsList: AvailableEvent[] = [
+export const availableEventsList: EventCard[] = [
   {
     title: "Timely and Adaptive Strategies to Optimize Suicide Prevention...",
     date: {
