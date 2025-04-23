@@ -1,7 +1,7 @@
 import NavBar from "@/components/layouts/NavBar";
 import "./globals.css";
 import Hero from "./components/layouts/Hero";
-import Events from "./components/layouts/Events";
+import Events from "./components/layouts/EventSection";
 import { FeaturedSection } from "./components/layouts/FeaturedSection";
 import Footer from "@/components/layouts/Footer";
 
