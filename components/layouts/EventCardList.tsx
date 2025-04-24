@@ -2,20 +2,30 @@ import React from "react";
 import Image from "next/image";
 import { EventCardListProps } from "@/types/home/EventTypes.ts";
 
-export const EventCardList: React.FC<EventCardListProps> = ({ events }) => {
+export const EventCardList: React.FC<EventCardListProps> = ({
+  events,
+  flexRow,
+}) => {
   return (
     <>
       {events.map((list, i) => (
-        <div key={i}>
+        <div
+          key={i}
+          className={`${
+            flexRow
+              ? "flex flex-col justify-start gap-4 items-center lg:flex-row"
+              : " max-w-[320px]"
+          }`}
+        >
           <Image
             src={list.imgLink}
-            height={170}
-            width={361}
+            height={70}
+            width={300}
             alt={list.imgAlt}
             className="rounded-2xl"
           />
 
-          <div>
+          <div className="flex flex-col md:gap-4 ">
             <h3 className="text-[#1F2024] font-bold text-lg my-2">
               {list.title}
             </h3>

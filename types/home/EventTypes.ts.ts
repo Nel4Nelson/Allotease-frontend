@@ -13,4 +13,5 @@ export interface EventCard {
 
 export interface EventCardListProps {
   events: EventCard[];
+  flexRow?: boolean;
 }
