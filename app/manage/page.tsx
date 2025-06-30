@@ -1,16 +1,17 @@
-import NavBar from '@/components/layouts/NavBar';
-import React from 'react'
-import Hero from './components/layouts/Hero';
-import Footer from '@/components/layouts/Footer';
+'use client';
+import React from 'react';
+import { Navbar } from '@/components/layout/navbar';
+import { Footer } from '@/components/layout/footer';
+import { ManagementLayout } from '@/components/features/management/management-layout';
 
-const Manage = () => {
+export default function ManagePage() {
   return (
-    <div>
-        <NavBar/>
-        <Hero/>
-        <Footer/>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <main>
+        <ManagementLayout />
+      </main>
+      <Footer />
     </div>
-  )
+  );
 }
-
-export default Manage;
