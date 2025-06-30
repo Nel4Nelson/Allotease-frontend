@@ -358,3 +358,43 @@
 .form-label .required {
   color: var(--input-required);
 }
+
+/* Override browser autocomplete styling */
+.autocomplete-fix:-webkit-autofill,
+.autocomplete-fix:-webkit-autofill:hover,
+.autocomplete-fix:-webkit-autofill:focus,
+.autocomplete-fix:-webkit-autofill:active {
+  /* Remove the blue background */
+  -webkit-box-shadow: 0 0 0 30px white inset !important;
+  /* Keep your text color */
+  -webkit-text-fill-color: inherit !important;
+  /* Maintain your border styling */
+  border: inherit !important;
+  /* Keep your background */
+  background-color: transparent !important;
+}
+
+/* For other browsers */
+.autocomplete-fix:-moz-autofill {
+  background-color: transparent !important;
+  border: inherit !important;
+}
+
+/* Alternative approach - if the above doesn't work well */
+.form-input:-webkit-autofill,
+.form-input:-webkit-autofill:hover,
+.form-input:-webkit-autofill:focus,
+.form-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px var(--input-background, white) inset !important;
+  -webkit-text-fill-color: var(--input-text, #000) !important;
+  background-color: var(--input-background, white) !important;
+}
+
+/* Ensure transitions work properly */
+.form-input {
+  transition: all 0.2s ease-in-out;
+}
+
+.form-input:-webkit-autofill {
+  transition: background-color 5000s ease-in-out 0s;
+}

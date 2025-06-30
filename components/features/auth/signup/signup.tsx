@@ -6,7 +6,7 @@ import { AuthService } from "@/services/auth-service";
 import { UserFormData } from "@/types/auth";
 import { ApiError } from "@/services/api-client";
 
-export function AttendeeSignup() {
+export function UserSignup() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +37,7 @@ export function AttendeeSignup() {
         setError("Signup failed. Please try again.");
       }
     } catch (error) {
-      console.error("Attendee signup error:", error);
+      console.error("User signup error:", error);
 
       const apiError = error as ApiError;
       setError(apiError.message || "Something went wrong. Please try again.");

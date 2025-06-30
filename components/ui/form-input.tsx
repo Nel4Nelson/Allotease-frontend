@@ -9,8 +9,19 @@ interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
-  ({ label, error, required = false, showLabel = false, className = "", ...props }, ref) => {
-    const inputId = props.id || `input-${Math.random().toString(36).substr(2, 9)}`;
+  (
+    {
+      label,
+      error,
+      required = false,
+      showLabel = false,
+      className = "",
+      ...props
+    },
+    ref
+  ) => {
+    const inputId =
+      props.id || `input-${Math.random().toString(36).substr(2, 9)}`;
 
     return (
       <div className="space-y-1">
@@ -20,24 +31,24 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
             {required && <span className="required ml-1">*</span>}
           </Label>
         )}
-        
+
         {!showLabel && label && (
           <Label htmlFor={inputId} className="sr-only">
             {label}
           </Label>
         )}
-        
+
         <div className="relative">
           <input
             ref={ref}
             id={inputId}
-            className={`form-input ${className}`}
+            className={`form-input autocomplete-fix ${className}`}
             placeholder={props.placeholder}
             aria-invalid={error ? "true" : "false"}
             {...props}
           />
         </div>
-        
+
         {error && (
           <p className="text-red-500 text-sm font-source-sans-pro" role="alert">
             {error}

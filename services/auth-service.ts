@@ -16,11 +16,11 @@ import {
 export class AuthService {
   private static readonly ENDPOINTS = {
     // Signup endpoints
-    SIGNUP: '/auth/user/signup',
+    SIGNUP: '/auth/signup',
     ADMIN_SIGNUP: '/auth/organization/signup',
     
     // Login endpoints
-    USER_LOGIN: '/auth/user/login',
+    USER_LOGIN: '/auth/login',
     ORGANIZATION_LOGIN: '/auth/organization/login',
     
     // OTP endpoints

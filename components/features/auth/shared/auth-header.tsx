@@ -41,10 +41,11 @@ export function AuthHeader({
     <div className="mb-4 flex gap-3">
       {/* Back Button */}
       <BackButton onClick={onBack} />
-      
+
       {/* Title */}
       <h1
         className="
+        w-full
           font-space-grotesk 
           font-bold 
           text-center 

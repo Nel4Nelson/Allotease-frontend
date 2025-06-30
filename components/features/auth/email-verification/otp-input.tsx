@@ -25,12 +25,10 @@ export function OtpInput({
   }, [disabled]);
 
   useEffect(() => {
-    // Call onComplete when OTP is fully entered
+    // Call onComplete whenever OTP changes (not just when complete)
     const otpValue = otp.join("");
-    if (otpValue.length === length) {
-      onComplete(otpValue);
-    }
-  }, [otp, length, onComplete]);
+    onComplete(otpValue);
+  }, [otp, onComplete]);
 
   const handleChange = (element: HTMLInputElement, index: number) => {
     const value = element.value;
@@ -124,7 +122,7 @@ export function OtpInput({
   };
 
   return (
-    <div className="flex items-center justify-center gap-3 sm:gap-4">
+    <div className="flex items-center justify-center gap-3">
       {otp.map((digit, index) => (
         <input
           key={index}
@@ -140,23 +138,12 @@ export function OtpInput({
           onPaste={handlePaste}
           disabled={disabled}
           className={`
+            form-input autocomplete-fix
             w-12 h-12 sm:w-14 sm:h-14 
             text-center text-lg sm:text-xl font-bold font-source-sans-pro
-            border-2 rounded-lg
-            transition-all duration-200
-            focus:outline-none focus:ring-2 focus:ring-offset-1
-            disabled:opacity-50 disabled:cursor-not-allowed
-            ${
-              error
-                ? "border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500/20"
-                : "border-[var(--input-border)] text-[var(--input-text)] focus:border-[var(--input-border-focus)] focus:ring-[var(--input-border-focus)]/20"
-            }
-            ${
-              digit
-                ? "bg-[var(--input-background)] border-[var(--input-border-focus)]"
-                : "bg-[var(--input-background)]"
-            }
+            ${error ? "border-red-500 text-red-600" : ""}
           `}
+          aria-invalid={error ? "true" : "false"}
           aria-label={`Digit ${index + 1} of ${length}`}
         />
       ))}

@@ -6,16 +6,18 @@ import { Button } from "@/components/ui/button";
 import { OtpInput } from "./otp-input";
 import { AuthService } from "@/services/auth-service";
 import { ApiError } from "@/types/auth";
+import { AuthLayout } from "../shared";
 
 export function EmailVerification() {
   const router = useRouter();
   const [email, setEmail] = useState<string>("");
+  const [otp, setOtp] = useState<string>("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [resetKey, setResetKey] = useState(0); // Key to force OTP input reset
+  const [resetKey, setResetKey] = useState(0);
 
   useEffect(() => {
     // Get email from session storage
@@ -39,12 +41,17 @@ export function EmailVerification() {
     }
   }, [resendCooldown]);
 
-  const handleOtpComplete = async (otpValue: string) => {
-    await verifyOtp(otpValue);
+  const handleOtpComplete = (otpValue: string) => {
+    // Just store the OTP, don't auto-verify
+    setOtp(otpValue);
+    setError(null); // Clear any previous errors
   };
 
-  const verifyOtp = async (otpValue: string) => {
-    if (!email) return;
+  const handleVerifyClick = async () => {
+    if (!email || !otp || otp.length !== 6) {
+      setError("Please enter a valid 6-digit code.");
+      return;
+    }
 
     try {
       setIsVerifying(true);
@@ -52,7 +59,7 @@ export function EmailVerification() {
 
       const response = await AuthService.verifyOtp({
         email,
-        otp: otpValue,
+        otp: otp,
       });
 
       if (response.status === "success") {
@@ -76,6 +83,7 @@ export function EmailVerification() {
 
       // Reset the OTP input on error by changing the key
       setResetKey((prev) => prev + 1);
+      setOtp(""); // Clear stored OTP
     } finally {
       setIsVerifying(false);
     }
@@ -94,6 +102,7 @@ export function EmailVerification() {
         setResendCooldown(60); // 60 second cooldown
         // Reset OTP input after successful resend
         setResetKey((prev) => prev + 1);
+        setOtp(""); // Clear stored OTP
         setError(null);
       }
     } catch (error) {
@@ -104,6 +113,10 @@ export function EmailVerification() {
     } finally {
       setIsResending(false);
     }
+  };
+
+  const handleBack = () => {
+    router.push("/signup");
   };
 
   const maskEmail = (email: string) => {
@@ -117,127 +130,116 @@ export function EmailVerification() {
 
   if (success) {
     return (
-      <div className="space-y-6 text-center">
-        <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
-          <div className="mb-4">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
+      <AuthLayout
+        title="Email Verified Successfully!"
+        showBackButton={false}
+        onBack={undefined}
+        footerChildren={undefined}
+      >
+        <div className="space-y-6 text-center">
+          <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
+            <div className="mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-8 h-8 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
             </div>
+            <h3 className="text-xl font-bold text-green-800 mb-2 font-space-grotesk">
+              Account Activated!
+            </h3>
+            <p className="text-green-600 font-source-sans-pro">
+              Your account has been activated. Redirecting you to the home page...
+            </p>
           </div>
-          <h3 className="text-xl font-bold text-green-800 mb-2 font-space-grotesk">
-            Email Verified Successfully!
-          </h3>
-          <p className="text-green-600 font-source-sans-pro">
-            Your account has been activated. Redirecting you to the home page...
-          </p>
         </div>
-      </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="text-center space-y-3">
-        <div className="w-16 h-16 bg-[var(--input-background)] rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg
-            className="w-8 h-8 text-[var(--feature-accent-orange)]"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-            />
-          </svg>
-        </div>
-
-        <h2 className="text-2xl sm:text-3xl font-bold font-space-grotesk text-[var(--title-color)]">
-          Verify Your Email
-        </h2>
-
-        <p className="text-[var(--body-text)] font-source-sans-pro max-w-md mx-auto">
-          We've sent a 6-digit verification code to{" "}
-          <span className="font-semibold text-[var(--title-color)]">
-            {email ? maskEmail(email) : "your email"}
-          </span>
-        </p>
-      </div>
-
-      {/* Error Message */}
-      {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-600 text-sm font-source-sans-pro text-center">
-            {error}
+    <AuthLayout
+      title="Verify Your Email"
+      showBackButton={true}
+      onBack={handleBack}
+      footerChildren={undefined}
+    >
+      <div className="space-y-6">
+        {/* Description */}
+        <div className="text-center space-y-3">
+          <p className="text-[var(--body-text)] font-source-sans-pro max-w-md mx-auto">
+            We've sent a 6-digit verification code to{" "}
+            <span className="font-semibold text-[var(--title-color)]">
+              {email ? maskEmail(email) : "your email"}
+            </span>
           </p>
         </div>
-      )}
 
-      {/* OTP Input */}
-      <div className="space-y-6">
-        <OtpInput
-          key={resetKey} // This forces the component to reset when the key changes
-          length={6}
-          onComplete={handleOtpComplete}
-          disabled={isVerifying}
-          error={!!error}
-        />
-
-        {/* Loading State */}
-        {isVerifying && (
-          <div className="text-center">
-            <p className="text-[var(--body-text)] font-source-sans-pro text-sm">
-              Verifying your code...
+        {/* Error Message */}
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-sm font-source-sans-pro text-center">
+              {error}
             </p>
           </div>
         )}
-      </div>
 
-      {/* Resend Section */}
-      <div className="text-center space-y-4">
-        <p className="text-[var(--body-text)] font-source-sans-pro text-sm">
-          Didn't receive the code?
-        </p>
+        {/* OTP Input */}
+        <div className="space-y-6">
+          <OtpInput
+            key={resetKey}
+            length={6}
+            onComplete={handleOtpComplete}
+            disabled={isVerifying}
+            error={!!error}
+          />
 
-        <Button
-          variant="ghost"
-          onClick={handleResendOtp}
-          disabled={isResending || resendCooldown > 0}
-          className="text-[var(--feature-accent-orange)] hover:text-[var(--feature-accent-orange)] hover:bg-[var(--feature-accent-orange)]/10 font-source-sans-pro"
-        >
-          {isResending
-            ? "Sending..."
-            : resendCooldown > 0
-            ? `Resend in ${resendCooldown}s`
-            : "Resend Code"}
-        </Button>
-      </div>
+          {/* Manual Verification Button */}
+          <div className="flex justify-center">
+            <Button
+              variant="signup-primary"
+              size="allotease-lg"
+              className="w-2/3"
+              onClick={handleVerifyClick}
+              disabled={isVerifying || !otp || otp.length !== 6}
+              loading={isVerifying}
+            >
+              Verify Email
+            </Button>
+          </div>
+        </div>
 
-      {/* Back to Signup */}
-      <div className="text-center pt-4 border-t border-[var(--input-border)]">
-        <Button
-          variant="ghost"
-          onClick={() => router.push("/signup")}
-          className="text-[var(--body-text)] hover:text-[var(--title-color)] font-source-sans-pro"
-        >
-          ← Back to Sign Up
-        </Button>
+        {/* Resend Section */}
+        <div className="text-center space-y-4">
+          <p className="text-[var(--body-text)] font-source-sans-pro text-sm">
+            Didn't receive the code?
+          </p>
+
+          <Button
+            variant="ghost"
+            size="allotease-md"
+            onClick={handleResendOtp}
+            disabled={isResending || resendCooldown > 0}
+            loading={isResending}
+            className="text-[var(--feature-accent-orange)] hover:text-[var(--feature-accent-orange)] hover:bg-[var(--feature-accent-orange)]/10 font-source-sans-pro"
+          >
+            {resendCooldown > 0 
+              ? `Resend in ${resendCooldown}s`
+              : "Resend Code"
+            }
+          </Button>
+        </div>
       </div>
-    </div>
+    </AuthLayout>
   );
 }

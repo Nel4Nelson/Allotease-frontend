@@ -12,7 +12,7 @@ const signInFormSchema = z.object({
     .min(1, { message: "Email is required." })
     .email({ message: "Please enter a valid email address." })
     .max(100, { message: "Email must not exceed 100 characters." }),
-  
+
   password: z
     .string()
     .min(1, { message: "Password is required." })
@@ -30,10 +30,10 @@ interface SignInFormProps {
   submitButtonText?: string;
 }
 
-export function SignInForm({ 
-  onSubmit, 
+export function SignInForm({
+  onSubmit,
   isLoading = false,
-  submitButtonText = "Sign In"
+  submitButtonText = "Sign In",
 }: SignInFormProps) {
   const {
     register,
@@ -49,19 +49,19 @@ export function SignInForm({
   });
 
   const formFields = [
-    { 
-      name: "email" as const, 
+    {
+      name: "email" as const,
       label: "Email",
-      placeholder: "Email*", 
+      placeholder: "Email*",
       type: "email",
-      required: true
+      required: true,
     },
-    { 
-      name: "password" as const, 
+    {
+      name: "password" as const,
       label: "Password",
-      placeholder: "Password*", 
+      placeholder: "Password*",
       type: "password",
-      required: true
+      required: true,
     },
   ];
 
@@ -81,16 +81,18 @@ export function SignInForm({
         ))}
       </div>
 
-      <Button
-        type="submit"
-        variant="signup-primary"
-        size="allotease-lg"
-        className="w-full"
-        loading={isLoading}
-        disabled={isLoading || !isValid}
-      >
-        {submitButtonText}
-      </Button>
+      <div className="flex justify-center">
+        <Button
+          type="submit"
+          variant="signup-primary"
+          size="allotease-md"
+          className="w-2/3"
+          loading={isLoading}
+          disabled={isLoading || !isValid}
+        >
+          {submitButtonText}
+        </Button>
+      </div>
     </form>
   );
 }
