@@ -1,7 +1,10 @@
-export { AboutNavbar } from "./about-navbar";
+export { AboutNavbar } from "./navbar";
+export { AboutMobileMenu } from "./mobile-menu";
+export { AboutDesktopNav } from "./desktop-nav";
 export { AboutPage } from "./about-page";
+export { HeroContent } from "./hero-content";
+export { HeroSection } from "./hero-section";
 export { FeatureSection } from "./feature-section";
 export { TestimonialSection } from "./testimonial-section";
 export { PricingSection } from "./pricing-section";
 export { FaqSection } from "./faq-section";
-export { AboutFooter } from "./about-footer";

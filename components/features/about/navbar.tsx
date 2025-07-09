@@ -3,8 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { MenuIcon, CloseIcon } from "@/components/icons";
-import { AboutDesktopNav } from "./desktop-nav";
-import { AboutMobileMenu } from "./mobile-menu";
+import { AboutDesktopNav } from ".";
+import { AboutMobileMenu } from ".";
 
 export function AboutNavbar() {
   const [menuOpen, setMenuOpen] = useState(false);

@@ -3,10 +3,10 @@ import { aboutPageData } from "@/data/about";
 import {
   FaqSection,
   FeatureSection,
+  HeroSection,
   PricingSection,
   TestimonialSection,
 } from ".";
-import { HeroSection } from "@/components/hero/about/hero-section";
 import { Footer } from "@/components/layout";
 
 export function AboutPage() {
