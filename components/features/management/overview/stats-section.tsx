@@ -1,6 +1,6 @@
 "use client";
 
-interface StatCard {
+export interface StatCard {
   title: string;
   value: number;
   percentage: string;

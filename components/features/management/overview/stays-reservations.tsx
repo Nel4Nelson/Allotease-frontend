@@ -9,17 +9,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ReservationStatusBadge } from "../shared/reservation-status-badge";
+import {
+ 
+  TransformedReservation,
+} from "@/utils/stay-reservation-transformer";
 
-interface StayReservation {
-  id: string;
-  guest: string;
-  room: string;
-  dates: string;
-  status: "Pending" | "Confirmed" | "Cancelled";
-}
+// interface StayReservation {
+//   id: string;
+//   guest: string;
+//   room: string;
+//   dates: string;
+//   status: "Pending" | "Confirmed" | "Cancelled";
+// }
 
 interface StaysReservationsProps {
-  reservations: StayReservation[];
+  reservations: TransformedReservation[];
   loading?: boolean;
   onSearch?: (value: string) => void;
   onSort?: (value: string) => void;
@@ -83,9 +87,9 @@ export function StaysReservations({
               className="text-[#71727A] border-none"
             >
               <TableCell className="font-medium">{reservation.id}</TableCell>
-              <TableCell>{reservation.guest}</TableCell>
+              <TableCell>{reservation.guestName}</TableCell>
               <TableCell className="hidden sm:table-cell">
-                {reservation.room}
+                {reservation.roomType}
               </TableCell>
               <TableCell className="hidden sm:table-cell">
                 {reservation.dates}

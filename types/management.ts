@@ -11,7 +11,7 @@ export interface WithdrawalRequest {
   amount: number;
   currency: string;
   requestDate: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: "pending" | "processing" | "completed" | "failed";
   bankDetails: {
     bankName: string;
     accountNumber: string;
@@ -27,7 +27,7 @@ export interface HostProfile {
   email: string;
   avatar?: string;
   isVerified: boolean;
-  serviceTypes: ('events' | 'stays' | 'car-parks')[];
+  serviceTypes: ("events" | "stays" | "car-parks")[];
   stats: {
     totalListings: number;
     activeListings: number;
@@ -60,32 +60,32 @@ export interface ManagementStats {
 }
 
 export interface ReservationItem {
-  id: string;
-  type: 'event' | 'stay' | 'car-park';
-  guestName: string;
-  serviceName: string;
+  id?: string;
+  type?: "event" | "stay" | "car-park" ;
+  guestName?: string;
+  serviceName?: string;
   roomType?: string;
   dates: {
     start: string;
     end: string;
   };
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
-  amount: number;
-  currency: string;
+  status: "pending" | "confirmed" | "cancelled";
+  amount?: number;
+  currency?: string;
   guestContact?: string;
 }
 
 export interface HostListing {
   id: string;
-  type: 'event' | 'stay' | 'car-park';
+  type: "event" | "stay" | "car-park";
   title: string;
   image: {
     src: string;
     alt: string;
   };
-  status: 'active' | 'inactive' | 'draft';
+  status: "active" | "inactive" | "draft";
   pricing: {
-    type: 'free' | 'paid';
+    type: "free" | "paid";
     amount?: number;
     currency?: string;
   };
@@ -129,7 +129,25 @@ export interface RecentReservationsProps {
 
 export interface HostListingsGridProps {
   listings: HostListing[];
-  activeFilter: 'all' | 'event' | 'stay' | 'car-park';
-  onFilterChange: (filter: 'all' | 'event' | 'stay' | 'car-park') => void;
+  activeFilter: "all" | "event" | "stay" | "car-park";
+  onFilterChange: (filter: "all" | "event" | "stay" | "car-park") => void;
   isLoading?: boolean;
+}
+
+export interface PaginationMeta {
+  totalItems: number;
+  currentPage: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+export interface StayReservationsResponse {
+  reservations: ReservationItem[];
+  pagination: PaginationMeta;
+}
+
+export interface EventReservationsResponse {
+  events: ReservationItem[];
+  pagination: PaginationMeta;
 }
