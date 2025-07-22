@@ -1,148 +1,400 @@
-// /components/layout/navbar.tsx - Updated version
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
-import React from "react";
+import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useSearch } from "@/hooks/use-search";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  SearchIcon,
+  PencilIcon,
+  TicketIcon,
+  ChevronDownIcon,
+} from "@/components/icons";
+import { useAuthStore } from "@/stores/auth-store";
+import { AuthService } from "@/services/auth-service";
 
-export function Navbar() {
-  const { isSearchVisible, toggleSearch, hideSearch } = useSearch();
+export default function Header() {
+  // Get auth data directly from store
+  const { user, isAuthenticated, getUserRole, isLoading } = useAuthStore();
+  
+  // Get user role and email from auth store
+  const userRole = getUserRole();
+  const userEmail = user?.email || "Guest";
+  
+  // Check if user is allocation admin (allocator role)
+  const isAllocationAdmin = userRole === 'allocator';
 
-  const SearchIcon = () => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      fill="#71727a"
-      viewBox="0 0 256 256"
-      className="mr-1"
-    >
-      <path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path>
-    </svg>
-  );
-
-  const NavItem = ({
-    children,
-    href,
-  }: {
-    children: React.ReactNode;
-    href?: string;
-  }) => {
-    const content = (
-      <div className="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity">
-        {children}
-      </div>
-    );
-
-    if (href) {
-      return <Link href={href}>{content}</Link>;
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await AuthService.logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
     }
+  };
 
-    return content;
+  // Handle create event button click
+  const handleCreateEvent = () => {
+    if (userRole === 'allocator') {
+      // Allocators can create events - redirect to create event page
+      window.location.href = '/allocation-admin/create';
+    } else {
+      // Regular users need to upgrade first
+      window.location.href = '/upgrade';
+    }
   };
 
   return (
-    <nav className="flex items-center gap-1 justify-between px-4 md:px-8 py-2 sm:py-4 border font-source bg-white">
-      <div className="flex items-center gap-2 md:gap-10">
-        <Link href="/">
-          <Image
-            src="/images/logo.svg"
-            alt="Allotease Logo"
-            width={120}
-            height={40}
-            priority
-          />
-        </Link>
+    <header
+      className="w-full bg-white/80 backdrop-blur-sm relative"
+      style={{ borderBottom: "1px solid rgba(138, 174, 164, 0.20)" }}
+    >
+      {/* Background Gradient */}
+      <div className="absolute inset-0 -z-10">
+        <div
+          className="absolute inset-0 opacity-60 blur-2xl"
+          style={{
+            background:
+              "linear-gradient(354deg, #FFF 24.04%, rgba(255, 243, 230, 0.35) 59.41%, #D5FFEB 113.97%)",
+            filter: "blur(24px)",
+            opacity: 0.6,
+          }}
+        />
+      </div>
 
-        {/* Search Section */}
-        <div className="relative">
-          {/* Desktop Search - Always visible */}
-          <div className="hidden sm:flex items-center border border-[#8AAEA433] h-[40px] max-w-[300px] w-full rounded-full px-2 py-1 bg-[#F2F4F780]">
-            <SearchIcon />
-            <input
-              type="text"
-              placeholder="Search by address"
-              className="outline-none text-[#71727A] bg-transparent flex-1"
+      <div className="max-w-[965px] mx-auto px-4 sm:px-6 lg:px-8 h-16">
+        <div className="flex items-center h-full">
+          {/* Left Section: Logo + Search */}
+          <div className="flex items-center flex-1 mr-8">
+            {/* Logo */}
+            <Image
+              src="/images/logo.svg"
+              alt="Allotease Logo"
+              width={120}
+              height={40}
+              priority
+              className="mr-6 mt-1"
             />
+
+            {/* Search Bar */}
+            <div className="flex items-center gap-3 h-10 max-w-[300px] px-3 flex-1 rounded-full border border-gray-300/20 bg-gray-100/50">
+              <SearchIcon />
+              <input
+                type="text"
+                placeholder="Search by address"
+                className="flex-1 bg-transparent border-none outline-none text-gray-600 font-source-sans text-base placeholder:text-gray-500"
+                style={{ color: "#71727A" }}
+              />
+            </div>
           </div>
 
-          {/* Mobile Search - Toggleable */}
-          <div className="sm:hidden">
-            {isSearchVisible ? (
-              <div className="flex items-center border border-[#8AAEA433] rounded-full px-2 py-1 bg-[#F2F4F780]">
-                <SearchIcon />
-                <input
-                  type="text"
-                  placeholder="Search by address"
-                  className="outline-none text-sm w-[120px] text-[#71727A] bg-transparent"
-                  autoFocus
-                  onBlur={hideSearch}
-                />
+          {/* Right Section: Action Buttons + User Profile */}
+          <div className="flex items-center gap-8">
+            {/* Create an event */}
+            <button 
+              className="flex items-center gap-2 hover:opacity-70 transition-opacity"
+              onClick={handleCreateEvent}
+            >
+              <PencilIcon />
+              <span
+                className="font-source-sans text-base font-semibold"
+                style={{ color: "#1F3A3A" }}
+              >
+                Create an event
+              </span>
+            </button>
+
+            {/* Ticket */}
+            <button className="flex items-center gap-2 hover:opacity-70 transition-opacity">
+              <TicketIcon />
+              <span
+                className="font-source-sans text-base font-semibold"
+                style={{ color: "#1F3A3A" }}
+              >
+                Ticket
+              </span>
+            </button>
+
+            {/* User Profile Dropdown - Only show if authenticated */}
+            {isAuthenticated && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-3 hover:bg-gray-50 rounded-lg px-2 py-1 transition-colors">
+                    {/* Avatar */}
+                    <div className="w-8 h-8 rounded-full overflow-hidden">
+                      <Image
+                        src="/icons/encircle-star-green-avatar.svg"
+                        alt="User Avatar"
+                        width={32}
+                        height={32}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span
+                      className="font-source-sans text-base"
+                      style={{
+                        color: "#1F2024",
+                        fontFamily: '"Source Sans Pro"',
+                        fontSize: "16px",
+                        fontWeight: 400,
+                        lineHeight: "normal",
+                      }}
+                    >
+                      {userEmail}
+                    </span>
+                    <ChevronDownIcon />
+                  </button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent
+                  className="p-0 border-0 shadow-none bg-transparent"
+                  align="end"
+                  style={{ width: "309px" }}
+                >
+                  {/* Custom Dropdown Container */}
+                  <div
+                    className="flex flex-col items-start gap-4"
+                    style={{
+                      width: "309px",
+                      padding: "20px",
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                      gap: "16px",
+                      borderRadius: "16px",
+                      border: "1px solid rgba(138, 174, 164, 0.20)",
+                      background: "rgba(113, 114, 122, 0.5)",
+                      boxShadow: "0px 4px 10px 0px rgba(0, 0, 0, 0.04)",
+                      backdropFilter: "blur(21px)",
+                    }}
+                  >
+                    {/* User Info Section */}
+                    <div className="flex-col gap-2 w-full">
+                      <div className="flex justify-center">
+                        <div className="w-8 h-8 rounded-full overflow-hidden">
+                          <Image
+                            src="/icons/encircle-star-green-avatar.svg"
+                            alt="User Avatar"
+                            width={32}
+                            height={32}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-center">
+                        <span
+                          style={{
+                            color: "#1F2024",
+                            fontFamily: '"Source Sans Pro"',
+                            fontSize: "16px",
+                            fontWeight: 400,
+                            lineHeight: "normal",
+                          }}
+                        >
+                          {userEmail}
+                        </span>
+                      </div>
+                      {/* Display user role for debugging/info */}
+                      {user && (
+                        <div className="flex justify-center mt-1">
+                          <span
+                            style={{
+                              color: "#666",
+                              fontFamily: '"Source Sans Pro"',
+                              fontSize: "12px",
+                              fontWeight: 400,
+                              lineHeight: "normal",
+                            }}
+                          >
+                            {userRole === 'allocator' ? 'Allocation Admin' : 'User'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Menu Items Container */}
+                    <div
+                      className="flex flex-col items-start self-stretch"
+                      style={{
+                        borderRadius: "16px",
+                        background: "rgba(242, 244, 247, 0.50)",
+                      }}
+                    >
+                      {/* Ticket - First item with conditional top rounded corners */}
+                      <div
+                        className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
+                        style={{
+                          padding: "16px 20px",
+                          borderBottom: isAllocationAdmin ? "1px solid rgba(138, 174, 164, 0.20)" : "1px solid rgba(138, 174, 164, 0.20)",
+                          borderRadius: "16px 16px 0 0", // Top-left and top-right rounded
+                        }}
+                      >
+                        <Image
+                          src="/icons/ticket.svg"
+                          alt="Ticket"
+                          width={16}
+                          height={16}
+                        />
+                        <span
+                          style={{
+                            color: "#1F2024",
+                            fontFamily: '"Source Sans Pro"',
+                            fontSize: "16px",
+                            fontWeight: 600,
+                            lineHeight: "normal",
+                          }}
+                        >
+                          Ticket
+                        </span>
+                      </div>
+
+                      {/* Manage my resources - Only show if user is allocation-admin */}
+                      {isAllocationAdmin && (
+                        <div
+                          className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
+                          style={{
+                            padding: "16px 20px",
+                            borderBottom: "1px solid rgba(138, 174, 164, 0.20)",
+                          }}
+                        >
+                          <Image
+                            src="/icons/browsers.svg"
+                            alt="Manage resources"
+                            width={16}
+                            height={16}
+                          />
+                          <span
+                            style={{
+                              color: "#1F2024",
+                              fontFamily: '"Source Sans Pro"',
+                              fontSize: "16px",
+                              fontWeight: 600,
+                              lineHeight: "normal",
+                            }}
+                          >
+                            Manage my resources
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Create new event */}
+                      <div
+                        className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
+                        style={{
+                          padding: "16px 20px",
+                          borderBottom: "1px solid rgba(138, 174, 164, 0.20)",
+                        }}
+                        onClick={handleCreateEvent}
+                      >
+                        <Image
+                          src="/icons/bank.svg"
+                          alt="Create event"
+                          width={16}
+                          height={16}
+                        />
+                        <span
+                          style={{
+                            color: "#1F2024",
+                            fontFamily: '"Source Sans Pro"',
+                            fontSize: "16px",
+                            fontWeight: 600,
+                            lineHeight: "normal",
+                          }}
+                        >
+                          Create new event
+                        </span>
+                      </div>
+
+                      {/* About Allotease - Last item with bottom rounded corners */}
+                      <div
+                        className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
+                        style={{
+                          padding: "16px 20px",
+                          borderRadius: "0 0 16px 16px", // Bottom-left and bottom-right rounded
+                        }}
+                      >
+                        <Image
+                          src="/icons/allotease-icon.svg"
+                          alt="About"
+                          width={16}
+                          height={16}
+                        />
+                        <span
+                          style={{
+                            color: "#1F2024",
+                            fontFamily: '"Source Sans Pro"',
+                            fontSize: "16px",
+                            fontWeight: 600,
+                            lineHeight: "normal",
+                          }}
+                        >
+                          About Allotease
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Logout Section */}
+                    <div
+                      className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
+                      style={{
+                        padding: "16px 20px",
+                        background: "rgba(242, 244, 247, 0.50)",
+                        borderRadius: "16px",
+                      }}
+                      onClick={handleLogout}
+                    >
+                      <Image
+                        src="/icons/logout.svg"
+                        alt="Logout"
+                        width={16}
+                        height={16}
+                      />
+                      <span
+                        style={{
+                          color: "#1F2024",
+                          fontFamily: '"Source Sans Pro"',
+                          fontSize: "16px",
+                          fontWeight: 600,
+                          lineHeight: "normal",
+                        }}
+                      >
+                        Log Out
+                      </span>
+                    </div>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {/* Show login/signup buttons if not authenticated and not loading */}
+            {!isAuthenticated && !isLoading && (
+              <div className="flex items-center gap-4">
+                <button 
+                  className="font-source-sans text-base font-semibold text-[#1F3A3A] hover:opacity-70 transition-opacity"
+                  onClick={() => window.location.href = '/login'}
+                >
+                  Login
+                </button>
+                <button 
+                  className="font-source-sans text-base font-semibold bg-[#1F3A3A] text-white px-4 py-2 rounded-lg hover:opacity-80 transition-opacity"
+                  onClick={() => window.location.href = '/signup'}
+                >
+                  Sign Up
+                </button>
               </div>
-            ) : (
-              <button onClick={toggleSearch} className="p-1">
-                <SearchIcon />
-              </button>
+            )}
+
+            {/* Show loading state */}
+            {isLoading && (
+              <div className="flex items-center gap-4">
+                <div className="w-6 h-6 border-2 border-gray-300 border-t-[#1F3A3A] rounded-full animate-spin"></div>
+              </div>
             )}
           </div>
         </div>
       </div>
-
-      {/* Right Side Navigation - Hide when mobile search is active */}
-      {!isSearchVisible && (
-        <div className="flex items-center gap-3 md:gap-6 lg:gap-10">
-          <NavItem href="/create/event">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              fill="#1f3a3a"
-              viewBox="0 0 256 256"
-            >
-              <path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"></path>
-            </svg>
-            <h4 className="font-semibold text-[#1F3A3A] text-sm lg:text-base hidden md:block">
-              Create an event
-            </h4>
-          </NavItem>
-
-          <NavItem href="/tickets">
-            <div className="w-[8px] h-[8px] bg-[#FF5B00] rounded-full"></div>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              fill="#1f3a3a"
-              viewBox="0 0 256 256"
-            >
-              <path d="M232,104a8,8,0,0,0,8-8V64a16,16,0,0,0-16-16H32A16,16,0,0,0,16,64V96a8,8,0,0,0,8,8,24,24,0,0,1,0,48,8,8,0,0,0-8,8v32a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V160a8,8,0,0,0-8-8,24,24,0,0,1,0-48ZM32,167.2a40,40,0,0,0,0-78.4V64H88V192H32Zm192,0V192H104V64H224V88.8a40,40,0,0,0,0,78.4Z"></path>
-            </svg>
-            <h4 className="font-semibold text-[#1F3A3A] text-sm lg:text-base hidden md:block">
-              Ticket
-            </h4>
-          </NavItem>
-
-          <div className="flex items-center gap-1">
-            <Avatar className="bg-[#406832] flex justify-center items-center">
-              <AvatarImage src="/icons/star.svg" className="w-[1rem]" />
-              <AvatarFallback>CN</AvatarFallback>
-            </Avatar>
-            <div className="flex w-[10.5rem] items-center gap-1 truncate lg:flex">
-              <p className="text-[#1F2024]">obiruby@gmail.com</p>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                fill="#1f3a3a"
-                viewBox="0 0 256 256"
-              >
-                <path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"></path>
-              </svg>
-            </div>
-          </div>
-        </div>
-      )}
-    </nav>
+    </header>
   );
 }

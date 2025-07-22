@@ -192,7 +192,7 @@ function Button({
       ) : (
         <>
           {leftIcon && (
-            <span className="mr-[15px] flex-shrink-0">{leftIcon}</span>
+            <span className="mr-[10px] flex-shrink-0">{leftIcon}</span>
           )}
           <span>{children}</span>
           {rightIcon && <span className="ml-2 flex-shrink-0">{rightIcon}</span>}

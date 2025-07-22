@@ -7,7 +7,7 @@ export const aboutPageData: AboutPageData = {
         {
           title: "Discover Accommodation Nationwide",
           description:
-            "Search hotels, apartments, and student lodges available across Nigeria, near campuses, city centres, and event venues.",
+            "Search hotels, appartments, and student lodges available across Nigeria, near campuses, city centres, and event venues.",
         },
         {
           title: "Hassle-Free Reservation",

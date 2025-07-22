@@ -4,6 +4,8 @@ interface IconProps {
   size?: number;
   color?: string;
   className?: string;
+  width?: number;
+  height?: number;
 }
 
 export const MenuIcon = () => (
@@ -198,6 +200,283 @@ export function AtIcon({
         stroke={color}
         strokeLinecap="round"
         strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export const SearchIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="21"
+    height="20"
+    viewBox="0 0 21 20"
+    fill="none"
+  >
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M3.82957 8.8178C3.82957 5.58363 6.46124 2.9528 9.6954 2.9528C12.9287 2.9528 15.5604 5.58363 15.5604 8.8178C15.5604 12.052 12.9287 14.6836 9.6954 14.6836C6.46124 14.6836 3.82957 12.052 3.82957 8.8178ZM19.2421 17.5336L15.4096 13.7111C16.5396 12.3936 17.2271 10.6861 17.2271 8.8178C17.2271 4.6653 13.8479 1.28613 9.6954 1.28613C5.54207 1.28613 2.1629 4.6653 2.1629 8.8178C2.1629 12.9711 5.54207 16.3503 9.6954 16.3503C11.3804 16.3503 12.9329 15.787 14.1887 14.8478L18.0654 18.7136L19.2421 17.5336Z"
+      fill="#71727A"
+    />
+  </svg>
+);
+
+export const PencilIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+  >
+    <path
+      d="M7.24219 16.8749H3.75C3.58424 16.8749 3.42527 16.8091 3.30806 16.6919C3.19085 16.5747 3.125 16.4157 3.125 16.2499V12.7577C3.12472 12.6766 3.14044 12.5962 3.17127 12.5211C3.20211 12.446 3.24744 12.3778 3.30469 12.3202L12.6797 2.94524C12.7378 2.88619 12.8072 2.83929 12.8836 2.80728C12.9601 2.77527 13.0421 2.75879 13.125 2.75879C13.2079 2.75879 13.2899 2.77527 13.3664 2.80728C13.4428 2.83929 13.5122 2.88619 13.5703 2.94524L17.0547 6.42962C17.1137 6.48777 17.1606 6.5571 17.1926 6.63355C17.2247 6.71 17.2411 6.79205 17.2411 6.87493C17.2411 6.95781 17.2247 7.03987 17.1926 7.11632C17.1606 7.19277 17.1137 7.26209 17.0547 7.32024L7.67969 16.6952C7.62216 16.7525 7.5539 16.7978 7.47883 16.8287C7.40376 16.8595 7.32334 16.8752 7.24219 16.8749V16.8749Z"
+      stroke="#1F3A3A"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10.625 5L15 9.375"
+      stroke="#1F3A3A"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const TicketIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+  >
+    <path
+      d="M7.5 4.375V15.625"
+      stroke="#1F3A3A"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M1.87499 13.0625C1.8742 12.9186 1.92374 12.7789 2.01504 12.6676C2.10635 12.5563 2.23367 12.4805 2.37499 12.4531C2.93712 12.3338 3.4412 12.025 3.80289 11.5784C4.16458 11.1319 4.36194 10.5747 4.36194 10C4.36194 9.42534 4.16458 8.86812 3.80289 8.42157C3.4412 7.97502 2.93712 7.66623 2.37499 7.54687C2.23367 7.51955 2.10635 7.44368 2.01504 7.33241C1.92374 7.22113 1.8742 7.08144 1.87499 6.9375V5C1.87499 4.83424 1.94084 4.67527 2.05805 4.55806C2.17526 4.44085 2.33423 4.375 2.49999 4.375H17.5C17.6658 4.375 17.8247 4.44085 17.9419 4.55806C18.0591 4.67527 18.125 4.83424 18.125 5V6.9375C18.1258 7.08144 18.0763 7.22113 17.9849 7.33241C17.8936 7.44368 17.7663 7.51955 17.625 7.54687C17.0629 7.66623 16.5588 7.97502 16.1971 8.42157C15.8354 8.86812 15.638 9.42534 15.638 10C15.638 10.5747 15.8354 11.1319 16.1971 11.5784C16.5588 12.025 17.0629 12.3338 17.625 12.4531C17.7663 12.4805 17.8936 12.5563 17.9849 12.6676C18.0763 12.7789 18.1258 12.9186 18.125 13.0625V15C18.125 15.1658 18.0591 15.3247 17.9419 15.4419C17.8247 15.5592 17.6658 15.625 17.5 15.625H2.49999C2.33423 15.625 2.17526 15.5592 2.05805 15.4419C1.94084 15.3247 1.87499 15.1658 1.87499 15V13.0625Z"
+      stroke="#1F3A3A"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const FolderIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+  >
+    <path
+      d="M18.125 15C18.125 15.1658 18.0591 15.3247 17.9419 15.4419C17.8247 15.5592 17.6658 15.625 17.5 15.625H2.5C2.33424 15.625 2.17527 15.5592 2.05806 15.4419C1.94085 15.3247 1.875 15.1658 1.875 15V6.25C1.875 6.08424 1.94085 5.92527 2.05806 5.80806C2.17527 5.69085 2.33424 5.625 2.5 5.625H7.1875L8.75 3.75H17.5C17.6658 3.75 17.8247 3.81585 17.9419 3.93306C18.0591 4.05027 18.125 4.20924 18.125 4.375V15Z"
+      stroke="#71727A"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const BuildingIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+  >
+    <path
+      d="M2.5 17.5H17.5M5 17.5V3.75C5 3.58424 5.06585 3.42527 5.18306 3.30806C5.30027 3.19085 5.45924 3.125 5.625 3.125H14.375C14.5408 3.125 14.6997 3.19085 14.8169 3.30806C14.9342 3.42527 15 3.58424 15 3.75V17.5M7.5 7.5H8.75M7.5 10H8.75M7.5 12.5H8.75M11.25 7.5H12.5M11.25 10H12.5M11.25 12.5H12.5"
+      stroke="#71727A"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const InfoIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+  >
+    <circle
+      cx="10"
+      cy="10"
+      r="8.125"
+      stroke="#71727A"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10 13.75V10"
+      stroke="#71727A"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10 6.25H10.0088"
+      stroke="#71727A"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const LogoutIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+  >
+    <path
+      d="M7.5 17.5H4.375C4.20924 17.5 4.05027 17.4342 3.93306 17.3169C3.81585 17.1997 3.75 17.0408 3.75 16.875V3.125C3.75 2.95924 3.81585 2.80027 3.93306 2.68306C4.05027 2.56585 4.20924 2.5 4.375 2.5H7.5M13.75 13.75L17.5 10M17.5 10L13.75 6.25M17.5 10H7.5"
+      stroke="#71727A"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export function UploadIcon({
+  className = "",
+  width = 20,
+  height = 21,
+}: IconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={width}
+      height={height}
+      viewBox="0 0 20 21"
+      fill="none"
+      className={className}
+    >
+      <path
+        d="M13.75 10.5H17.5C17.6658 10.5 17.8247 10.5658 17.9419 10.6831C18.0592 10.8003 18.125 10.9592 18.125 11.125V16.125C18.125 16.2908 18.0592 16.4497 17.9419 16.5669C17.8247 16.6842 17.6658 16.75 17.5 16.75H2.5C2.33424 16.75 2.17527 16.6842 2.05806 16.5669C1.94085 16.4497 1.875 16.2908 1.875 16.125V11.125C1.875 10.9592 1.94085 10.8003 2.05806 10.6831C2.17527 10.5658 2.33424 10.5 2.5 10.5H6.25"
+        stroke="black"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10 10.5V2.375"
+        stroke="black"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M6.25 6.125L10 2.375L13.75 6.125"
+        stroke="black"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M14.6875 14.25C15.0327 14.25 15.3125 13.9702 15.3125 13.625C15.3125 13.2798 15.0327 13 14.6875 13C14.3423 13 14.0625 13.2798 14.0625 13.625C14.0625 13.9702 14.3423 14.25 14.6875 14.25Z"
+        fill="black"
+      />
+    </svg>
+  );
+}
+
+export function CalendarIcon({
+  className = "",
+  width = 20,
+  height = 21,
+}: IconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={width}
+      height={height}
+      viewBox="0 0 20 21"
+      fill="none"
+      className={className}
+    >
+      <path
+        d="M16.25 3.625H3.75C3.40482 3.625 3.125 3.90482 3.125 4.25V16.75C3.125 17.0952 3.40482 17.375 3.75 17.375H16.25C16.5952 17.375 16.875 17.0952 16.875 16.75V4.25C16.875 3.90482 16.5952 3.625 16.25 3.625Z"
+        stroke="#1F2024"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M13.75 2.375V4.875"
+        stroke="#1F2024"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M6.25 2.375V4.875"
+        stroke="#1F2024"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M3.125 7.375H16.875"
+        stroke="#1F2024"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M7.1875 10.5H9.375L8.125 12.0625C8.33072 12.0621 8.53334 12.1126 8.7149 12.2093C8.89646 12.306 9.05134 12.4461 9.16579 12.617C9.28025 12.788 9.35075 12.9845 9.37104 13.1892C9.39133 13.3939 9.36079 13.6005 9.28211 13.7906C9.20343 13.9806 9.07906 14.1484 8.92002 14.2789C8.76098 14.4093 8.5722 14.4986 8.37041 14.5386C8.16863 14.5786 7.96008 14.5682 7.76327 14.5084C7.56646 14.4485 7.38748 14.341 7.24219 14.1953"
+        stroke="#1F2024"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M11.25 11.4375L12.5 10.5V14.5625"
+        stroke="#1F2024"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function ChevronDownIcon({ className = "", width = 20, height = 20 }: IconProps) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width={width} 
+      height={height} 
+      viewBox="0 0 20 21" 
+      fill="none"
+      className={className}
+    >
+      <path 
+        d="M4.375 9.25L10 14.875L15.625 9.25" 
+        stroke="#1F2024" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function CategoryTagIcon({ className = "", width = 18, height = 18 }: IconProps) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width={width} 
+      height={height} 
+      viewBox="0 0 18 18" 
+      fill="none"
+      className={className}
+    >
+      <path 
+        d="M13.6687 13.8094L16.875 9.00002L13.6687 4.19065C13.6179 4.11222 13.548 4.04791 13.4657 4.00366C13.3833 3.95941 13.2911 3.93666 13.1977 3.93752H2.8125C2.66332 3.93752 2.52024 3.99679 2.41475 4.10228C2.30926 4.20777 2.25 4.35084 2.25 4.50002V13.5C2.25 13.6492 2.30926 13.7923 2.41475 13.8978C2.52024 14.0033 2.66332 14.0625 2.8125 14.0625H13.1977C13.2911 14.0634 13.3833 14.0406 13.4657 13.9964C13.548 13.9521 13.6179 13.8878 13.6687 13.8094Z" 
+        fill="#FF5B00"
       />
     </svg>
   );

@@ -1,42 +1,48 @@
-// /components/ui/form-select.tsx
-import React, { forwardRef } from "react";
+"use client";
+import React, { forwardRef, useId } from "react";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-interface SelectOption {
-  value: string;
-  label: string;
-  disabled?: boolean;
-}
-
-interface FormSelectProps
-  extends React.SelectHTMLAttributes<HTMLSelectElement> {
+interface FormSelectProps {
   label?: string;
+  placeholder?: string;
+  options: { value: string; label: string }[];
+  value?: string;
+  onValueChange?: (value: string) => void;
   error?: string;
   required?: boolean;
   showLabel?: boolean;
-  options: SelectOption[];
-  placeholder?: string;
+  className?: string;
+  id?: string;
 }
 
-export const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
+export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
   (
     {
       label,
+      placeholder = "Select an option",
+      options,
+      value,
+      onValueChange,
       error,
       required = false,
       showLabel = false,
       className = "",
-      options,
-      placeholder,
-      ...props
+      id,
     },
     ref
   ) => {
-    const selectId =
-      props.id || `select-${Math.random().toString(36).substr(2, 9)}`;
+    const generatedId = useId();
+    const selectId = id || generatedId;
 
     return (
-      <div className="space-y-1">
+      <div className="space-y-1" ref={ref}>
         {showLabel && label && (
           <Label htmlFor={selectId} className="form-label">
             {label}
@@ -51,28 +57,24 @@ export const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
         )}
 
         <div className="relative">
-          <select
-            ref={ref}
-            id={selectId}
-            className={`form-input ${className}`}
-            aria-invalid={error ? "true" : "false"}
-            {...props}
-          >
-            {placeholder && (
-              <option value="" disabled>
-                {placeholder}
-              </option>
-            )}
-            {options.map((option) => (
-              <option
-                key={option.value}
-                value={option.value}
-                disabled={option.disabled}
-              >
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <Select value={value} onValueChange={onValueChange}>
+            <SelectTrigger 
+              id={selectId}
+              className={`form-input autocomplete-fix ${className}`}
+              style={{
+                border: error ? '1px solid #ef4444' : undefined,
+              }}
+            >
+              <SelectValue placeholder={placeholder} />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {error && (

@@ -1,70 +1,82 @@
-'use client';
-import { Navbar } from '@/components/layout/navbar';
-import { Footer } from '@/components/layout/footer';
-import { useServiceTabs } from '@/hooks/use-service-tabs';
-import { usePagination } from '@/hooks/use-pagination';
-import { sampleEvents } from '@/data/sample-events';
-import { FeaturedOrganizers, HeroBanner, ServiceTabs } from '@/components/features/home';
-import { ServiceCard } from '@/components/features/shared';
+/* eslint-disable react/no-unescaped-entities */
+"use client";
+import React, { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { StaysGrid } from "@/components/features/home/stays-grid";
+import { HeroBanner } from "./hero-banner";
+import { TabNavigation } from "@/components/features/home/tab-navigation";
+import { FeaturedOrganizers } from "@/components/features";
 
-export default function HomePage() {
-  const { activeTab, changeTab } = useServiceTabs('events'); // Default to events
-  const { visibleCount, toggleShowMore, showingAll } = usePagination({
-    totalItems: sampleEvents.length,
-    initialPageSize: 6,
-  });
 
-  // Get current service data based on active tab
-  const getCurrentData = () => {
+export default function Home() {
+  const pathname = usePathname();
+  const [activeTab, setActiveTab] = useState("stays");
+
+  // Set active tab based on URL
+  useEffect(() => {
+    if (pathname === "/" || pathname === "/stays") {
+      setActiveTab("stays");
+    } else if (pathname === "/events") {
+      setActiveTab("events");
+    } else if (pathname === "/car-parks") {
+      setActiveTab("car-parks");
+    }
+  }, [pathname]);
+
+  const renderTabContent = () => {
     switch (activeTab) {
-      case 'events':
-        return sampleEvents;
-      case 'stays':
-        return []; // Will add later
-      case 'car-parks':
-        return []; // Will add later
+      case "stays":
+        return <StaysGrid accommodationType="appartments" />;
+      case "events":
+        return (
+          <div className="text-center py-12">
+            <h3 className="text-xl font-semibold text-gray-600 mb-4">
+              Events Coming Soon
+            </h3>
+            <p className="text-gray-500">
+              We're working on bringing you the best events in your area.
+            </p>
+          </div>
+        );
+      case "car-parks":
+        return (
+          <div className="text-center py-12">
+            <h3 className="text-xl font-semibold text-gray-400 mb-4">
+              Car Parks
+            </h3>
+            <p className="text-gray-400">
+              This feature is currently unavailable.
+            </p>
+          </div>
+        );
       default:
-        return [];
+        return <StaysGrid accommodationType="appartments" />;
     }
   };
 
-  const currentData = getCurrentData();
-  const visibleData = currentData.slice(0, visibleCount);
-
   return (
-    <div className="min-h-screen">
-      <Navbar />
-      
-      <main className="space-y-8">
-        <HeroBanner />
-        
-        <section className="px-4 md:px-8">
-          <ServiceTabs activeTab={activeTab} onTabChange={changeTab} />
-          
-          {/* Service Grid */}
-          <div className="mt-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <ServiceCard items={visibleData} />
-            </div>
+    <div className="py-8 space-y-12">
+      {/* Hero Banner Section */}
+      <HeroBanner />
 
-            {/* Show More/Less Button */}
-            {currentData.length > 6 && (
-              <div className="mt-6 text-center">
-                <button
-                  onClick={toggleShowMore}
-                  className="px-6 py-2 bg-[#F2F4F799] text-[#FF5B00] rounded-full font-medium hover:bg-[#F2F4F7] transition-colors"
-                >
-                  {showingAll ? 'Show Less' : 'See More'}
-                </button>
-              </div>
-            )}
-          </div>
-        </section>
+      {/* Tab Navigation with Content */}
+      <TabNavigation activeTab={activeTab} onTabChange={setActiveTab}>
+        {renderTabContent()}
+      </TabNavigation>
 
+ 
+
+      {/* Featured Hotels & Landlords Section */}
+      <section className="py-12">
+        <h2 className="text-2xl font-space-grotesk font-semibold text-gray-900 mb-2">
+          Featured Hotels & Landlords
+        </h2>
+        <p className="text-gray-600 mb-8">Extra description text</p>
+
+
+        {/* Placeholder for carousel */}
         <FeaturedOrganizers />
-      </main>
-      
-      <Footer />
+      </section>
     </div>
   );
 }

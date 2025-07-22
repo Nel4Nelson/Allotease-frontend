@@ -42,6 +42,8 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
+  --color-dark-slate: #20232A;
+
   /* Auth Background Tokens */
   --auth-bg-opacity: 0.6;
   --auth-bg-gradient: linear-gradient(
@@ -93,7 +95,7 @@
   --input-border: rgba(138, 174, 164, 0.2);
   --input-border-focus: #ff5b00;
   --input-text: #1f2024;
-  --input-placeholder: #71727a;
+  --input-placeholder: var(--body-text);
   --input-required: #ff5b00;
 
   /* Button Design Tokens */
@@ -181,6 +183,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: "Source Sans Pro", sans-serif;
   }
 }
 
@@ -214,31 +217,32 @@
 }
 
 /* Tab classes */
-.tab-trigger-bg-active {
-  background: linear-gradient(267deg, #fff3e7 -49.46%, #fff 97.79%);
-  box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.04);
-}
-.tab-trigger-text-active {
-  color: var(--title-color);
-  font-family: "Source Sans Pro";
-  font-size: 18px;
-  font-style: normal;
-  font-weight: 600;
-  line-height: normal;
-}
-
-/* Add this to your global.css */
 [data-slot="tabs-list"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px;
   height: 45px;
   border-radius: 10px;
   border: 1px solid rgba(138, 174, 164, 0.2);
   background: rgba(242, 244, 247, 0.3);
   backdrop-filter: blur(21px);
+}
+
+[data-slot="tabs-trigger"] {
   display: flex;
-  padding: 4px;
-  align-items: flex-start;
-  gap: 8px;
-  color: var(--Body, #71727a);
+  align-items: center;
+  justify-content: center;
+  height: 37px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  /* Text styling for inactive state */
+  color: var(--body-text);
   font-family: "Source Sans Pro", sans-serif;
   font-size: 18px;
   font-style: normal;
@@ -246,24 +250,31 @@
   line-height: normal;
 }
 
-[data-slot="tabs-trigger"] {
-  color: var(--body-text);
-  font-size: 18px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
+[data-slot="tabs-trigger"]:hover:not([data-state="active"]) {
+  background: rgba(255, 255, 255, 0.5);
 }
+
 [data-slot="tabs-trigger"][data-state="active"] {
-  background: linear-gradient(267deg, #fff3e7 -49.46%, #fff 97.79%) !important;
+  background: var(--tab-bg);
   box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.04);
+
+  /* Text styling for active state */
   color: var(--title-color);
+  font-family: "Source Sans Pro", sans-serif;
   font-size: 18px;
-  font-weight: 600;
-  padding-inline: 12px;
-  color: var(--Title, #1f2024);
-  font-family: "Source Sans Pro";
   font-style: normal;
+  font-weight: 600;
   line-height: normal;
+}
+
+/* Breadcrumb Styles */
+.breadcrumb-text {
+  color: var(--body-text);
+  font-family: "Source Sans Pro", sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 24px; /* 171.429% */
 }
 
 /* Typography classes*/
@@ -357,6 +368,47 @@
 
 .form-label .required {
   color: var(--input-required);
+}
+
+/* Form Textarea Styles */
+.form-textarea {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 141px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--input-border);
+  background: var(--input-background);
+  font-family: "Source Sans Pro", sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--input-text);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  resize: vertical;
+}
+
+.form-textarea::placeholder {
+  color: var(--input-placeholder);
+  transition: opacity 0.3s ease;
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--input-border-focus);
+  box-shadow: 0 0 0 0.5px var(--input-border-focus),
+    0 4px 12px rgba(255, 91, 0, 0.12), 0 2px 4px rgba(255, 91, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.form-textarea:focus::placeholder {
+  opacity: 0.6;
+}
+
+.form-textarea:hover:not(:focus) {
+  border-color: rgba(255, 91, 0, 0.3);
+  transform: translateY(-0.5px);
+  box-shadow: 0 2px 8px rgba(255, 91, 0, 0.06);
 }
 
 /* Override browser autocomplete styling */

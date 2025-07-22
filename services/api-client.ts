@@ -6,7 +6,7 @@ import axios, {
   AxiosRequestConfig,
 } from "axios";
 
-// Types - Updated to match actual API response
+// Generic API Response wrapper (for consistency)
 export interface ApiResponse<T = any> {
   status: string;
   token?: string;
@@ -147,12 +147,12 @@ class ApiClient {
     };
   }
 
-  // HTTP Methods - Updated to return the actual response structure
+  // HTTP Methods - Return actual API response types (not wrapped)
   async get<T>(
     url: string,
     params?: any,
     config?: AxiosRequestConfig
-  ): Promise<ApiResponse<T>> {
+  ): Promise<T> {
     const response = await this.instance.get(url, { params, ...config });
     return response.data;
   }
@@ -161,7 +161,7 @@ class ApiClient {
     url: string,
     data?: any,
     config?: AxiosRequestConfig
-  ): Promise<ApiResponse<T>> {
+  ): Promise<T> {
     const response = await this.instance.post(url, data, config);
     return response.data;
   }
@@ -170,7 +170,7 @@ class ApiClient {
     url: string,
     data?: any,
     config?: AxiosRequestConfig
-  ): Promise<ApiResponse<T>> {
+  ): Promise<T> {
     const response = await this.instance.put(url, data, config);
     return response.data;
   }
@@ -179,7 +179,7 @@ class ApiClient {
     url: string,
     data?: any,
     config?: AxiosRequestConfig
-  ): Promise<ApiResponse<T>> {
+  ): Promise<T> {
     const response = await this.instance.patch(url, data, config);
     return response.data;
   }
@@ -187,7 +187,7 @@ class ApiClient {
   async delete<T>(
     url: string,
     config?: AxiosRequestConfig
-  ): Promise<ApiResponse<T>> {
+  ): Promise<T> {
     const response = await this.instance.delete(url, config);
     return response.data;
   }
@@ -197,7 +197,7 @@ class ApiClient {
     url: string,
     formData: FormData,
     onUploadProgress?: (progressEvent: any) => void
-  ): Promise<ApiResponse<T>> {
+  ): Promise<T> {
     const config: AxiosRequestConfig = {
       headers: {
         "Content-Type": "multipart/form-data",

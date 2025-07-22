@@ -17,7 +17,7 @@ export function AuthLayout({
   onBack
 }: AuthLayoutProps) {
   return (
-    <div className="auth-background">
+    <div className="auth-background py-10">
       <div className="auth-content">
         <div className="max-w-[20rem] w-full px-4">
           <AuthHeader 

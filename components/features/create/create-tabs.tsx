@@ -1,51 +1,82 @@
-// /components/features/create/create-tabs.tsx
 "use client";
-import React, { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SingleFormEventCreation } from "./events/single-form-event-creation";
-import { ComingSoon } from ".";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { StaysForm, type StaysFormData } from "./stays-form";
+import { EventsForm, type EventsFormData } from "./events-form";
 
-export function CreateTabs() {
-  const [currentTab, setCurrentTab] = useState("events");
+type TabType = "stays" | "events" | "car-parks";
+
+interface CreateTabsProps {
+  className?: string;
+}
+
+export function CreateTabs({ className = "" }: CreateTabsProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted before accessing search params
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const activeTab = mounted
+    ? (searchParams.get("type") as TabType) || "events"
+    : "events";
+
+  const handleTabChange = (value: string) => {
+    router.push(`/allocation-admin/create?type=${value}`);
+  };
+
+  const handleStaysSubmit = (data: StaysFormData) => {
+    console.log("Stays data:", data);
+    // Handle stays form submission
+  };
+
+  const handleEventsSubmit = (data: EventsFormData) => {
+    console.log("Events data:", data);
+    // Handle events form submission
+  };
+
+  // Don't render until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <div className={className}>
+        <div className="h-12 bg-gray-100 rounded-lg animate-pulse mb-8"></div>
+        <div className="space-y-4">
+          <div className="h-6 bg-gray-100 rounded animate-pulse"></div>
+          <div className="h-4 bg-gray-100 rounded animate-pulse w-3/4"></div>
+          <div className="h-12 bg-gray-100 rounded animate-pulse"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-      <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-        {/* Tab Navigation */}
-        <div className="flex justify-center mb-8">
-          <TabsList className="grid w-80 grid-cols-3 bg-[var(--card-background)] border border-[var(--input-border)]">
-            <TabsTrigger
-              value="stays"
-              className="font-source-sans-pro font-medium data-[state=active]:bg-[var(--feature-accent-orange)] data-[state=active]:text-white"
-            >
-              Stays
-            </TabsTrigger>
-            <TabsTrigger
-              value="events"
-              className="font-source-sans-pro font-medium data-[state=active]:bg-[var(--feature-accent-orange)] data-[state=active]:text-white"
-            >
-              Events
-            </TabsTrigger>
-            <TabsTrigger
-              value="car-parks"
-              className="font-source-sans-pro font-medium data-[state=active]:bg-[var(--feature-accent-orange)] data-[state=active]:text-white"
-            >
-              Car parks
-            </TabsTrigger>
-          </TabsList>
-        </div>
+    <div className={className}>
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <TabsList>
+          <TabsTrigger value="stays">Stays</TabsTrigger>
+          <TabsTrigger value="events">Events</TabsTrigger>
+          <TabsTrigger value="car-parks">Car parks</TabsTrigger>
+        </TabsList>
 
-        {/* Tab Content */}
-        <TabsContent value="stays" className="mt-0">
-          <ComingSoon type="stays" />
+        <TabsContent value="stays" className="mt-8">
+          <StaysForm onSubmit={handleStaysSubmit} />
         </TabsContent>
 
-        <TabsContent value="events" className="mt-0">
-          <SingleFormEventCreation />
+        <TabsContent value="events" className="mt-8">
+          <EventsForm onSubmit={handleEventsSubmit} />
         </TabsContent>
 
-        <TabsContent value="car-parks" className="mt-0">
-          <ComingSoon type="car-parks" />
+        <TabsContent value="car-parks" className="mt-8">
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Create New Car Park</h2>
+            <p className="text-gray-600">
+              Car park form content will go here...
+            </p>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

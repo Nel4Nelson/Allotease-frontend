@@ -1,5 +1,4 @@
-// /components/ui/form-textarea.tsx
-import React, { forwardRef } from "react";
+import React, { forwardRef, useId } from "react";
 import { Label } from "@/components/ui/label";
 
 interface FormTextareaProps
@@ -22,8 +21,8 @@ export const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
     },
     ref
   ) => {
-    const textareaId =
-      props.id || `textarea-${Math.random().toString(36).substr(2, 9)}`;
+    const generatedId = useId();
+    const textareaId = props.id || generatedId;
 
     return (
       <div className="space-y-1">
@@ -44,10 +43,11 @@ export const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
           <textarea
             ref={ref}
             id={textareaId}
-            className={`form-input resize-none ${className}`}
+            className={`form-input autocomplete-fix ${className}`}
             placeholder={props.placeholder}
             aria-invalid={error ? "true" : "false"}
-            rows={4}
+            rows={6}
+            style={{ minHeight: "141px", resize: "vertical" }}
             {...props}
           />
         </div>

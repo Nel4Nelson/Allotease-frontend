@@ -17,7 +17,7 @@ export function AboutPage() {
       <HeroSection />
 
       <FeatureSection
-        headingPrimary="Connected Rooms, Apartments & Lodges"
+        headingPrimary="Connected Rooms, Appartments & Lodges"
         headingAccent="Across Nigeria."
         bannerSrc="/images/about/nigeria-events-banner.svg"
         bannerAlt="Nigerian hands raised with flag and event elements"
