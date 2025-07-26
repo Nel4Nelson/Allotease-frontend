@@ -2,29 +2,133 @@
 import { apiClient } from "./api-client";
 import type { EventsFormData } from "@/components/features/create/events-form";
 
-// API response interface
+// Event interface from API response
+export interface Event {
+  _id: string;
+  title: string;
+  description: string;
+  eventType: "remote" | "physical";
+  price: number;
+  capacity: number;
+  startTime: string;
+  endTime?: string;
+  coverImage?: string;
+  location?: {
+    country: string;
+    city?: string;
+    state?: string;
+    address?: string;
+  };
+  createdAt: string;
+}
+
+// API response interface for getting events
+interface GetEventsResponse {
+  status: string;
+  message: string;
+  data: {
+    items: Event[];
+    totalCount: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+
+// API response interface for creating event
 interface CreateEventResponse {
   status: string;
   message: string;
   data: {
-    event: {
-      _id: string;
-      title: string;
-      description: string;
-      eventType: string;
-      startTime: string;
-      endTime: string;
-      price: number;
-      capacity: number;
-      // ... other event fields
-    };
+    event: Event;
   };
+}
+
+// Query parameters for getting events
+export interface GetEventsParams {
+  page?: number;
+  limit?: number;
+  query?: string;
+  allocatorId?: string;
+  [key: string]: any; // Allow additional query params
 }
 
 export class EventService {
   private static readonly ENDPOINTS = {
     CREATE_EVENT: "/events/",
+    GET_EVENTS: "/events/",
   } as const;
+
+  /**
+   * Get all events with pagination and filters
+   */
+  static async getAllEvents(params: GetEventsParams = {}): Promise<GetEventsResponse> {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      // Add default params
+      queryParams.append("page", (params.page || 1).toString());
+      queryParams.append("limit", (params.limit || 6).toString());
+      
+      // Add optional params
+      if (params.query) queryParams.append("query", params.query);
+      if (params.allocatorId) queryParams.append("allocatorId", params.allocatorId);
+      
+      // Add any additional params
+      Object.keys(params).forEach(key => {
+        if (!["page", "limit", "query", "allocatorId"].includes(key) && params[key]) {
+          queryParams.append(key, params[key].toString());
+        }
+      });
+
+      const url = `${this.ENDPOINTS.GET_EVENTS}?${queryParams.toString()}`;
+      const response = await apiClient.get<GetEventsResponse>(url);
+      
+      return response;
+    } catch (error) {
+      console.error("Failed to fetch events:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Format event date and time for display
+   */
+  static formatEventDateTime(startTime: string): string {
+    try {
+      const date = new Date(startTime);
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+      const time = date.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+      });
+      
+      // Get timezone offset
+      const timeZone = date.toLocaleTimeString('en-US', { timeZoneName: 'short' }).split(' ')[2];
+      
+      return `${dayName} • ${time} ${timeZone}`;
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Date TBD";
+    }
+  }
+
+  /**
+   * Format event price for display
+   */
+  static formatEventPrice(price: number): string {
+    return price === 0 ? "Free" : `₦${price.toLocaleString()}`;
+  }
+
+  /**
+   * Get event cover image with fallback
+   */
+  static getEventCoverImage(event: Event): string {
+    return event.coverImage || "/images/event-banner.svg";
+  }
 
   /**
    * Create a new event

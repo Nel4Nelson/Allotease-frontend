@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ConditionalLayout } from "@/components/layout/conditional-layout";
 
-
 export const metadata: Metadata = {
   title: "Allotease - Find the right vacation accommodation",
   description:
@@ -23,10 +22,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-source-sans">
-           <ConditionalLayout>{children}</ConditionalLayout>
-     
-        
-       
+        <ConditionalLayout>{children}</ConditionalLayout>
       </body>
     </html>
   );

@@ -120,12 +120,9 @@ export interface EventsFormData {
   isFree: boolean;
 }
 
-interface EventsFormProps {
-  onSubmit: (values: EventsFormData) => void;
-  isLoading?: boolean;
-}
 
-export function EventsForm({ onSubmit }: EventsFormProps) {
+
+export function EventsForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -134,7 +131,6 @@ export function EventsForm({ onSubmit }: EventsFormProps) {
   
   const {
     register,
-    handleSubmit,
     setValue,
     watch,
     formState: { errors },
@@ -281,7 +277,7 @@ export function EventsForm({ onSubmit }: EventsFormProps) {
   return (
     <div className="space-y-6">
       {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form  className="space-y-6">
         {/* First Question */}
         <div>
           <h2 className="text-(--color-dark-slate) font-source-sans-pro text-[20px] font-semibold leading-normal mb-2">

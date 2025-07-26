@@ -1,15 +1,9 @@
-"use client";
-import React from "react";
-import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
-import { TicketsLayout } from "@/components/features/tickets/tickets-layout";
+import React from 'react'
 
-export default function TicketsPage() {
+const page = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      <TicketsLayout />
-      <Footer />
-    </div>
-  );
+    <div>page</div>
+  )
 }
+
+export default page

@@ -444,39 +444,130 @@ export function CalendarIcon({
   );
 }
 
-export function ChevronDownIcon({ className = "", width = 20, height = 20 }: IconProps) {
+export function ChevronDownIcon({
+  className = "",
+  width = 20,
+  height = 20,
+}: IconProps) {
   return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width={width} 
-      height={height} 
-      viewBox="0 0 20 21" 
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={width}
+      height={height}
+      viewBox="0 0 20 21"
       fill="none"
       className={className}
     >
-      <path 
-        d="M4.375 9.25L10 14.875L15.625 9.25" 
-        stroke="#1F2024" 
-        strokeLinecap="round" 
+      <path
+        d="M4.375 9.25L10 14.875L15.625 9.25"
+        stroke="#1F2024"
+        strokeLinecap="round"
         strokeLinejoin="round"
       />
     </svg>
   );
 }
 
-export function CategoryTagIcon({ className = "", width = 18, height = 18 }: IconProps) {
+export function CategoryTagIcon({
+  className = "",
+  width = 18,
+  height = 18,
+}: IconProps) {
   return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width={width} 
-      height={height} 
-      viewBox="0 0 18 18" 
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={width}
+      height={height}
+      viewBox="0 0 18 18"
       fill="none"
       className={className}
     >
-      <path 
-        d="M13.6687 13.8094L16.875 9.00002L13.6687 4.19065C13.6179 4.11222 13.548 4.04791 13.4657 4.00366C13.3833 3.95941 13.2911 3.93666 13.1977 3.93752H2.8125C2.66332 3.93752 2.52024 3.99679 2.41475 4.10228C2.30926 4.20777 2.25 4.35084 2.25 4.50002V13.5C2.25 13.6492 2.30926 13.7923 2.41475 13.8978C2.52024 14.0033 2.66332 14.0625 2.8125 14.0625H13.1977C13.2911 14.0634 13.3833 14.0406 13.4657 13.9964C13.548 13.9521 13.6179 13.8878 13.6687 13.8094Z" 
+      <path
+        d="M13.6687 13.8094L16.875 9.00002L13.6687 4.19065C13.6179 4.11222 13.548 4.04791 13.4657 4.00366C13.3833 3.95941 13.2911 3.93666 13.1977 3.93752H2.8125C2.66332 3.93752 2.52024 3.99679 2.41475 4.10228C2.30926 4.20777 2.25 4.35084 2.25 4.50002V13.5C2.25 13.6492 2.30926 13.7923 2.41475 13.8978C2.52024 14.0033 2.66332 14.0625 2.8125 14.0625H13.1977C13.2911 14.0634 13.3833 14.0406 13.4657 13.9964C13.548 13.9521 13.6179 13.8878 13.6687 13.8094Z"
         fill="#FF5B00"
+      />
+    </svg>
+  );
+}
+
+export function StarIcon({ className = "" }: IconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      className={className}
+    >
+      <path
+        d="M7.24062 10.4284L9.99687 12.1784C10.3523 12.4026 10.7898 12.0691 10.6859 11.6589L9.8875 8.51984C9.86591 8.43283 9.86934 8.34149 9.8974 8.25634C9.92546 8.1712 9.977 8.09571 10.0461 8.03859L12.518 5.97687C12.8406 5.7089 12.6766 5.16749 12.2555 5.14015L9.0289 4.93234C8.94087 4.92722 8.85623 4.89656 8.78533 4.84411C8.71443 4.79167 8.66035 4.71971 8.62969 4.63703L7.42656 1.60734C7.39471 1.51978 7.33669 1.44415 7.26038 1.39071C7.18407 1.33726 7.09316 1.30859 7 1.30859C6.90683 1.30859 6.81592 1.33726 6.73961 1.39071C6.6633 1.44415 6.60528 1.51978 6.57343 1.60734L5.37031 4.63703C5.33965 4.71971 5.28556 4.79167 5.21466 4.84411C5.14377 4.89656 5.05913 4.92722 4.97109 4.93234L1.74453 5.14015C1.32344 5.16749 1.15937 5.7089 1.48203 5.97687L3.9539 8.03859C4.02299 8.09571 4.07454 8.1712 4.1026 8.25634C4.13065 8.34149 4.13409 8.43283 4.1125 8.51984L3.37422 11.4292C3.24844 11.9214 3.77344 12.3206 4.19453 12.0526L6.75937 10.4284C6.8313 10.3827 6.91476 10.3584 7 10.3584C7.08523 10.3584 7.1687 10.3827 7.24062 10.4284Z"
+        fill="url(#paint0_linear_2168_4845)"
+      />
+      <defs>
+        <linearGradient
+          id="paint0_linear_2168_4845"
+          x1="7"
+          y1="7"
+          x2="1.80616e-07"
+          y2="-1"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor="#7DF5B0" />
+          <stop offset="0.355769" stopColor="white" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
+export function LeftArrowIcon({ className = "" }: IconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+    >
+      <path
+        d="M20.25 12H3.75"
+        stroke="#FF5B00"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10.5 18.75L3.75 12L10.5 5.25"
+        stroke="#FF5B00"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function RightArrowIcon({ className = "" }: IconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+    >
+      <path
+        d="M3.75 12H20.25"
+        stroke="#FF5B00"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M13.5 18.75L20.25 12L13.5 5.25"
+        stroke="#FF5B00"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );

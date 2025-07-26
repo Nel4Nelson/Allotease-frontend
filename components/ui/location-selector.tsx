@@ -25,15 +25,17 @@ interface LocationSelectorProps {
   onEventTypeChange?: (eventType: EventType) => void;
   error?: string;
   required?: boolean;
+  mode?: 'events' | 'stays'; // New prop to determine display mode
 }
 
 export function LocationSelector({ 
   value, 
-  eventType = 'remote',
+  eventType = 'venue', // Default to venue for stays
   onChange, 
   onEventTypeChange,
   error, 
-  required = false 
+  required = false,
+  mode = 'events' // Default to events mode for backward compatibility
 }: LocationSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isOnline, setIsOnline] = useState(true);
@@ -43,6 +45,9 @@ export function LocationSelector({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
   const markerRef = useRef<any>(null);
+
+  // For stays mode, always use venue type
+  const actualEventType = mode === 'stays' ? 'venue' : eventType;
 
   // Ensure component is mounted before accessing browser APIs
   useEffect(() => {
@@ -65,13 +70,13 @@ export function LocationSelector({
     };
   }, [mounted]);
 
-  // Handle search with debouncing - moved to useCallback to fix dependency issue
+  // Handle search with debouncing
   const handleSearch = useCallback(async (query: string, updateInput: boolean = true) => {
     if (updateInput) {
       setSearchQuery(query);
     }
     
-    if (query.length > 2 && isOnline && eventType === 'venue' && mapboxgl) {
+    if (query.length > 2 && isOnline && actualEventType === 'venue' && mapboxgl) {
       try {
         const response = await fetch(
           `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxgl.accessToken}&country=ng&limit=5`
@@ -94,11 +99,11 @@ export function LocationSelector({
       setSuggestions([]);
       setShowSuggestions(false);
     }
-  }, [isOnline, eventType]);
+  }, [isOnline, actualEventType]);
 
   // Initialize Mapbox
   useEffect(() => {
-    if (!mounted || !mapRef.current || !isOnline || eventType !== 'venue' || !mapboxgl) return;
+    if (!mounted || !mapRef.current || !isOnline || actualEventType !== 'venue' || !mapboxgl) return;
 
     try {
       mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || 'your_mapbox_token_here';
@@ -173,7 +178,7 @@ export function LocationSelector({
         markerRef.current = null;
       }
     };
-  }, [mounted, isOnline, eventType, value, onChange, handleSearch]);
+  }, [mounted, isOnline, actualEventType, value, onChange, handleSearch]);
 
   // Handle suggestion selection
   const handleSuggestionSelect = (feature: any) => {
@@ -210,8 +215,10 @@ export function LocationSelector({
     }
   };
 
-  // Handle tab change
+  // Handle tab change (only for events mode)
   const handleTabChange = (newEventType: string) => {
+    if (mode === 'stays') return; // No tab changes in stays mode
+    
     const eventTypeValue = newEventType as EventType;
     onEventTypeChange?.(eventTypeValue);
     
@@ -237,6 +244,69 @@ export function LocationSelector({
     );
   }
 
+  // Stays mode - no tabs, always show location input and map
+  if (mode === 'stays') {
+    return (
+      <div className="space-y-4">
+        {/* Search Input */}
+        <div className="relative">
+          <FormInput
+            placeholder="Find location*"
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+            error={error}
+            required={required}
+            className="w-full"
+          />
+          
+          {/* Suggestions Dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-[12px] shadow-lg max-h-60 overflow-y-auto">
+              {suggestions.map((suggestion, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => handleSuggestionSelect(suggestion)}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0"
+                >
+                  <div className="text-sm font-medium text-gray-900">
+                    {suggestion.place_name.split(',')[0]}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {suggestion.place_name}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        {/* Map Container */}
+        <div className="relative">
+          <div 
+            ref={mapRef} 
+            className="w-full max-w-[565px] h-[198px] rounded-[24px] bg-gray-100 border border-gray-200 overflow-hidden"
+            style={{ maxWidth: '100%' }}
+          />
+          
+          {!isOnline && (
+            <div className="absolute inset-0 bg-gray-100 rounded-[24px] flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 100 19.5 9.75 9.75 0 000-19.5z" />
+                  </svg>
+                </div>
+                <p className="text-sm text-gray-600">Map unavailable offline</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Events mode - original implementation with tabs
   return (
     <div className="space-y-6">
       <Tabs value={eventType} onValueChange={handleTabChange}>
