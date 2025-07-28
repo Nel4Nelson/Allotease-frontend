@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 "use client";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -6,68 +5,15 @@ import { BalanceCard } from "./balance-card";
 import { StatsSection } from "./stats-section";
 import { StaysReservations } from "./stays-reservations";
 import { EventsReservations } from "./events-reservations";
-
-// Mock data - replace with API calls
-const mockStats = [
-  {
-    title: "Total Reservation",
-    value: 124,
-    percentage: "+12%",
-    trend: "up" as const,
-  },
-  {
-    title: "Check-ins today",
-    value: 8,
-    percentage: "+2%",
-    trend: "up" as const,
-  },
-  {
-    title: "Available spaces",
-    value: 124,
-    percentage: "-3%",
-    trend: "down" as const,
-  },
-  {
-    title: "Revenue this month",
-    value: 450000,
-    percentage: "+12%",
-    trend: "up" as const,
-  },
-];
-
-const mockStaysReservations = [
-  {
-    id: "RES-1001",
-    guest: "Kingsley Promise",
-    room: "Classic King Room",
-    dates: "May 31 - Jun 1",
-    status: "Pending" as const,
-  },
-  {
-    id: "RES-1002",
-    guest: "Amaka Onyeka",
-    room: "Deluxe Twin Room",
-    dates: "June 5 - June 6",
-    status: "Confirmed" as const,
-  },
-  // Add more mock data...
-];
-
-const mockEventsReservations = [
-  {
-    id: "RES-1001",
-    attendee: "Kingsley Promise",
-    ticketCount: 2,
-    date: "2024-01-19 10:00AM",
-  },
-  {
-    id: "RES-1002",
-    attendee: "Ada Eze",
-    ticketCount: 1,
-    date: "2024-02-01 02:30PM",
-  },
-  // Add more mock data...
-];
+import {
+  useEventStats,
+  useRecentEventsReservations,
+  useRecentStaysReservations,
+  useStayStats,
+} from "@/hooks/use-overview";
+import { transformToStatCards } from "@/utils/stats-transformer";
+import { transformStayReservationData } from "@/utils/stay-reservation-transformer";
+import { transformEventReservationData } from "@/utils/events-reservation-tranformer";
 
 interface OverviewPageProps {
   onWithdraw?: () => void;
@@ -75,6 +21,31 @@ interface OverviewPageProps {
 
 export function OverviewPage({ onWithdraw }: OverviewPageProps) {
   const [activeTab, setActiveTab] = useState("stays");
+
+  // Fetch data using hooks
+  const {
+    data: stayStats,
+    loading: stayStatsLoading,
+    error: stayStatsError,
+  } = useStayStats();
+
+  const {
+    data: eventStats,
+    loading: eventStatsLoading,
+    error: eventStatsError,
+  } = useEventStats();
+
+  const {
+    data: stayReservations,
+    loading: stayReservationsLoading,
+    error: stayReservationsError,
+  } = useRecentStaysReservations();
+
+  const {
+    data: eventReservations,
+    loading: eventReservationsLoading,
+    error: eventReservationsError,
+  } = useRecentEventsReservations();
 
   const handleSearch = (value: string) => {
     console.log("Searching:", value);
@@ -91,13 +62,53 @@ export function OverviewPage({ onWithdraw }: OverviewPageProps) {
     // TODO: Implement export functionality
   };
 
+  const getCurrentStats = () => {
+    if (activeTab === "stays" && stayStats)
+      return transformToStatCards(stayStats);
+    if (activeTab === "events" && eventStats)
+      return transformToStatCards(eventStats);
+    return [];
+  };
+
+  // Transform the data before passing to component
+  const transformedStayReservations = stayReservations?.reservations
+    ? transformStayReservationData(stayReservations.reservations)
+    : [];
+
+  // Transform the data before passing to component
+  const transformedEventReservations = eventReservations?.events
+    ? transformEventReservationData(eventReservations.events)
+    : [];
   return (
     <div className="space-y-6">
       {/* Balance Card with Withdrawal */}
       <BalanceCard balance={2150500} onWithdraw={onWithdraw} />
 
+      {/* Error Handling for Stats */}
+      {activeTab === "stays" && stayStatsError && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600 text-sm">
+            {stayStatsError.message || "Failed to load stay statistics."}
+          </p>
+        </div>
+      )}
+
+      {activeTab === "events" && eventStatsError && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600 text-sm">
+            {eventStatsError.message || "Failed to load event statistics."}
+          </p>
+        </div>
+      )}
+
       {/* Stats Section */}
-      <StatsSection stats={mockStats} />
+      <StatsSection
+        stats={getCurrentStats()}
+        loading={
+          (activeTab === "stays" && (stayStatsLoading || !stayStats)) ||
+          (activeTab === "events" && (eventStatsLoading || !eventStats))
+        }
+      />
 
       {/* Reservations Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -108,21 +119,39 @@ export function OverviewPage({ onWithdraw }: OverviewPageProps) {
         </TabsList>
 
         <TabsContent value="stays" className="mt-6">
-          <StaysReservations
-            reservations={mockStaysReservations}
-            onSearch={handleSearch}
-            onSort={handleSort}
-            onExport={handleExport}
-          />
+          {stayReservationsError ? (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 text-sm">
+                Failed to load stay reservations.
+              </p>
+            </div>
+          ) : (
+            <StaysReservations
+              reservations={transformedStayReservations}
+              onSearch={handleSearch}
+              onSort={handleSort}
+              onExport={handleExport}
+              loading={stayReservationsLoading}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="events" className="mt-6">
-          <EventsReservations
-            reservations={mockEventsReservations}
-            onSearch={handleSearch}
-            onSort={handleSort}
-            onExport={handleExport}
-          />
+          {eventReservationsError ? (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 text-sm">
+                Failed to load event reservations.
+              </p>
+            </div>
+          ) : (
+            <EventsReservations
+              reservations={transformedEventReservations}
+              onSearch={handleSearch}
+              onSort={handleSort}
+              onExport={handleExport}
+              loading={eventReservationsLoading}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="parking" className="mt-6">
@@ -132,7 +161,7 @@ export function OverviewPage({ onWithdraw }: OverviewPageProps) {
               Car Parks Coming Soon!
             </h3>
             <p className="text-sm">
-              We're working on adding parking reservations.
+              We are working on adding parking reservations.
             </p>
           </div>
         </TabsContent>
