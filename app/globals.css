@@ -41,6 +41,71 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  --color-dark-slate: #20232A;
+
+  /* Auth Background Tokens */
+  --auth-bg-opacity: 0.6;
+  --auth-bg-gradient: linear-gradient(
+    354deg,
+    #fff 24.04%,
+    rgba(255, 243, 230, 0.35) 59.41%,
+    #d5ffeb 113.97%
+  );
+  --auth-bg-blur: blur(18.285715103149414px);
+
+  /* Typography Design Tokens */
+  --title-color: #1f2024;
+  --auth-footer-text: #7a7a7a;
+  --auth-divider-stroke: #8aaea4;
+
+  /* Tab Design Tokens */
+  --tab-bg: linear-gradient(267deg, #fff3e7 -49.46%, #fff 97.79%);
+
+  /* Role Card Color Tokens */
+  --role-card-text: #ff5b00;
+  --role-card-bg: rgba(242, 244, 247, 0.6);
+  --role-card-bg-hover: rgba(242, 244, 247, 0.75);
+  --role-card-bg-active: rgba(242, 244, 247, 0.85);
+
+  --allotease-primary: #13c962;
+  --allotease-primary-hover: #0ea54b;
+  --allotease-primary-active: #0d924a;
+  --allotease-primary-focus: rgba(19, 201, 98, 0.3);
+
+  --btn-browse-bg: #ff5d04;
+  --btn-browse-hover: #e04e00;
+  --btn-browse-active: #cc4600;
+  --btn-browse-focus: rgba(255, 93, 4, 0.3);
+
+  --hero-subtitle-color: rgba(213, 255, 235, 0.5);
+  --hero-text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.12);
+
+  --allotease-accent-green: #16f476;
+  --allotease-accent-yellow: #f0ff81;
+
+  --allotease-teal: #1f3a3a;
+  --feature-accent-orange: #ff5b00;
+
+  --body-text: #71727a;
+  --card-background: #f2f4f7;
+
+  /* Form Input Design Tokens */
+  --input-background: rgba(242, 244, 247, 0.5);
+  --input-border: rgba(138, 174, 164, 0.2);
+  --input-border-focus: #ff5b00;
+  --input-text: #1f2024;
+  --input-placeholder: var(--body-text);
+  --input-required: #ff5b00;
+
+  /* Button Design Tokens */
+  --btn-primary-shadow: 0px 4px 4px 0px rgba(255, 255, 255, 0.25) inset,
+    0px 20px 41.3px 0px rgba(0, 0, 0, 0.18);
+  --btn-primary-shadow-hover: 0px 6px 6px 0px rgba(255, 255, 255, 0.3) inset,
+    0px 25px 50px 0px rgba(0, 0, 0, 0.22);
+  --btn-glass-shadow: 0 8px 32px rgba(255, 255, 255, 0.1);
+  --btn-glass-shadow-hover: 0 12px 40px rgba(255, 255, 255, 0.15);
+  --btn-glass-text-shadow: 0px 4px 10px rgba(0, 0, 0, 0.04);
 }
 
 :root {
@@ -118,13 +183,270 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: "Source Sans Pro", sans-serif;
   }
 }
 
-body {
-  font-family: 'Space Grotesk', sans-serif;
+/* Auth Background Utility Classes */
+.auth-background {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
 }
 
-.font-source {
-  font-family: 'Source Sans Pro';
+.auth-background::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: var(--auth-bg-opacity);
+  background: var(--auth-bg-gradient);
+  filter: var(--auth-bg-blur);
+  z-index: 0;
+}
+.auth-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Tab classes */
+[data-slot="tabs-list"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px;
+  height: 45px;
+  border-radius: 10px;
+  border: 1px solid rgba(138, 174, 164, 0.2);
+  background: rgba(242, 244, 247, 0.3);
+  backdrop-filter: blur(21px);
+}
+
+[data-slot="tabs-trigger"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 37px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  /* Text styling for inactive state */
+  color: var(--body-text);
+  font-family: "Source Sans Pro", sans-serif;
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: normal;
+}
+
+[data-slot="tabs-trigger"]:hover:not([data-state="active"]) {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+[data-slot="tabs-trigger"][data-state="active"] {
+  background: var(--tab-bg);
+  box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.04);
+
+  /* Text styling for active state */
+  color: var(--title-color);
+  font-family: "Source Sans Pro", sans-serif;
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: normal;
+}
+
+/* Breadcrumb Styles */
+.breadcrumb-text {
+  color: var(--body-text);
+  font-family: "Source Sans Pro", sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 24px; /* 171.429% */
+}
+
+/* Typography classes*/
+.font-space-grotesk {
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.font-source-sans-pro {
+  font-family: "Source Sans Pro", sans-serif;
+}
+
+/* Custom Utilities for Complex Shadows (Tailwind can't handle these) */
+.shadow-btn-primary {
+  box-shadow: var(--btn-primary-shadow);
+}
+
+.shadow-btn-primary-hover {
+  box-shadow: var(--btn-primary-shadow-hover);
+}
+
+.shadow-btn-glass {
+  box-shadow: var(--btn-glass-shadow);
+}
+
+.shadow-btn-glass-hover {
+  box-shadow: var(--btn-glass-shadow-hover);
+}
+
+.text-shadow-glass {
+  text-shadow: var(--btn-glass-text-shadow);
+}
+
+/* Hero Typography Classes */
+.hero-gradient-text {
+  background: linear-gradient(87deg, #16f476 1.46%, #f0ff81 33.33%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.text-shadow-hero {
+  text-shadow: var(--hero-text-shadow);
+}
+
+/* Form Input Styles */
+.form-input {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 45px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--input-border);
+  background: var(--input-background);
+  font-family: "Source Sans Pro", sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--input-text);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-input::placeholder {
+  color: var(--input-placeholder);
+  transition: opacity 0.3s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--input-border-focus);
+  box-shadow: 0 0 0 0.5px var(--input-border-focus),
+    0 4px 12px rgba(255, 91, 0, 0.12), 0 2px 4px rgba(255, 91, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.form-input:focus::placeholder {
+  opacity: 0.6;
+}
+
+.form-input:hover:not(:focus) {
+  border-color: rgba(255, 91, 0, 0.3);
+  transform: translateY(-0.5px);
+  box-shadow: 0 2px 8px rgba(255, 91, 0, 0.06);
+}
+
+/* Form Label Styles */
+.form-label {
+  font-family: "Source Sans Pro", sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--input-placeholder);
+}
+
+.form-label .required {
+  color: var(--input-required);
+}
+
+/* Form Textarea Styles */
+.form-textarea {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 141px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--input-border);
+  background: var(--input-background);
+  font-family: "Source Sans Pro", sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--input-text);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  resize: vertical;
+}
+
+.form-textarea::placeholder {
+  color: var(--input-placeholder);
+  transition: opacity 0.3s ease;
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--input-border-focus);
+  box-shadow: 0 0 0 0.5px var(--input-border-focus),
+    0 4px 12px rgba(255, 91, 0, 0.12), 0 2px 4px rgba(255, 91, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.form-textarea:focus::placeholder {
+  opacity: 0.6;
+}
+
+.form-textarea:hover:not(:focus) {
+  border-color: rgba(255, 91, 0, 0.3);
+  transform: translateY(-0.5px);
+  box-shadow: 0 2px 8px rgba(255, 91, 0, 0.06);
+}
+
+/* Override browser autocomplete styling */
+.autocomplete-fix:-webkit-autofill,
+.autocomplete-fix:-webkit-autofill:hover,
+.autocomplete-fix:-webkit-autofill:focus,
+.autocomplete-fix:-webkit-autofill:active {
+  /* Remove the blue background */
+  -webkit-box-shadow: 0 0 0 30px white inset !important;
+  /* Keep your text color */
+  -webkit-text-fill-color: inherit !important;
+  /* Maintain your border styling */
+  border: inherit !important;
+  /* Keep your background */
+  background-color: transparent !important;
+}
+
+/* For other browsers */
+.autocomplete-fix:-moz-autofill {
+  background-color: transparent !important;
+  border: inherit !important;
+}
+
+/* Alternative approach - if the above doesn't work well */
+.form-input:-webkit-autofill,
+.form-input:-webkit-autofill:hover,
+.form-input:-webkit-autofill:focus,
+.form-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px var(--input-background, white) inset !important;
+  -webkit-text-fill-color: var(--input-text, #000) !important;
+  background-color: var(--input-background, white) !important;
+}
+
+/* Ensure transitions work properly */
+.form-input {
+  transition: all 0.2s ease-in-out;
+}
+
+.form-input:-webkit-autofill {
+  transition: background-color 5000s ease-in-out 0s;
 }

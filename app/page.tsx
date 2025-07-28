@@ -1,18 +1,20 @@
-import NavBar from "@/components/layouts/NavBar";
-import "./globals.css";
-import Hero from "./components/layouts/Hero";
-import Events from "./components/layouts/EventSection";
-import { FeaturedSection } from "./components/layouts/FeaturedSection";
-import Footer from "@/components/layouts/Footer";
+"use client";
+import React from "react";
+import { HeroBanner } from "./hero-banner";
+import { HomeTabs } from "@/components/features/home/home-tab";
+import { FeaturedSection } from "@/components/features/home/feature-section";
 
 export default function Home() {
   return (
-    <div className="">
-      <NavBar />
-      <Hero />
-      <Events />
+    <div className="py-8 space-y-12">
+      {/* Hero Banner Section */}
+      <HeroBanner />
+
+      {/* Tab Navigation with Content */}
+      <HomeTabs className="container mx-auto px-4" />
+
+      {/* Featured Hotels & Landlords Section */}
       <FeaturedSection />
-      <Footer />
     </div>
   );
 }
