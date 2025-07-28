@@ -1,9 +1,14 @@
-import React from 'react'
+"use client";
+import { TicketTabs } from "@/components/features/tickets/ticket-tab";
+import React from "react";
 
-const page = () => {
+const Ticket = () => {
   return (
-    <div>page</div>
-  )
-}
+    <div className="py-4">
+      {/* Ticket Tabs with Content */}
+      <TicketTabs />
+    </div>
+  );
+};
 
-export default page
+export default Ticket;
