@@ -75,7 +75,7 @@ export function EventCard({
         <p
           style={{
             color: "var(--Body, #71727A)",
-            fontFamily: '"Source Sans Pro"',
+            fontFamily: "var(--font-source-sans), sans-serif",
             fontSize: "16px",
             fontStyle: "normal",
             fontWeight: 400,

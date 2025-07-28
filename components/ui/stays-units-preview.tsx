@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import { useDebouncedStaysFormStore } from "@/hooks/use-debounced-stay-store";
 import { StaysService } from "@/services/stays-service";
 import type { FacilityDetail } from "@/stores/stay-form-store";
@@ -17,6 +18,12 @@ export function StaysUnitsPreview({ className = "" }: StaysUnitsPreviewProps) {
   
   const [isLoading, setIsLoading] = useState(false);
   const [unitsFacilitiesData, setUnitsFacilitiesData] = useState<Map<string, FacilityDetail[]>>(new Map());
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+
+  // Handle image load errors
+  const handleImageError = (facilityId: string) => {
+    setImageErrors(prev => new Set(prev).add(facilityId));
+  };
 
   // Format currency for display
   const formatCurrency = (amount: number) => {
@@ -105,6 +112,11 @@ export function StaysUnitsPreview({ className = "" }: StaysUnitsPreviewProps) {
     loadUnitsFacilities();
   }, [units, getFacilityDetails, updateFacilitiesCache]);
 
+  // Reset image errors when facilities data changes
+  useEffect(() => {
+    setImageErrors(new Set());
+  }, [unitsFacilitiesData]);
+
   // Don't render section if no units
   if (!units || units.length === 0) {
     return (
@@ -192,22 +204,15 @@ export function StaysUnitsPreview({ className = "" }: StaysUnitsPreviewProps) {
                       key={facility._id}
                       className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-3 py-1"
                     >
-                      <div className="w-4 h-4 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-                        {facility.icon ? (
-                          <img
+                      <div className="w-4 h-4 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 relative">
+                        {facility.icon && !imageErrors.has(facility._id) ? (
+                          <Image
                             src={facility.icon}
                             alt={facility.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              // Fallback to placeholder if image fails to load
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              target.parentElement!.innerHTML = `
-                                <svg class="w-full h-full text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H9m0 0H7m2 0v-9a2 2 0 012-2h2a2 2 0 012 2v9M9 7h6m-6 4h6m-6 4h2" />
-                                </svg>
-                              `;
-                            }}
+                            fill
+                            className="object-cover"
+                            sizes="16px"
+                            onError={() => handleImageError(facility._id)}
                           />
                         ) : (
                           <svg className="w-full h-full text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

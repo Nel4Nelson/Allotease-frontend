@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { StaysBanner } from "@/components/ui/stays-banner";
@@ -13,7 +13,8 @@ interface StaysPreviewProps {
   className?: string;
 }
 
-export function StaysPreview({ className = "" }: StaysPreviewProps) {
+// Component that uses useSearchParams
+function StaysPreviewContent({ className = "" }: StaysPreviewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -58,7 +59,7 @@ export function StaysPreview({ className = "" }: StaysPreviewProps) {
 
           {/* Available Section */}
           <div className="mb-8">
-             <StaysUnitsPreview />
+            <StaysUnitsPreview />
           </div>
 
           {/* Follow card Section */}
@@ -89,5 +90,14 @@ export function StaysPreview({ className = "" }: StaysPreviewProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+// Main component that wraps the useSearchParams component in Suspense
+export function StaysPreview({ className = "" }: StaysPreviewProps) {
+  return (
+    <Suspense fallback={<div>Loading preview...</div>}>
+      <StaysPreviewContent className={className} />
+    </Suspense>
   );
 }

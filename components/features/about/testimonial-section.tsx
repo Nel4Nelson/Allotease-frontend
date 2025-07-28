@@ -68,7 +68,8 @@ export function TestimonialSection() {
   const [isMobile, setIsMobile] = useState(false);
   const [itemsVisible, setItemsVisible] = useState(5);
   const [isHovered, setIsHovered] = useState(false);
-  const intervalRef = useRef(null);
+  // Fix 1: Properly type the ref for NodeJS.Timeout
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const moveClockwise = () => {
     setStartIndex((prev) => (prev + 1) % testimonials.length);
@@ -148,7 +149,8 @@ export function TestimonialSection() {
     }
   };
 
-  const handleCardHover = (isHovering) => {
+  // Fix 2: Add proper type annotation for the parameter
+  const handleCardHover = (isHovering: boolean) => {
     setIsHovered(isHovering);
   };
 

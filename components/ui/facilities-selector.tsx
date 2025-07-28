@@ -1,6 +1,13 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
+import Image from "next/image";
 import { FormInput } from "@/components/ui/form-input";
 import { StaysService } from "@/services/stays-service";
 import type { FacilityDetail } from "@/stores/stay-form-store";
@@ -41,9 +48,9 @@ export function FacilitiesSelector({
     setMounted(true);
   }, []);
 
-  // Debounced search function
-  const debouncedSearch = useCallback(
-    debounce(async (query: string) => {
+  // Create search function without debounce first
+  const searchFacilities = useCallback(
+    async (query: string) => {
       if (query.length < 2) {
         setSuggestions([]);
         setShowSuggestions(false);
@@ -75,8 +82,14 @@ export function FacilitiesSelector({
       } finally {
         setIsSearching(false);
       }
-    }, 300),
+    },
     [selectedFacilities, onUpdateCache]
+  );
+
+  // Debounced search function
+  const debouncedSearch = useMemo(
+    () => debounce(searchFacilities, 300),
+    [searchFacilities]
   );
 
   // Handle search input changes
@@ -163,15 +176,19 @@ export function FacilitiesSelector({
                 className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-[12px] px-4 py-3 group hover:bg-gray-100 transition-colors"
               >
                 {/* Facility Icon */}
-                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 relative">
                   {facility.icon ? (
-                    <img
+                    <Image
                       src={facility.icon}
                       alt={facility.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        // Fallback to placeholder if image fails to load
-                        (e.target as HTMLImageElement).style.display = "none";
+                      fill
+                      className="object-cover"
+                      sizes="32px"
+                      onError={() => {
+                        // Handle error by showing fallback
+                        console.log(
+                          `Failed to load image for ${facility.name}`
+                        );
                       }}
                     />
                   ) : (
@@ -238,7 +255,7 @@ export function FacilitiesSelector({
             ref={suggestionsRef}
             className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-[12px] shadow-lg max-h-60 overflow-y-auto"
           >
-            {suggestions.map((facility, index) => (
+            {suggestions.map((facility) => (
               <button
                 key={facility._id}
                 type="button"
@@ -246,14 +263,18 @@ export function FacilitiesSelector({
                 className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0 flex items-center gap-3"
               >
                 {/* Facility Icon */}
-                <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 relative">
                   {facility.icon ? (
-                    <img
+                    <Image
                       src={facility.icon}
                       alt={facility.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
+                      fill
+                      className="object-cover"
+                      sizes="24px"
+                      onError={() => {
+                        console.log(
+                          `Failed to load image for ${facility.name}`
+                        );
                       }}
                     />
                   ) : (

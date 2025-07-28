@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 import Link from "next/link";
 import Image from "next/image";
@@ -22,9 +23,9 @@ export function HeroContent() {
             className="hidden sm:block h-full w-px bg-[var(--input-border)] mx-3 md:mx-4"
             aria-hidden="true"
           />
-          {/* <p className="text-base sm:text-lg md:text-xl xl:text-2xl font-source-sans-pro font-semibold text-[var(--hero-subtitle-color)] leading-tight">
+          <p className="text-base sm:text-lg md:text-xl xl:text-2xl font-source-sans-pro font-semibold text-[var(--hero-subtitle-color)] leading-tight">
             Nigerian's Favorite Booking solution
-          </p> */}
+          </p>
         </div>
 
         {/* Main Hero Title */}

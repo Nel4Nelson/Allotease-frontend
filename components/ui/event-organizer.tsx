@@ -25,7 +25,7 @@ export function EventOrganizer({
         <span
           style={{
             color: "var(--Body, #71727A)",
-            fontFamily: '"Source Sans Pro"',
+            fontFamily: "var(--font-source-sans), sans-serif",
             fontSize: "12px",
             fontStyle: "normal",
             fontWeight: 400,
@@ -38,7 +38,7 @@ export function EventOrganizer({
       <span
         style={{
           color: "var(--Body, #71727A)",
-          fontFamily: '"Source Sans Pro"',
+          fontFamily: "var(--font-source-sans), sans-serif",
           fontSize: "12px",
           fontStyle: "normal",
           fontWeight: 400,

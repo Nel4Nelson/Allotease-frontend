@@ -22,7 +22,7 @@ export function EventBadge({ children, className = "" }: EventBadgeProps) {
       <span
         style={{
           color: "var(--System-Teal, #1F3A3A)",
-          fontFamily: '"Source Sans Pro"',
+          fontFamily: "var(--font-source-sans), sans-serif",
           fontSize: "12px",
           fontStyle: "normal",
           fontWeight: 400,

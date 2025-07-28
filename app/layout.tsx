@@ -1,6 +1,19 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ConditionalLayout } from "@/components/layout/conditional-layout";
+import { Space_Grotesk, Source_Sans_3 } from "next/font/google";
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-space-grotesk',
+});
+
+const sourceSans = Source_Sans_3({
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  variable: '--font-source-sans',
+});
 
 export const metadata: Metadata = {
   title: "Allotease - Find the right vacation accommodation",
@@ -14,13 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Source+Sans+Pro:wght@400;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="en" className={`${spaceGrotesk.variable} ${sourceSans.variable}`}>
       <body className="font-source-sans">
         <ConditionalLayout>{children}</ConditionalLayout>
       </body>

@@ -82,7 +82,7 @@ export function StayCard({
         <span
           style={{
             color: "var(--Body, #71727A)",
-            fontFamily: '"Source Sans Pro"',
+            fontFamily: "var(--font-source-sans), sans-serif",
             fontSize: "14px",
             fontStyle: "normal",
             fontWeight: 400,

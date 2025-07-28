@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import React, { useState } from "react";
+import Image from "next/image";
 import { FormInput } from "@/components/ui/form-input";
 import { FormTextarea } from "@/components/ui/form-textarea";
 import { FormSelect } from "@/components/ui/form-select";
@@ -22,6 +23,9 @@ interface UnitsManagerProps {
   errors?: Record<string, any>;
 }
 
+// Define frequency type properly
+type FrequencyType = "daily" | "weekly" | "monthly" | "yearly";
+
 // Frequency options for pricing
 const frequencyOptions = [
   { value: "daily", label: "Daily" },
@@ -42,11 +46,17 @@ export function UnitsManager({
   getUnitFacilities,
   errors = {},
 }: UnitsManagerProps) {
-  const [currentUnit, setCurrentUnit] = useState({
+  const [currentUnit, setCurrentUnit] = useState<{
+    title: string;
+    description: string;
+    price: number;
+    frequency: FrequencyType;
+    quantity: number;
+  }>({
     title: "",
     description: "",
     price: 0,
-    frequency: "daily" as const,
+    frequency: "daily",
     quantity: 1,
   });
   
@@ -59,6 +69,13 @@ export function UnitsManager({
     unitId: "",
     unitTitle: "",
   });
+
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+
+  // Handle image load errors
+  const handleImageError = (facilityId: string) => {
+    setImageErrors(prev => new Set(prev).add(facilityId));
+  };
 
   // Generate next unit number for title placeholder
   const getNextUnitNumber = () => units.length + 1;
@@ -154,6 +171,11 @@ export function UnitsManager({
     );
   };
 
+  // Reset image errors when units change
+  React.useEffect(() => {
+    setImageErrors(new Set());
+  }, [units]);
+
   return (
     <div className="space-y-6">
       {/* Existing Units Display */}
@@ -197,15 +219,22 @@ export function UnitsManager({
                     key={facility._id}
                     className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-3 py-1"
                   >
-                    <div className="w-4 h-4 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-                      {facility.icon ? (
-                        <img
+                    <div className="w-4 h-4 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 relative">
+                      {facility.icon && !imageErrors.has(facility._id) ? (
+                        <Image
                           src={facility.icon}
                           alt={facility.name}
-                          className="w-full h-full object-cover"
+                          fill
+                          className="object-cover"
+                          sizes="16px"
+                          onError={() => handleImageError(facility._id)}
                         />
                       ) : (
-                        <div className="w-full h-full bg-gray-300"></div>
+                        <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+                          <svg className="w-2 h-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H9m0 0H7m2 0v-9a2 2 0 012-2h2a2 2 0 012 2v9M9 7h6m-6 4h6m-6 4h2" />
+                          </svg>
+                        </div>
                       )}
                     </div>
                     <span className="text-xs font-medium text-gray-700">
@@ -318,7 +347,7 @@ export function UnitsManager({
               onValueChange={(value) =>
                 setCurrentUnit({
                   ...currentUnit,
-                  frequency: value as "daily" | "weekly" | "monthly" | "yearly",
+                  frequency: value as FrequencyType,
                 })
               }
               error={errors.frequency}

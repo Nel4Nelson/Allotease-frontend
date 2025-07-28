@@ -88,7 +88,7 @@ export function AllocationAdminCard({
       <p
         style={{
           color: "var(--Body, #71727A)",
-          fontFamily: '"Source Sans Pro"',
+          fontFamily: "var(--font-source-sans), sans-serif",
           fontSize: "16px",
           fontStyle: "normal",
           fontWeight: 400,
@@ -109,13 +109,15 @@ export function AllocationAdminCard({
           onMouseLeave={handleMouseLeave}
           disabled={isFollowing}
           className={`transition-all ${
-            isFollowing 
-              ? "cursor-not-allowed opacity-60" 
+            isFollowing
+              ? "cursor-not-allowed opacity-60"
               : "hover:bg-orange-50 cursor-pointer"
           }`}
           style={{
             borderRadius: "51px",
-            border: `1px solid ${isFollowing ? "#B0B0B0" : "var(--Orange-Red, #FF5B00)"}`,
+            border: `1px solid ${
+              isFollowing ? "#B0B0B0" : "var(--Orange-Red, #FF5B00)"
+            }`,
             display: "flex",
             padding: "6px 12px",
             justifyContent: "center",
@@ -127,7 +129,7 @@ export function AllocationAdminCard({
           <span
             style={{
               color: isFollowing ? "#B0B0B0" : "var(--Orange-Red, #FF5B00)",
-              fontFamily: '"Source Sans Pro"',
+              fontFamily: "var(--font-source-sans), sans-serif",
               fontSize: "18px",
               fontStyle: "normal",
               fontWeight: 600,
@@ -147,7 +149,7 @@ export function AllocationAdminCard({
               left: "50%",
               transform: "translateX(-50%)",
               whiteSpace: "nowrap",
-              fontFamily: '"Source Sans Pro"',
+              fontFamily: "var(--font-source-sans), sans-serif",
               fontSize: "14px",
               fontWeight: 500,
             }}

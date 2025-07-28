@@ -1,12 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef, useState } from "react";
-import { useEventFormStore } from "@/stores/event-form-store";
-
-// Dynamic imports for mapbox-gl to avoid SSR issues
-let mapboxgl: any;
-if (typeof window !== "undefined") {
-  mapboxgl = require('mapbox-gl');
-}
+import { useStaysFormStore } from "@/stores/stay-form-store";
 
 const LocationIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="21" viewBox="0 0 20 21" fill="none">
@@ -17,14 +11,15 @@ const LocationIcon = () => (
   </svg>
 );
 
-interface EventLocationProps {
+interface StaysLocationProps {
   className?: string;
 }
 
-export function EventLocation({ className = "" }: EventLocationProps) {
-  const { formData } = useEventFormStore();
+export function StaysLocation({ className = "" }: StaysLocationProps) {
+  const { formData } = useStaysFormStore();
   const [mounted, setMounted] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
+  const [mapboxgl, setMapboxgl] = useState<any>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
   const markerRef = useRef<any>(null);
@@ -33,6 +28,22 @@ export function EventLocation({ className = "" }: EventLocationProps) {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Dynamic import of mapbox-gl
+  useEffect(() => {
+    if (!mounted) return;
+
+    const loadMapbox = async () => {
+      try {
+        const mapboxModule = await import('mapbox-gl');
+        setMapboxgl(mapboxModule.default);
+      } catch (error) {
+        console.error('Failed to load mapbox-gl:', error);
+      }
+    };
+
+    loadMapbox();
+  }, [mounted]);
 
   // Check online status
   useEffect(() => {
@@ -50,9 +61,9 @@ export function EventLocation({ className = "" }: EventLocationProps) {
     };
   }, [mounted]);
 
-  // Initialize Mapbox for venue events
+  // Initialize Mapbox for accommodation locations
   useEffect(() => {
-    if (!mounted || !mapRef.current || !isOnline || formData.eventType !== 'venue' || !mapboxgl) return;
+    if (!mounted || !mapRef.current || !isOnline || !mapboxgl) return;
 
     try {
       mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || 'your_mapbox_token_here';
@@ -121,34 +132,14 @@ export function EventLocation({ className = "" }: EventLocationProps) {
         markerRef.current = null;
       }
     };
-  }, [mounted, isOnline, formData.eventType, formData.location]);
+  }, [mounted, isOnline, mapboxgl, formData.location]);
 
   // Don't render until mounted
   if (!mounted) {
     return <div className={className}>Loading location...</div>;
   }
 
-  // Handle remote events
-  if (formData.eventType === 'remote') {
-    return (
-      <div className={className}>
-        {/* Section Title */}
-        <h3 className="text-[var(--Title,#1F2024)] font-space-grotesk text-xl font-bold leading-[140%] tracking-[-0.4px] mb-4">
-          Location
-        </h3>
-        
-        {/* Online Event Info */}
-        <div className="flex items-center gap-3">
-          <LocationIcon />
-          <span className="text-[var(--Title,#1F2024)] font-source-sans-pro text-base font-semibold leading-[142.745%] tracking-[-0.32px]">
-            Online Event
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  // Handle venue events
+  // Handle accommodation location display
   const location = formData.location;
   const hasLocation = location && location.address;
   
@@ -173,17 +164,17 @@ export function EventLocation({ className = "" }: EventLocationProps) {
               </div>
               {/* City, State (Secondary) */}
               <div className="text-[var(--Body,#71727A)] font-source-sans-pro text-base font-normal leading-[142.745%] tracking-[-0.32px] mt-1">
-               {location.address} {location.city}, {location.state}
+                {location.city}, {location.state}, {location.country}
               </div>
             </>
           ) : (
             <>
               {/* Placeholder */}
               <div className="text-gray-400 font-source-sans-pro text-base font-semibold leading-[142.745%] tracking-[-0.32px]">
-                Venue Address
+                Accommodation Address
               </div>
               <div className="text-gray-400 font-source-sans-pro text-base font-normal leading-[142.745%] tracking-[-0.32px] mt-1">
-                City, State will appear here
+                City, State, Country will appear here
               </div>
             </>
           )}

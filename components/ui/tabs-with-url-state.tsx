@@ -1,6 +1,6 @@
 "use client";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect, ReactNode, Suspense } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export interface TabConfig {
@@ -17,7 +17,7 @@ interface TabsWithUrlStateProps {
   className?: string;
 }
 
-export function TabsWithUrlState({
+export function CustomTabsContent({
   tabs,
   defaultTab,
   basePath,
@@ -73,5 +73,14 @@ export function TabsWithUrlState({
         ))}
       </Tabs>
     </div>
+  );
+}
+
+
+export function TabsWithUrlState(props: TabsWithUrlStateProps) {
+  return (
+    <Suspense fallback={<div>Loading tabs...</div>}>
+      <CustomTabsContent {...props} />
+    </Suspense>
   );
 }

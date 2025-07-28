@@ -42,7 +42,7 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  --color-dark-slate: #20232A;
+  --color-dark-slate: #20232a;
 
   /* Auth Background Tokens */
   --auth-bg-opacity: 0.6;
@@ -106,6 +106,10 @@
   --btn-glass-shadow: 0 8px 32px rgba(255, 255, 255, 0.1);
   --btn-glass-shadow-hover: 0 12px 40px rgba(255, 255, 255, 0.15);
   --btn-glass-text-shadow: 0px 4px 10px rgba(0, 0, 0, 0.04);
+
+  /* Typography */
+  --font-space-grotesk: var(--font-space-grotesk);
+  --font-source-sans: var(--font-source-sans);
 }
 
 :root {
@@ -183,7 +187,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: "Source Sans Pro", sans-serif;
+    font-family: var(--font-source-sans), sans-serif;
   }
 }
 
@@ -243,7 +247,7 @@
 
   /* Text styling for inactive state */
   color: var(--body-text);
-  font-family: "Source Sans Pro", sans-serif;
+  font-family: var(--font-source-sans), sans-serif;
   font-size: 18px;
   font-style: normal;
   font-weight: 600;
@@ -260,7 +264,7 @@
 
   /* Text styling for active state */
   color: var(--title-color);
-  font-family: "Source Sans Pro", sans-serif;
+  font-family: var(--font-source-sans), sans-serif;
   font-size: 18px;
   font-style: normal;
   font-weight: 600;
@@ -270,7 +274,7 @@
 /* Breadcrumb Styles */
 .breadcrumb-text {
   color: var(--body-text);
-  font-family: "Source Sans Pro", sans-serif;
+  font-family: var(--font-source-sans), sans-serif;
   font-size: 14px;
   font-style: normal;
   font-weight: 400;
@@ -279,11 +283,11 @@
 
 /* Typography classes*/
 .font-space-grotesk {
-  font-family: "Space Grotesk", sans-serif;
+  font-family: var(--font-space-grotesk), sans-serif; /* Updated */
 }
 
 .font-source-sans-pro {
-  font-family: "Source Sans Pro", sans-serif;
+  font-family: var(--font-source-sans), sans-serif; /* Updated */
 }
 
 /* Custom Utilities for Complex Shadows (Tailwind can't handle these) */
@@ -328,7 +332,7 @@
   border-radius: 8px;
   border: 1px solid var(--input-border);
   background: var(--input-background);
-  font-family: "Source Sans Pro", sans-serif;
+  font-family: var(--font-source-sans), sans-serif;
   font-size: 16px;
   font-weight: 400;
   color: var(--input-text);
@@ -360,7 +364,7 @@
 
 /* Form Label Styles */
 .form-label {
-  font-family: "Source Sans Pro", sans-serif;
+  font-family: var(--font-source-sans), sans-serif;
   font-size: 16px;
   font-weight: 400;
   color: var(--input-placeholder);
@@ -380,7 +384,7 @@
   border-radius: 8px;
   border: 1px solid var(--input-border);
   background: var(--input-background);
-  font-family: "Source Sans Pro", sans-serif;
+  font-family: var(--font-source-sans), sans-serif;
   font-size: 16px;
   font-weight: 400;
   color: var(--input-text);

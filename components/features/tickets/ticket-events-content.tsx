@@ -2,12 +2,13 @@
 
 import { TicketEventCard } from "./ticket-event-card";
 
-
 interface TicketEventsContentProps {
   className?: string;
 }
 
-export function TicketEventsContent({ className = "" }: TicketEventsContentProps) {
+export function TicketEventsContent({
+  className = "",
+}: TicketEventsContentProps) {
   // Mock data for now - will replace with API later
   const mockEvents = [
     {
@@ -15,22 +16,22 @@ export function TicketEventsContent({ className = "" }: TicketEventsContentProps
       title: "Timely and Adaptive Strategies to Optimize Suicide Prevention...",
       dateTime: "Thursday • 6:00 PM GMT+1",
       imageUrl: "/api/placeholder/326/176",
-      badgeText: "Free"
+      badgeText: "Free",
     },
     {
-      id: "2", 
+      id: "2",
       title: "Timely and Adaptive Strategies to Optimize Suicide Prevention...",
       dateTime: "Thursday • 6:00 PM GMT+1",
       imageUrl: "/api/placeholder/326/176",
-      badgeText: "Free"
+      badgeText: "Free",
     },
     {
       id: "3",
       title: "Timely and Adaptive Strategies to Optimize Suicide Prevention...",
-      dateTime: "Thursday • 6:00 PM GMT+1", 
+      dateTime: "Thursday • 6:00 PM GMT+1",
       imageUrl: "/api/placeholder/326/176",
-      badgeText: "Free"
-    }
+      badgeText: "Free",
+    },
   ];
 
   const mockPastEvents = [
@@ -38,23 +39,23 @@ export function TicketEventsContent({ className = "" }: TicketEventsContentProps
       id: "4",
       title: "Timely and Adaptive Strategies to Optimize Suicide Prevention...",
       dateTime: "Thursday • 6:00 PM GMT+1",
-      imageUrl: "/api/placeholder/326/176", 
-      badgeText: "Free"
+      imageUrl: "/api/placeholder/326/176",
+      badgeText: "Free",
     },
     {
       id: "5",
       title: "Timely and Adaptive Strategies to Optimize Suicide Prevention...",
       dateTime: "Thursday • 6:00 PM GMT+1",
       imageUrl: "/api/placeholder/326/176",
-      badgeText: "Free"
+      badgeText: "Free",
     },
     {
       id: "6",
       title: "Timely and Adaptive Strategies to Optimize Suicide Prevention...",
       dateTime: "Thursday • 6:00 PM GMT+1",
       imageUrl: "/api/placeholder/326/176",
-      badgeText: "Free"
-    }
+      badgeText: "Free",
+    },
   ];
 
   const handleEventClick = (eventId: string) => {
@@ -91,7 +92,7 @@ export function TicketEventsContent({ className = "" }: TicketEventsContentProps
           <p
             style={{
               color: "var(--Body, #71727A)",
-              fontFamily: '"Source Sans Pro"',
+              fontFamily: "var(--font-source-sans), sans-serif",
               fontSize: "16px",
               fontStyle: "normal",
               fontWeight: 400,
@@ -141,7 +142,7 @@ export function TicketEventsContent({ className = "" }: TicketEventsContentProps
           <p
             style={{
               color: "var(--Body, #71727A)",
-              fontFamily: '"Source Sans Pro"',
+              fontFamily: "var(--font-source-sans), sans-serif",
               fontSize: "16px",
               fontStyle: "normal",
               fontWeight: 400,

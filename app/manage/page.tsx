@@ -1,11 +1,10 @@
-'use client';
-import React from 'react';
-import { Navbar } from '@/components/layout/navbar';
+//Todo: Redirect here to go somewhere
+import React from 'react'
 
-export default function ManagePage() {
+const AllocationDashboard = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-    </div>
-  );
+    <div>AllocationDashboard</div>
+  )
 }
+
+export default AllocationDashboard

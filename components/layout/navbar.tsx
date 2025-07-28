@@ -19,31 +19,31 @@ import { AuthService } from "@/services/auth-service";
 export default function Header() {
   // Get auth data directly from store
   const { user, isAuthenticated, getUserRole, isLoading } = useAuthStore();
-  
+
   // Get user role and email from auth store
   const userRole = getUserRole();
   const userEmail = user?.email || "Guest";
-  
+
   // Check if user is allocation admin (allocator role)
-  const isAllocationAdmin = userRole === 'allocator';
+  const isAllocationAdmin = userRole === "allocator";
 
   // Handle logout
   const handleLogout = async () => {
     try {
       await AuthService.logout();
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error);
     }
   };
 
   // Handle create event button click
   const handleCreateEvent = () => {
-    if (userRole === 'allocator') {
+    if (userRole === "allocator") {
       // Allocators can create events - redirect to create event page
-      window.location.href = '/allocation-admin/create';
+      window.location.href = "/allocation-admin/create";
     } else {
       // Regular users need to upgrade first
-      window.location.href = '/upgrade';
+      window.location.href = "/upgrade";
     }
   };
 
@@ -94,7 +94,7 @@ export default function Header() {
           {/* Right Section: Action Buttons + User Profile */}
           <div className="flex items-center gap-8">
             {/* Create an event */}
-            <button 
+            <button
               className="flex items-center gap-2 hover:opacity-70 transition-opacity"
               onClick={handleCreateEvent}
             >
@@ -137,7 +137,7 @@ export default function Header() {
                       className="font-source-sans text-base"
                       style={{
                         color: "#1F2024",
-                        fontFamily: '"Source Sans Pro"',
+                        fontFamily: "var(--font-source-sans), sans-serif",
                         fontSize: "16px",
                         fontWeight: 400,
                         lineHeight: "normal",
@@ -187,7 +187,7 @@ export default function Header() {
                         <span
                           style={{
                             color: "#1F2024",
-                            fontFamily: '"Source Sans Pro"',
+                            fontFamily: "var(--font-source-sans), sans-serif",
                             fontSize: "16px",
                             fontWeight: 400,
                             lineHeight: "normal",
@@ -198,17 +198,18 @@ export default function Header() {
                       </div>
                       {/* Display user role for debugging/info */}
                       {user && (
-                        <div className="flex justify-center mt-1">
+                        <div className="flex font-source-sans justify-center mt-1">
                           <span
                             style={{
                               color: "#666",
-                              fontFamily: '"Source Sans Pro"',
                               fontSize: "12px",
                               fontWeight: 400,
                               lineHeight: "normal",
                             }}
                           >
-                            {userRole === 'allocator' ? 'Allocation Admin' : 'User'}
+                            {userRole === "allocator"
+                              ? "Allocation Admin"
+                              : "User"}
                           </span>
                         </div>
                       )}
@@ -227,7 +228,9 @@ export default function Header() {
                         className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
                         style={{
                           padding: "16px 20px",
-                          borderBottom: isAllocationAdmin ? "1px solid rgba(138, 174, 164, 0.20)" : "1px solid rgba(138, 174, 164, 0.20)",
+                          borderBottom: isAllocationAdmin
+                            ? "1px solid rgba(138, 174, 164, 0.20)"
+                            : "1px solid rgba(138, 174, 164, 0.20)",
                           borderRadius: "16px 16px 0 0", // Top-left and top-right rounded
                         }}
                       >
@@ -240,7 +243,7 @@ export default function Header() {
                         <span
                           style={{
                             color: "#1F2024",
-                            fontFamily: '"Source Sans Pro"',
+                            fontFamily: "var(--font-source-sans), sans-serif",
                             fontSize: "16px",
                             fontWeight: 600,
                             lineHeight: "normal",
@@ -268,7 +271,7 @@ export default function Header() {
                           <span
                             style={{
                               color: "#1F2024",
-                              fontFamily: '"Source Sans Pro"',
+                              fontFamily: "var(--font-source-sans), sans-serif",
                               fontSize: "16px",
                               fontWeight: 600,
                               lineHeight: "normal",
@@ -297,7 +300,7 @@ export default function Header() {
                         <span
                           style={{
                             color: "#1F2024",
-                            fontFamily: '"Source Sans Pro"',
+                            fontFamily: "var(--font-source-sans), sans-serif",
                             fontSize: "16px",
                             fontWeight: 600,
                             lineHeight: "normal",
@@ -324,7 +327,7 @@ export default function Header() {
                         <span
                           style={{
                             color: "#1F2024",
-                            fontFamily: '"Source Sans Pro"',
+                            fontFamily: "var(--font-source-sans), sans-serif",
                             fontSize: "16px",
                             fontWeight: 600,
                             lineHeight: "normal",
@@ -354,7 +357,7 @@ export default function Header() {
                       <span
                         style={{
                           color: "#1F2024",
-                          fontFamily: '"Source Sans Pro"',
+                          fontFamily: "var(--font-source-sans), sans-serif",
                           fontSize: "16px",
                           fontWeight: 600,
                           lineHeight: "normal",
@@ -371,15 +374,15 @@ export default function Header() {
             {/* Show login/signup buttons if not authenticated and not loading */}
             {!isAuthenticated && !isLoading && (
               <div className="flex items-center gap-4">
-                <button 
+                <button
                   className="font-source-sans text-base font-semibold text-[#1F3A3A] hover:opacity-70 transition-opacity"
-                  onClick={() => window.location.href = '/login'}
+                  onClick={() => (window.location.href = "/login")}
                 >
                   Login
                 </button>
-                <button 
+                <button
                   className="font-source-sans text-base font-semibold bg-[#1F3A3A] text-white px-4 py-2 rounded-lg hover:opacity-80 transition-opacity"
-                  onClick={() => window.location.href = '/signup'}
+                  onClick={() => (window.location.href = "/signup")}
                 >
                   Sign Up
                 </button>

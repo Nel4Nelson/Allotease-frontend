@@ -1,3 +1,4 @@
+//archieve: This code is not used anywhere
 "use client";
 import React from "react";
 import { UserType } from "@/types/auth";

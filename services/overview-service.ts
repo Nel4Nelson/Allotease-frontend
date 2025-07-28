@@ -17,11 +17,11 @@ export class OverviewService {
     endpoint: string
   ): Promise<ApiResponse<ManagementStats>> {
     try {
-      return await apiClient.get<ManagementStats>(endpoint);
+      return await apiClient.get<ApiResponse<ManagementStats>>(endpoint);
     } catch (error) {
       console.error(
         `Fetching stats from ${endpoint} failed:`,
-        error|| error
+        error
       );
       throw error;
     }
@@ -41,7 +41,7 @@ export class OverviewService {
   ): Promise<ApiResponse<StayReservationsResponse>> {
     const url = `${this.ENDPOINTS.GET_RECENT_STAYS_RESERVATIONS}?page=${page}&limit=${limit}`;
     try {
-      return await apiClient.get<StayReservationsResponse>(url);
+      return await apiClient.get<ApiResponse<StayReservationsResponse>>(url);
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error(
@@ -59,7 +59,7 @@ export class OverviewService {
     ApiResponse<EventReservationsResponse>
   > {
     try {
-      return await apiClient.get<EventReservationsResponse>(
+      return await apiClient.get<ApiResponse<EventReservationsResponse>>(
         this.ENDPOINTS.GET_RECENT_EVENTS_RESERVATIONS
       );
     } catch (error: unknown) {

@@ -1,3 +1,3 @@
-export * from './hero-banner';
-export * from './service-tabs';
-export * from './featured-organizers';
+export * from "./hero-banner";
+export * from "./feature-section"
+export * from "./home-tab"

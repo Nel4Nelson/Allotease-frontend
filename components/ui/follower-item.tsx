@@ -10,6 +10,7 @@ interface FollowerItemProps {
   isFollowing: boolean;
   onToggleFollow?: (id: string) => void;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 export function FollowerItem({
@@ -19,6 +20,7 @@ export function FollowerItem({
   isFollowing,
   onToggleFollow,
   className = "",
+  style, // Add this parameter
 }: FollowerItemProps) {
   const handleToggleFollow = () => {
     if (onToggleFollow) {
@@ -37,6 +39,7 @@ export function FollowerItem({
         alignItems: "center",
         gap: "20px",
         alignSelf: "stretch",
+        ...style, // Merge with any passed style prop
       }}
     >
       {/* Avatar */}

@@ -1,8 +1,9 @@
 import { useCallback, useMemo } from "react";
 import { debounce } from "lodash";
 import { useStaysFormStore } from "@/stores/stay-form-store";
-import type { StaysFormData, UnitData } from "@/components/features/create/stays-form";
-import type { FacilityDetail } from "@/stores/stay-form-store";
+
+import type { FacilityDetail, UnitData } from "@/stores/stay-form-store";
+import { StaysFormData } from "@/types/stays-form-schema";
 
 export const useDebouncedStaysFormStore = () => {
   const {

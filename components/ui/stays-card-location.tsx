@@ -10,14 +10,14 @@ export function StayLocation({ location, className = "" }: StayLocationProps) {
     <p
       className={className}
       style={{
-        color: 'var(--Body, #71727A)',
-        fontFamily: '"Source Sans Pro"',
-        fontSize: '16px',
-        fontStyle: 'normal',
+        color: "var(--Body, #71727A)",
+        fontFamily: "var(--font-source-sans), sans-serif",
+        fontSize: "16px",
+        fontStyle: "normal",
         fontWeight: 400,
-        lineHeight: '142.745%',
-        letterSpacing: '-0.32px',
-        margin: 0
+        lineHeight: "142.745%",
+        letterSpacing: "-0.32px",
+        margin: 0,
       }}
     >
       {location}

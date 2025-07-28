@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-unescaped-entities */
 "use client";
-import React from "react";
+import React, { Suspense } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
+import { z } from "zod";
 import { FormInput } from "@/components/ui/form-input";
 import { FormTextarea } from "@/components/ui/form-textarea";
 import { ImageUpload } from "@/components/ui/image-upload";
@@ -13,13 +13,42 @@ import {
   type LocationData,
 } from "@/components/ui/location-selector";
 import { FormSelect } from "@/components/ui/form-select";
-import { FacilitiesSelector } from "@/components/ui/facilities-selector";
-import { UnitsManager } from "@/components/ui/units-manager";
 import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useDebouncedStaysFormStore } from "@/hooks/use-debounced-stay-store";
 import { debounce } from "lodash";
-import { StaysFormData, staysFormSchema } from "@/types/stays-form-schema";
+import { useDebouncedStaysFormStore } from "@/hooks/use-debounced-stay-store";
+
+const staysFormSchema = z.object({
+  accommodationTitle: z
+    .string()
+    .min(1, { message: "Accommodation title is required." })
+    .max(100, { message: "Title must not exceed 100 characters." }),
+  accommodationDescription: z
+    .string()
+    .min(1, { message: "Accommodation description is required." })
+    .max(1000, { message: "Description must not exceed 1000 characters." }),
+  images: z
+    .array(z.instanceof(File))
+    .min(1, { message: "At least one image is required." })
+    .max(10, { message: "Maximum 10 images allowed." }),
+  location: z.object({
+    address: z.string().min(1, { message: "Address is required." }),
+    city: z.string().min(1, { message: "City is required." }),
+    state: z.string().min(1, { message: "State is required." }),
+    country: z.string().min(1, { message: "Country is required." }),
+  }),
+  accommodationType: z
+    .string()
+    .min(1, { message: "Accommodation type is required." }),
+});
+
+export interface StaysFormData {
+  accommodationTitle: string;
+  accommodationDescription: string;
+  images: File[];
+  location: LocationData;
+  accommodationType: string;
+}
 
 const accommodationTypes = [
   { value: "hotel-lodging", label: "Hotel & Lodging" },
@@ -27,32 +56,22 @@ const accommodationTypes = [
   { value: "school-lodges", label: "School Lodges" },
 ];
 
+interface StaysFormProps {
+  isLoading?: boolean;
+}
 
-export function StaysForm() {
+// Component that uses useSearchParams
+function StaysFormContent({}: StaysFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   // Zustand store integration
-  const { 
-    formData: storeData, 
-    updateFormDataImmediate, 
+  const {
+    formData: storeData,
+    updateFormDataImmediate,
     updateFormDataDebounced,
-    selectedFacilities,
-    addFacilityToSelection,
-    removeFacilityFromSelection,
-    updateFacilitiesCache,
-    getFacilityDetails,
-    
-    // Units management
-    units,
-    addUnitToStore,
-    updateUnitInStore,
-    removeUnitFromStore,
-    addFacilityToUnit,
-    removeFacilityFromUnit,
-    getUnitFacilities,
   } = useDebouncedStaysFormStore();
-  
+
   const {
     register,
     setValue,
@@ -68,15 +87,11 @@ export function StaysForm() {
       images: storeData.images || [],
       location: storeData.location || undefined,
       accommodationType: storeData.accommodationType || "",
-      facilities: storeData.facilities || [],
-      units: storeData.units || [],
     },
   });
 
   const location = watch("location");
-  const facilities = watch("facilities");
-  const accommodationUnits = watch("units");
-  
+
   // Watch for text input changes
   const accommodationTitle = watch("accommodationTitle");
   const accommodationDescription = watch("accommodationDescription");
@@ -97,40 +112,18 @@ export function StaysForm() {
     updateFormDataImmediate({ accommodationType: value });
   };
 
-  // Facility management handlers
-  const handleAddFacility = (facilityId: string) => {
-    const currentFacilities = facilities || [];
-    const newFacilities = [...currentFacilities, facilityId];
-    setValue("facilities", newFacilities, { shouldValidate: true });
-    addFacilityToSelection(facilityId);
-  };
-
-  const handleRemoveFacility = (facilityId: string) => {
-    const currentFacilities = facilities || [];
-    const newFacilities = currentFacilities.filter(id => id !== facilityId);
-    setValue("facilities", newFacilities, { shouldValidate: true });
-    removeFacilityFromSelection(facilityId);
-  };
-
-  // Sync facilities to store when they change
-  React.useEffect(() => {
-    if (facilities) {
-      updateFormDataImmediate({ facilities });
-    }
-  }, [facilities, updateFormDataImmediate]);
-
-  // Sync units to store when they change
-  React.useEffect(() => {
-    if (accommodationUnits) {
-      updateFormDataImmediate({ units: accommodationUnits });
-    }
-  }, [accommodationUnits, updateFormDataImmediate]);
-
   // Debounced sync for text inputs
   const debouncedSyncTextInputs = React.useMemo(
-    () => debounce((data: { accommodationTitle?: string; accommodationDescription?: string }) => {
-      updateFormDataDebounced(data);
-    }, 500),
+    () =>
+      debounce(
+        (data: {
+          accommodationTitle?: string;
+          accommodationDescription?: string;
+        }) => {
+          updateFormDataDebounced(data);
+        },
+        500
+      ),
     [updateFormDataDebounced]
   );
 
@@ -160,15 +153,15 @@ export function StaysForm() {
     <div className="space-y-6">
       {/* Form */}
       <form className="space-y-6">
-        {/* 1. Accommodation Title */}
+        {/* First Question */}
         <div>
           <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-2">
             What's the name of your accommodation?
           </h2>
           <p className="text-[#7A7A7A] font-source-sans-pro text-base font-normal leading-[160%] mb-4">
-            This will be your accommodation's title. Your title will be used to help
-            create your accommodation's summary, description, and tags – so be
-            specific!
+            This will be your accommodation's title. Your title will be used to
+            help create your accommodation's summary, description, and tags – so
+            be specific!
           </p>
           <FormInput
             label="Accommodation title"
@@ -179,7 +172,7 @@ export function StaysForm() {
           />
         </div>
 
-        {/* 2. Accommodation Description */}
+        {/* Second Question */}
         <div>
           <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-6">
             Tell more about the space?
@@ -193,18 +186,19 @@ export function StaysForm() {
           />
         </div>
 
-        {/* 3. Image Upload */}
+        {/* Third Question - Image Upload */}
         <div>
           <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-2">
             Upload accommodation images
           </h2>
           <p className="text-[#7A7A7A] font-source-sans-pro text-base font-normal leading-[160%] mb-4">
-            These images will be the main visual representation of your accommodation.
-            Choose clear, high-quality photos that best showcase the space to
-            attract users' attention.
+            These images will be the main visual representation of your
+            accommodation. Choose clear, high-quality photos that best showcase
+            the space to attract users' attention.
           </p>
           <p className="text-[#7A7A7A] font-source-sans-pro text-sm font-normal mb-4">
-            Recommended dimensions: 1200 x 800 pixels for optimal display. Upload up to 10 images.
+            Recommended dimensions: 1200 x 800 pixels for optimal display.
+            Upload up to 10 images.
           </p>
           <ImageUpload
             label="Upload accommodation images"
@@ -218,7 +212,7 @@ export function StaysForm() {
         {/* Divider */}
         <Divider className="mt-8" />
 
-        {/* 4. Location */}
+        {/* Location Section */}
         <div>
           <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-4">
             Where is it located?
@@ -237,7 +231,7 @@ export function StaysForm() {
           />
         </div>
 
-        {/* 5. Accommodation Type */}
+        {/* Accommodation Type Section */}
         <div>
           <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-4">
             Select accommodation type
@@ -262,71 +256,6 @@ export function StaysForm() {
           />
         </div>
 
-        {/* 6. General Facilities */}
-        <div>
-          <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-2">
-            Fill out general facilities available in your accommodation
-          </h2>
-          <p className="text-[#7A7A7A] font-source-sans-pro text-base font-normal leading-[160%] mb-4">
-            Select the facilities and amenities that your accommodation offers.
-            This helps guests understand what to expect during their stay.
-          </p>
-          <FacilitiesSelector
-            selectedFacilities={selectedFacilities}
-            onAddFacility={handleAddFacility}
-            onRemoveFacility={handleRemoveFacility}
-            onUpdateCache={updateFacilitiesCache}
-            getFacilityDetails={getFacilityDetails}
-            error={errors.facilities?.message}
-            required={true}
-          />
-        </div>
-
-        {/* 7. Available Space (Units) */}
-        <div>
-          <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-2">
-            Available space
-          </h2>
-          <p className="text-[#7A7A7A] font-source-sans-pro text-base font-normal leading-[160%] mb-4">
-            Add the different types of accommodation units available in your property.
-            Each unit can have its own pricing, facilities, and availability.
-          </p>
-          <UnitsManager
-            units={units}
-            onAddUnit={addUnitToStore}
-            onUpdateUnit={updateUnitInStore}
-            onRemoveUnit={removeUnitFromStore}
-            onAddUnitFacility={addFacilityToUnit}
-            onRemoveUnitFacility={removeFacilityFromUnit}
-            onUpdateCache={updateFacilitiesCache}
-            getFacilityDetails={getFacilityDetails}
-            getUnitFacilities={getUnitFacilities}
-            errors={
-              errors.units && Array.isArray(errors.units)
-                ? errors.units.reduce(
-                    (acc: any, error: any, index: number) => {
-                      if (error && accommodationUnits[index]) {
-                        acc[accommodationUnits[index].id] = error;
-                      }
-                      return acc;
-                    },
-                    {}
-                  )
-                : {}
-            }
-          />
-          {errors.units &&
-            typeof errors.units === "object" &&
-            "message" in errors.units && (
-              <p
-                className="text-red-500 text-sm font-source-sans-pro mt-2"
-                role="alert"
-              >
-                {(errors.units as any).message}
-              </p>
-            )}
-        </div>
-
         {/* Action Buttons */}
         <div className="flex items-center justify-center space-x-4 pt-4">
           <Button
@@ -349,5 +278,14 @@ export function StaysForm() {
         </div>
       </form>
     </div>
+  );
+}
+
+// Main component that wraps the useSearchParams component in Suspense
+export function StaysForm(props: StaysFormProps) {
+  return (
+    <Suspense fallback={<div>Loading form...</div>}>
+      <StaysFormContent {...props} />
+    </Suspense>
   );
 }

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-unescaped-entities */
 "use client";
-import React from "react";
+import React, { Suspense } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -120,9 +120,8 @@ export interface EventsFormData {
   isFree: boolean;
 }
 
-
-
-export function EventsForm() {
+// Component that uses useSearchParams
+function EventsFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -277,7 +276,7 @@ export function EventsForm() {
   return (
     <div className="space-y-6">
       {/* Form */}
-      <form  className="space-y-6">
+      <form className="space-y-6">
         {/* First Question */}
         <div>
           <h2 className="text-(--color-dark-slate) font-source-sans-pro text-[20px] font-semibold leading-normal mb-2">
@@ -505,5 +504,14 @@ export function EventsForm() {
         </div>
       </form>
     </div>
+  );
+}
+
+// Main component that wraps the useSearchParams component in Suspense
+export function EventsForm() {
+  return (
+    <Suspense fallback={<div>Loading form...</div>}>
+      <EventsFormContent />
+    </Suspense>
   );
 }

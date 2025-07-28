@@ -1,8 +1,6 @@
 "use client";
 import React from "react";
-import { HeroBanner } from "./hero-banner";
-import { HomeTabs } from "@/components/features/home/home-tab";
-import { FeaturedSection } from "@/components/features/home/feature-section";
+import { HeroBanner, HomeTabs, FeaturedSection } from "@/components/features";
 
 export default function Home() {
   return (

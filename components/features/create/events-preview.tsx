@@ -1,13 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { EventBanner } from "@/components/ui/event-banner";
 import { TicketSalesBadge } from "@/components/ui/ticket-sales-badge";
 import { EventTitle } from "@/components/ui/event-title";
 import { EventDescription } from "@/components/ui/event-description";
 import { EventDateTime } from "@/components/ui/event-date-time";
-import { EventLocation } from "@/components/ui/event-location";
 import { EventDetails } from "@/components/ui/event-details";
 import { EventCategories } from "@/components/ui/event-categories";
 import UserProfileFollowCard from "@/components/ui/user-profile-follow-card";
@@ -20,12 +19,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { StaysLocation } from "@/components/ui/event-location";
 
 interface EventsPreviewProps {
   className?: string;
 }
 
-export function EventsPreview({ className = "" }: EventsPreviewProps) {
+// Component that uses useSearchParams
+function EventsPreviewContent({ className = "" }: EventsPreviewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isCreating, setIsCreating] = useState(false);
@@ -124,7 +125,7 @@ export function EventsPreview({ className = "" }: EventsPreviewProps) {
 
           {/* Location Section */}
           <div className="mb-8">
-            <EventLocation />
+            <StaysLocation />
           </div>
 
           {/* Event Details Section */}
@@ -214,5 +215,14 @@ export function EventsPreview({ className = "" }: EventsPreviewProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+// Main component that wraps the useSearchParams component in Suspense
+export function EventsPreview({ className = "" }: EventsPreviewProps) {
+  return (
+    <Suspense fallback={<div>Loading preview...</div>}>
+      <EventsPreviewContent className={className} />
+    </Suspense>
   );
 }

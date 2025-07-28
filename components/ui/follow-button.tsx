@@ -8,11 +8,11 @@ interface FollowButtonProps {
   className?: string;
 }
 
-export function FollowButton({ 
-  isFollowing, 
-  onToggleFollow, 
+export function FollowButton({
+  isFollowing,
+  onToggleFollow,
   disabled = false,
-  className = "" 
+  className = "",
 }: FollowButtonProps) {
   const handleClick = () => {
     if (!disabled && onToggleFollow) {
@@ -28,21 +28,21 @@ export function FollowButton({
         disabled={disabled}
         className={`transition-all hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
         style={{
-          borderRadius: '51px',
-          border: '1px solid var(--Orange-Red, #FF5B00)',
-          display: 'flex',
-          padding: '4px 8px',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: '15px',
-          background: 'transparent',
-          color: 'var(--Orange-Red, #FF5B00)',
-          fontFamily: '"Source Sans Pro"',
-          fontSize: '14px',
-          fontStyle: 'normal',
+          borderRadius: "51px",
+          border: "1px solid var(--Orange-Red, #FF5B00)",
+          display: "flex",
+          padding: "4px 8px",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: "15px",
+          background: "transparent",
+          color: "var(--Orange-Red, #FF5B00)",
+          fontFamily: "var(--font-source-sans), sans-serif",
+          fontSize: "14px",
+          fontStyle: "normal",
           fontWeight: 600,
-          lineHeight: 'normal',
-          cursor: disabled ? 'not-allowed' : 'pointer'
+          lineHeight: "normal",
+          cursor: disabled ? "not-allowed" : "pointer",
         }}
       >
         Following
@@ -57,21 +57,21 @@ export function FollowButton({
       disabled={disabled}
       className={`transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
       style={{
-        borderRadius: '51px',
-        background: 'var(--Orange-Red, #FF5B00)',
-        display: 'flex',
-        padding: '4px 8px',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '15px',
-        border: 'none',
-        color: '#FFF',
-        fontFamily: '"Source Sans Pro"',
-        fontSize: '14px',
-        fontStyle: 'normal',
+        borderRadius: "51px",
+        background: "var(--Orange-Red, #FF5B00)",
+        display: "flex",
+        padding: "4px 8px",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: "15px",
+        border: "none",
+        color: "#FFF",
+        fontFamily: "var(--font-source-sans), sans-serif",
+        fontSize: "14px",
+        fontStyle: "normal",
         fontWeight: 600,
-        lineHeight: 'normal',
-        cursor: disabled ? 'not-allowed' : 'pointer'
+        lineHeight: "normal",
+        cursor: disabled ? "not-allowed" : "pointer",
       }}
     >
       Follow

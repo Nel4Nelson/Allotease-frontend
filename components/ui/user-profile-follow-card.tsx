@@ -68,7 +68,7 @@ export function UserProfileFollowCard({
           className="text-body font-source-sans-pro text-sm font-normal leading-[142.745%] tracking-[-0.28px]"
           style={{
             color: "#71727A",
-            fontFamily: '"Source Sans Pro"',
+            fontFamily: "var(--font-source-sans), sans-serif",
             fontSize: "14px",
             fontWeight: 400,
             lineHeight: "142.745%",
@@ -93,7 +93,7 @@ export function UserProfileFollowCard({
                 className="text-orange-red font-source-sans-pro text-lg font-semibold leading-normal"
                 style={{
                   color: "#FF5B00",
-                  fontFamily: '"Source Sans Pro"',
+                  fontFamily: "var(--font-source-sans), sans-serif",
                   fontSize: "18px",
                   fontWeight: 600,
                   lineHeight: "normal",

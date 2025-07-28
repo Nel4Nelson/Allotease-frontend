@@ -1,7 +1,6 @@
 import { EventBadge } from "@/components/ui/event-badge";
 import React from "react";
 
-
 interface TicketEventCardProps {
   title: string;
   dateTime: string;
@@ -72,7 +71,7 @@ export function TicketEventCard({
           <p
             style={{
               color: "var(--Body, #71727A)",
-              fontFamily: '"Source Sans Pro"',
+              fontFamily: "var(--font-source-sans), sans-serif",
               fontSize: "16px",
               fontStyle: "normal",
               fontWeight: 400,
@@ -104,7 +103,7 @@ export function TicketEventCard({
             border: "none",
             cursor: "pointer",
             color: "var(--Title, #1F2024)",
-            fontFamily: '"Source Sans Pro"',
+            fontFamily: "var(--font-source-sans), sans-serif",
             fontSize: "14px",
             fontStyle: "normal",
             fontWeight: 500,

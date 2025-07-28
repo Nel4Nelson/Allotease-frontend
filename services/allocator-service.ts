@@ -11,7 +11,7 @@ export interface Allocator {
   avatar: string;
   followingCount: number;
   followersCount: number;
-  isFollowing?: boolean; // Added for UI state
+  isFollowing?: boolean; 
 }
 
 // Followed user interface from the follow endpoint

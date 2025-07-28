@@ -1,13 +1,14 @@
 "use client";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 
 interface BreadcrumbProps {
   className?: string;
 }
 
-export function Breadcrumb({ className = "" }: BreadcrumbProps) {
+// Component that uses useSearchParams
+function BreadcrumbContent({ className = "" }: BreadcrumbProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
@@ -87,5 +88,14 @@ export function Breadcrumb({ className = "" }: BreadcrumbProps) {
         ))}
       </ol>
     </nav>
+  );
+}
+
+// Main component that wraps the useSearchParams component in Suspense
+export function Breadcrumb({ className = "" }: BreadcrumbProps) {
+  return (
+    <Suspense fallback={<div>Loading breadcrumb...</div>}>
+      <BreadcrumbContent className={className} />
+    </Suspense>
   );
 }

@@ -1,5 +1,3 @@
-// components/features/create/stays-form-schema.ts
-
 import { z } from "zod";
 import type { LocationData } from "@/components/ui/location-selector";
 import type { UnitData } from "@/stores/stay-form-store";
