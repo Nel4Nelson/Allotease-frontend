@@ -572,3 +572,77 @@ export function RightArrowIcon({ className = "" }: IconProps) {
     </svg>
   );
 }
+
+export function EyeOpenIcon({ width = 20, height = 21, className }: IconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={width}
+      height={height}
+      viewBox="0 0 20 21"
+      fill="none"
+      className={className}
+    >
+      <path
+        d="M10 4.875C3.75 4.875 1.25 10.5 1.25 10.5C1.25 10.5 3.75 16.125 10 16.125C16.25 16.125 18.75 10.5 18.75 10.5C18.75 10.5 16.25 4.875 10 4.875Z"
+        stroke="currentColor"
+        strokeOpacity="0.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10 13.625C11.7259 13.625 13.125 12.2259 13.125 10.5C13.125 8.77411 11.7259 7.375 10 7.375C8.27411 7.375 6.875 8.77411 6.875 10.5C6.875 12.2259 8.27411 13.625 10 13.625Z"
+        stroke="currentColor"
+        strokeOpacity="0.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function EyeClosedIcon({
+  width = 20,
+  height = 21,
+  className,
+}: IconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={width}
+      height={height}
+      viewBox="0 0 20 21"
+      fill="none"
+      className={className}
+    >
+      <path
+        d="M3.125 3.375L16.875 17.125"
+        stroke="currentColor"
+        strokeOpacity="0.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8.75 8.375C8.4375 8.75 8.25 9.25 8.25 9.75C8.25 11.125 9.375 12.25 10.75 12.25C11.25 12.25 11.75 12.0625 12.125 11.75"
+        stroke="currentColor"
+        strokeOpacity="0.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M6.25 6.25C4.375 7.5 2.5 9.75 2.5 10.5C2.5 10.5 4.375 15.125 10 15.125C11.25 15.125 12.375 14.875 13.375 14.375"
+        stroke="currentColor"
+        strokeOpacity="0.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M15.625 13.125C16.875 11.875 17.5 10.5 17.5 10.5C17.5 10.5 15.625 5.875 10 5.875C9.375 5.875 8.75 6 8.25 6.125"
+        stroke="currentColor"
+        strokeOpacity="0.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}

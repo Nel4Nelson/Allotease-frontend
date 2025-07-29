@@ -30,6 +30,9 @@ export function SignInFlow() {
       footerChildren={footerChildren}
       showBackButton={false}
       onBack={undefined}
+      accountText="Don't have an account?"
+      linkText="Sign Up"
+      linkHref="/signup"
     >
       <SignIn />
     </AuthLayout>

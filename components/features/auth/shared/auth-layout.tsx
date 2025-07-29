@@ -7,6 +7,11 @@ interface AuthLayoutProps {
   footerChildren?: React.ReactNode;
   showBackButton?: boolean;
   onBack?: () => void;
+  // Add AuthFooter customization props
+  accountText?: string;
+  linkText?: string;
+  linkHref?: string;
+  showAccountSection?: boolean;
 }
 
 export function AuthLayout({ 
@@ -14,7 +19,12 @@ export function AuthLayout({
   children, 
   footerChildren,
   showBackButton = true,
-  onBack
+  onBack,
+  // AuthFooter props with defaults
+  accountText = "Already have an account?",
+  linkText = "Sign In",
+  linkHref = "/signin",
+  showAccountSection = true,
 }: AuthLayoutProps) {
   return (
     <div className="auth-background py-10">
@@ -26,7 +36,14 @@ export function AuthLayout({
             onBack={onBack}
           />
           {children}
-          <AuthFooter>{footerChildren}</AuthFooter>
+          <AuthFooter
+            accountText={accountText}
+            linkText={linkText}
+            linkHref={linkHref}
+            showAccountSection={showAccountSection}
+          >
+            {footerChildren}
+          </AuthFooter>
         </div>
       </div>
     </div>
