@@ -19,7 +19,27 @@ export interface Event {
     state?: string;
     address?: string;
   };
+  tags?: string[];
+  agenda?: Array<{
+    _id: string;
+    title: string;
+    description: string;
+    startTime: string;
+    endTime: string;
+  }>;
+  ownerId?: string;
   createdAt: string;
+  updatedAt?: string;
+}
+
+// API response interface for getting single event
+interface GetEventResponse {
+  status: string;
+  message?: string;
+  data: {
+    event: Event;
+    availableCapacity: number;
+  };
 }
 
 // API response interface for getting events
@@ -59,7 +79,23 @@ export class EventService {
   private static readonly ENDPOINTS = {
     CREATE_EVENT: "/events/",
     GET_EVENTS: "/events/",
+    GET_EVENT_BY_ID: "/events/", // Will append ID
   } as const;
+
+  /**
+   * Get single event by ID
+   */
+  static async getEventById(id: string): Promise<GetEventResponse> {
+    try {
+      const url = `${this.ENDPOINTS.GET_EVENT_BY_ID}${id}`;
+      const response = await apiClient.get<GetEventResponse>(url);
+      
+      return response;
+    } catch (error) {
+      console.error("Failed to fetch event:", error);
+      throw error;
+    }
+  }
 
   /**
    * Get all events with pagination and filters

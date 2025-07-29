@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { ContentHeader } from "@/components/ui/content-header";
 import { SectionTitle } from "@/components/ui/section-title";
@@ -18,6 +19,7 @@ interface EventsContentProps {
 }
 
 export function EventsContent({ className = "" }: EventsContentProps) {
+  const router = useRouter();
   const [selectedLocation, setSelectedLocation] = useState("awka-anambra");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
@@ -91,11 +93,9 @@ export function EventsContent({ className = "" }: EventsContentProps) {
     loadEvents(1, false);
   };
 
-  // Handle event card click
+  // Handle event card click - Updated to navigate to the dynamic route
   const handleEventClick = (eventId: string) => {
-    // TODO: Navigate to /events/{eventId}
-    console.log("Navigate to event:", eventId);
-    toast.success(`Event ${eventId} clicked! Navigation coming soon.`);
+    router.push(`/${eventId}?type=events`);
   };
 
   // Show different buttons based on state
@@ -105,7 +105,6 @@ export function EventsContent({ className = "" }: EventsContentProps) {
   return (
     <div className={`space-y-6 ${className}`}>
       <div>
-        {/* Phase 1: Content Header */}
         <ContentHeader
           title={<SectionTitle>Available events in your location</SectionTitle>}
           action={
@@ -128,7 +127,6 @@ export function EventsContent({ className = "" }: EventsContentProps) {
           }
         />
 
-        {/* Phase 2: Location Selector */}
         <VariantSelect
           variant="ghost"
           icon="/icons/location.svg"
