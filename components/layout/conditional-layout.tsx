@@ -17,7 +17,8 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     pathname.startsWith("/signup") ||
     pathname.startsWith("/upgrade") ||
     pathname.startsWith("/email-verification") ||
-    pathname.startsWith("/forgot-password"); // Add any other auth routes
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/about"); 
 
   // If it's an auth route, render minimal layout
   if (isAuthRoute) {
