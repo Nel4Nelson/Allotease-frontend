@@ -9,10 +9,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ReservationStatusBadge } from "../shared/reservation-status-badge";
-import {
- 
-  TransformedReservation,
-} from "@/utils/stay-reservation-transformer";
+import { TransformedReservation } from "@/utils/stay-reservation-transformer";
+import SearchHeader from "../shared/search-header";
 
 // interface StayReservation {
 //   id: string;
@@ -34,6 +32,21 @@ export function StaysReservations({
   reservations,
   loading = false,
 }: StaysReservationsProps) {
+  const handleSearch = (value: string) => {
+    console.log("Searching:", value);
+    // Filter table or API call
+  };
+
+  const handleSortChange = (option: string) => {
+    console.log("Sort changed to:", option);
+    // Sort your data
+  };
+
+  const handleExport = () => {
+    console.log("Exporting table...");
+    // Export logic
+  };
+
   if (loading) {
     return (
       <div className="overflow-x-auto rounded-md bg-[#F2F4F7]/50 border">
@@ -59,6 +72,15 @@ export function StaysReservations({
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
           Recent Reservations
         </h2>
+
+        <SearchHeader
+          onSearch={handleSearch}
+          sortOptions={["Time", "Date", "Price"]}
+          onSortChange={handleSortChange}
+          onExport={handleExport}
+          showSort={true}
+          showExport={true}
+        />
       </div>
 
       <Table className="min-w-full w-full">

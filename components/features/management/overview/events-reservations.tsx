@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Ticket } from "lucide-react";
+import SearchHeader from "../shared/search-header";
 
 interface EventReservation {
   id: string;
@@ -28,7 +29,27 @@ interface EventsReservationsProps {
 export function EventsReservations({
   reservations,
   loading = false,
+  onSearch,
+  onSort,
+  onExport,
 }: EventsReservationsProps) {
+  const handleSortChange = (value: string) => {
+    if (onSort) {
+      onSort(value);
+    }
+  };
+
+  const handleExport = () => {
+    if (onExport) {
+      onExport();
+    }
+  };
+
+  const handleSearch = () => {
+    if (onSearch) {
+    }
+  };
+
   if (loading) {
     return (
       <div className="overflow-x-auto rounded-md bg-[#F2F4F7]/50 border">
@@ -54,6 +75,17 @@ export function EventsReservations({
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
           Recent Reservations
         </h2>
+
+        <div className="p-4">
+          <SearchHeader
+            onSearch={handleSearch}
+            sortOptions={["Time", "Date", "Price"]}
+            onSortChange={handleSortChange}
+            onExport={handleExport}
+            showSort={true}
+            showExport={true}
+          />
+        </div>
       </div>
 
       <Table className="min-w-full w-full">

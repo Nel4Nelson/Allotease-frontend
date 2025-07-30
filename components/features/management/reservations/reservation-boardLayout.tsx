@@ -1,8 +1,7 @@
 "use client";
 
-import { Header2 } from "@/components/ui/header";
 import Image from "next/image";
-import ButtonLink from "./components/ui/ButtonLink";
+import ButtonLink from "../../../../app/manage/reservation/components/ui/ButtonLink";
 
 type DashboardLayoutProps = {
   children: React.ReactNode;
@@ -31,7 +30,7 @@ export default function ReservationboardLayout({
       </div>
 
       <div className="flex items-center justify-between py-8">
-        <Header2 title={headerTitle} />
+        <h2>{headerTitle}</h2>
         <ButtonLink text={buttonText} href={buttonHref} />
       </div>
 

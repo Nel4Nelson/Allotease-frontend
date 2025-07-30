@@ -1,6 +1,6 @@
 import React from "react";
-import ReservationboardLayout from "../ReservationboardLayout";
-import AvailableSpace from "../components/layout/AvailableSpace";
+import ReservationboardLayout from "../../../../components/features/management/reservations/reservation-boardLayout";
+import AvailableSpace from "../../../../components/features/management/reservations/stays/available-space";
 
 export default function StaysPage() {
   return (

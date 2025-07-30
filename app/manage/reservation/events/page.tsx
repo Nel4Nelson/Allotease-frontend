@@ -1,6 +1,6 @@
-import EventPageHero from "@/app/manage/reservation/components/layout/EventPageHero";
+import EventPageHero from "@/components/features/management/reservations/events/EventPageHero";
 import React from "react";
-import ReservationboardLayout from "../../reservation/ReservationboardLayout";
+import ReservationboardLayout from "../../../../components/features/management/reservations/reservation-boardLayout";
 
 export default function EventPage() {
   return (

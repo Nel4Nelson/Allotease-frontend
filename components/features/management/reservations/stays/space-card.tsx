@@ -2,11 +2,21 @@
 "use client";
 
 import React from "react";
-import { Header3 } from "@/components/ui/header";
 import { Button } from "@/components/ui/button";
 import { ArrowUpRight, PencilSimpleLine } from "phosphor-react";
-import { SpaceCardProps } from "@/types";
 
+// Define the type for extra info items
+interface ExtraItem {
+  text: string;
+  icon: React.ElementType;
+}
+interface SpaceCardProps {
+  title: string;
+  spacesLeft: number;
+  price: string;
+  description: string;
+  extraInfo: ExtraItem[];
+}
 
 const SpaceCard: React.FC<SpaceCardProps> = ({
   title,
@@ -19,7 +29,7 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
     <div className="border rounded-xl p-4 shadow-md space-y-6 font-source">
       {/* Header */}
       <div className="flex justify-between items-center mb-2">
-        <Header3 title={title} />
+        <h3>{title}</h3>
         <span className="text-sm md:text-lg text-[#71727A] font-bold">
           {spacesLeft} Spaces left
         </span>

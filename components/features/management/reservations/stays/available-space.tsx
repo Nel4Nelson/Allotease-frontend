@@ -2,9 +2,40 @@
 
 import React, { useState } from "react";
 import { ChevronUp, ChevronDown, Check, Info, Star } from "lucide-react";
-import SpaceCard from "../ui/SpaceCard";
+import SpaceCard from "./space-card";
 // import SearchHeader from "@/app/manage/components/ui/SearchHeader";
 import { StaysReservations } from "@/components/features";
+import SearchHeader from "@/components/features/management/shared/search-header";
+import { TransformedReservation } from "@/utils/stay-reservation-transformer";
+
+type ExtraItem = {
+  text: string;
+  icon: React.ElementType;
+};
+
+export const dummyReservations: TransformedReservation[] = [
+  {
+    id: "RSV-001",
+    guestName: "Jane Doe",
+    roomType: "Deluxe Suite",
+    dates: "2025-08-01 to 2025-08-05",
+    status: "Confirmed",
+  },
+  {
+    id: "RSV-002",
+    guestName: "John Smith",
+    roomType: "Standard Room",
+    dates: "2025-08-10 to 2025-08-12",
+    status: "Pending",
+  },
+  {
+    id: "RSV-003",
+    guestName: "Alice Johnson",
+    roomType: "Executive Room",
+    dates: "2025-08-15 to 2025-08-20",
+    status: "Cancelled",
+  },
+];
 
 const extraInfo: ExtraItem[] = [
   { text: "Extra feature description one.", icon: Check },
@@ -27,7 +58,7 @@ const AvailableSpace = () => {
   };
 
   return (
-    <div className="w-full">
+    <div className="">
       {/* Header toggle */}
       <div
         className="flex items-center justify-between mb-4 w-full cursor-pointer font-source"
@@ -51,6 +82,7 @@ const AvailableSpace = () => {
               sortOptions={["Time", "Date", "Price"]}
               onExport={handleExport}
               showSort={true}
+              showExport={true}
             />
 
             {/* Cards */}
@@ -70,7 +102,7 @@ const AvailableSpace = () => {
 
           {/* Reservation Table */}
           <div className="mt-8">
-            <StaysReservations reservations={} />
+            <StaysReservations reservations={dummyReservations} />
           </div>
         </>
       )}
