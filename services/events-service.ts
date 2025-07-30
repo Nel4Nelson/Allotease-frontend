@@ -19,6 +19,11 @@ export interface Event {
     state?: string;
     address?: string;
   };
+  // Add geoLocation property if your API returns it
+  geoLocation?: {
+    latitude: number;
+    longitude: number;
+  };
   tags?: string[];
   agenda?: Array<{
     _id: string;
@@ -89,7 +94,7 @@ export class EventService {
     try {
       const url = `${this.ENDPOINTS.GET_EVENT_BY_ID}${id}`;
       const response = await apiClient.get<GetEventResponse>(url);
-      
+
       return response;
     } catch (error) {
       console.error("Failed to fetch event:", error);
@@ -100,28 +105,34 @@ export class EventService {
   /**
    * Get all events with pagination and filters
    */
-  static async getAllEvents(params: GetEventsParams = {}): Promise<GetEventsResponse> {
+  static async getAllEvents(
+    params: GetEventsParams = {}
+  ): Promise<GetEventsResponse> {
     try {
       const queryParams = new URLSearchParams();
-      
+
       // Add default params
       queryParams.append("page", (params.page || 1).toString());
       queryParams.append("limit", (params.limit || 6).toString());
-      
+
       // Add optional params
       if (params.query) queryParams.append("query", params.query);
-      if (params.allocatorId) queryParams.append("allocatorId", params.allocatorId);
-      
+      if (params.allocatorId)
+        queryParams.append("allocatorId", params.allocatorId);
+
       // Add any additional params
-      Object.keys(params).forEach(key => {
-        if (!["page", "limit", "query", "allocatorId"].includes(key) && params[key]) {
+      Object.keys(params).forEach((key) => {
+        if (
+          !["page", "limit", "query", "allocatorId"].includes(key) &&
+          params[key]
+        ) {
           queryParams.append(key, params[key].toString());
         }
       });
 
       const url = `${this.ENDPOINTS.GET_EVENTS}?${queryParams.toString()}`;
       const response = await apiClient.get<GetEventsResponse>(url);
-      
+
       return response;
     } catch (error) {
       console.error("Failed to fetch events:", error);
@@ -135,16 +146,18 @@ export class EventService {
   static formatEventDateTime(startTime: string): string {
     try {
       const date = new Date(startTime);
-      const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-      const time = date.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit',
-        hour12: true 
+      const dayName = date.toLocaleDateString("en-US", { weekday: "long" });
+      const time = date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
       });
-      
+
       // Get timezone offset
-      const timeZone = date.toLocaleTimeString('en-US', { timeZoneName: 'short' }).split(' ')[2];
-      
+      const timeZone = date
+        .toLocaleTimeString("en-US", { timeZoneName: "short" })
+        .split(" ")[2];
+
       return `${dayName} • ${time} ${timeZone}`;
     } catch (error) {
       console.error("Error formatting date:", error);
@@ -169,12 +182,14 @@ export class EventService {
   /**
    * Create a new event
    */
-  static async createEvent(formData: EventsFormData): Promise<CreateEventResponse> {
+  static async createEvent(
+    formData: EventsFormData
+  ): Promise<CreateEventResponse> {
     try {
       // Check if backend expects multipart/form-data or JSON
       // Let's try JSON first with manual FormData for image
       const hasImage = formData.image && formData.image.length > 0;
-      
+
       if (hasImage) {
         // Use FormData for image upload
         return this.createEventWithFormData(formData);
@@ -191,22 +206,30 @@ export class EventService {
   /**
    * Create event using FormData (for image uploads)
    */
-  private static async createEventWithFormData(formData: EventsFormData): Promise<CreateEventResponse> {
+  private static async createEventWithFormData(
+    formData: EventsFormData
+  ): Promise<CreateEventResponse> {
     const form = new FormData();
 
     // Add basic fields
     form.append("title", formData.eventTitle);
     form.append("description", formData.eventDescription);
-    
+
     // Map eventType: "venue" -> "physical", "remote" -> "remote"
     const eventType = formData.eventType === "venue" ? "physical" : "remote";
     form.append("eventType", eventType);
 
     // Format dates to ISO strings
     if (formData.eventDate && formData.startTime && formData.endTime) {
-      const startDateTime = this.combineDateTime(formData.eventDate, formData.startTime);
-      const endDateTime = this.combineDateTime(formData.eventDate, formData.endTime);
-      
+      const startDateTime = this.combineDateTime(
+        formData.eventDate,
+        formData.startTime
+      );
+      const endDateTime = this.combineDateTime(
+        formData.eventDate,
+        formData.endTime
+      );
+
       form.append("startTime", startDateTime.toISOString());
       form.append("endTime", endDateTime.toISOString());
     }
@@ -217,9 +240,15 @@ export class EventService {
     // Add agenda items - send each item individually instead of JSON string
     if (formData.agenda && formData.agenda.length > 0) {
       formData.agenda.forEach((item, index) => {
-        const startDateTime = this.combineDateTime(formData.eventDate!, item.startTime);
-        const endDateTime = this.combineDateTime(formData.eventDate!, item.endTime);
-        
+        const startDateTime = this.combineDateTime(
+          formData.eventDate!,
+          item.startTime
+        );
+        const endDateTime = this.combineDateTime(
+          formData.eventDate!,
+          item.endTime
+        );
+
         form.append(`agenda[${index}][title]`, item.title);
         form.append(`agenda[${index}][description]`, item.description);
         form.append(`agenda[${index}][startTime]`, startDateTime.toISOString());
@@ -233,7 +262,7 @@ export class EventService {
       formData.categories.forEach((tag, index) => {
         form.append(`tags[${index}]`, tag);
       });
-      
+
       // Approach 2: Also try as JSON string (some backends prefer this)
       // Uncomment if approach 1 doesn't work:
       // form.append("tags", JSON.stringify(formData.categories));
@@ -264,9 +293,11 @@ export class EventService {
   /**
    * Create event using JSON (fallback)
    */
-  private static async createEventWithJSON(formData: EventsFormData): Promise<CreateEventResponse> {
+  private static async createEventWithJSON(
+    formData: EventsFormData
+  ): Promise<CreateEventResponse> {
     const eventType = formData.eventType === "venue" ? "physical" : "remote";
-    
+
     const payload: any = {
       title: formData.eventTitle,
       description: formData.eventDescription,
@@ -278,20 +309,32 @@ export class EventService {
 
     // Add dates
     if (formData.eventDate && formData.startTime && formData.endTime) {
-      const startDateTime = this.combineDateTime(formData.eventDate, formData.startTime);
-      const endDateTime = this.combineDateTime(formData.eventDate, formData.endTime);
-      
+      const startDateTime = this.combineDateTime(
+        formData.eventDate,
+        formData.startTime
+      );
+      const endDateTime = this.combineDateTime(
+        formData.eventDate,
+        formData.endTime
+      );
+
       payload.startTime = startDateTime.toISOString();
       payload.endTime = endDateTime.toISOString();
     }
 
     // Add agenda
     if (formData.agenda && formData.agenda.length > 0) {
-      payload.agenda = formData.agenda.map(item => ({
+      payload.agenda = formData.agenda.map((item) => ({
         title: item.title,
         description: item.description,
-        startTime: this.combineDateTime(formData.eventDate!, item.startTime).toISOString(),
-        endTime: this.combineDateTime(formData.eventDate!, item.endTime).toISOString(),
+        startTime: this.combineDateTime(
+          formData.eventDate!,
+          item.startTime
+        ).toISOString(),
+        endTime: this.combineDateTime(
+          formData.eventDate!,
+          item.endTime
+        ).toISOString(),
       }));
     }
 
@@ -317,7 +360,7 @@ export class EventService {
    * Helper to combine date and time strings into a Date object
    */
   private static combineDateTime(date: Date, time: string): Date {
-    const [hours, minutes] = time.split(':').map(Number);
+    const [hours, minutes] = time.split(":").map(Number);
     const combined = new Date(date);
     combined.setHours(hours, minutes, 0, 0);
     return combined;
@@ -330,22 +373,31 @@ export class EventService {
     const errors: string[] = [];
 
     if (!formData.eventTitle) errors.push("Event title is required");
-    if (!formData.eventDescription) errors.push("Event description is required");
-    if (!formData.image || formData.image.length === 0) errors.push("Cover image is required");
+    if (!formData.eventDescription)
+      errors.push("Event description is required");
+    if (!formData.image || formData.image.length === 0)
+      errors.push("Cover image is required");
     if (!formData.eventDate) errors.push("Event date is required");
     if (!formData.startTime) errors.push("Start time is required");
     if (!formData.endTime) errors.push("End time is required");
-    if (!formData.categories || formData.categories.length === 0) errors.push("At least one category is required");
-    if (!formData.capacity || formData.capacity <= 0) errors.push("Event capacity is required");
-    if (!formData.agenda || formData.agenda.length === 0) errors.push("At least one agenda item is required");
+    if (!formData.categories || formData.categories.length === 0)
+      errors.push("At least one category is required");
+    if (!formData.capacity || formData.capacity <= 0)
+      errors.push("Event capacity is required");
+    if (!formData.agenda || formData.agenda.length === 0)
+      errors.push("At least one agenda item is required");
 
     // Validate agenda items
     if (formData.agenda) {
       formData.agenda.forEach((item, index) => {
-        if (!item.title) errors.push(`Agenda item ${index + 1}: Title is required`);
-        if (!item.description) errors.push(`Agenda item ${index + 1}: Description is required`);
-        if (!item.startTime) errors.push(`Agenda item ${index + 1}: Start time is required`);
-        if (!item.endTime) errors.push(`Agenda item ${index + 1}: End time is required`);
+        if (!item.title)
+          errors.push(`Agenda item ${index + 1}: Title is required`);
+        if (!item.description)
+          errors.push(`Agenda item ${index + 1}: Description is required`);
+        if (!item.startTime)
+          errors.push(`Agenda item ${index + 1}: Start time is required`);
+        if (!item.endTime)
+          errors.push(`Agenda item ${index + 1}: End time is required`);
       });
     }
 
@@ -354,10 +406,12 @@ export class EventService {
       if (!formData.location) {
         errors.push("Location is required for venue events");
       } else {
-        if (!formData.location.address) errors.push("Event address is required");
+        if (!formData.location.address)
+          errors.push("Event address is required");
         if (!formData.location.city) errors.push("Event city is required");
         if (!formData.location.state) errors.push("Event state is required");
-        if (!formData.location.country) errors.push("Event country is required");
+        if (!formData.location.country)
+          errors.push("Event country is required");
       }
     }
 

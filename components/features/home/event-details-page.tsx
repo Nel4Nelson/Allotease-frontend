@@ -4,9 +4,15 @@ import React, { useState, useEffect } from "react";
 import { EventDetailsBanner } from "@/components/ui/event-details/event-details-banner";
 import { EventDetailsTicketSalesBadge } from "@/components/ui/event-details/event-details-ticket-sales-badge";
 import { EventDetailsTitle } from "@/components/ui/event-details/event-details-title";
-import { EventDetailsDescription } from "@/components/ui/event-details/event-details-description";
 import { EventDetailsDateTime } from "@/components/ui/event-details/event-details-date-time";
 import { EventService, Event } from "@/services/events-service";
+import { EventDetailsLocation } from "@/components/ui/event-details/event-details-location";
+import { EventDetailsDescription } from "@/components/ui/event-details/event-details-description";
+import { EventDetailsEventDetails } from "@/components/ui/event-details/event-details-event-details";
+import { EventDetailsCategories } from "@/components/ui/event-details/event-details-categories";
+import { EventDetailsOrganizer } from "@/components/ui/event-details/event-details-organizer";
+import { EventDetailsOtherEvents } from "@/components/ui/event-details/event-details-other-events";
+import { EventDetailsRegistrationCard } from "@/components/ui/event-details/event-details-registration-card";
 
 interface EventDetailsPageProps {
   id: string;
@@ -162,61 +168,40 @@ export function EventDetailsPage({
 
           {/* Location Section */}
           <div className="mb-8">
-            {/* Location component will go here */}
-            <div className="bg-blue-50 rounded-lg p-4">
-              <h3 className="text-xl font-bold mb-2">Location</h3>
-              <p className="text-gray-600">Location component coming soon...</p>
-            </div>
+            <EventDetailsLocation
+              eventType={event.eventType}
+              location={event.location}
+            />
           </div>
 
           {/* Event Details Section */}
           <div className="mb-8">
-            {/* Event Details component will go here */}
-            <div className="bg-green-50 rounded-lg p-4">
-              <h3 className="text-xl font-bold mb-2">Event Details</h3>
-              <p className="text-gray-600">
-                Event details component coming soon...
-              </p>
-            </div>
+            <EventDetailsEventDetails agenda={event.agenda} />
           </div>
 
           {/* Categories Section */}
           <div className="mb-8">
-            {/* Categories component will go here */}
-            <div className="bg-purple-50 rounded-lg p-4">
-              <h3 className="text-xl font-bold mb-2">Categories</h3>
-              <p className="text-gray-600">
-                Categories component coming soon...
-              </p>
-            </div>
+            <EventDetailsCategories tags={event.tags} />
           </div>
 
           {/* Follow card Section */}
           <div className="mb-8">
-            {/* UserProfileFollowCard will go here */}
-            <div className="bg-orange-50 rounded-lg p-4">
-              <h3 className="text-xl font-bold mb-2">Organizer</h3>
-              <p className="text-gray-600">
-                Follow card component coming soon...
-              </p>
-            </div>
+            <EventDetailsOrganizer ownerId={event.ownerId} />
           </div>
         </div>
 
         {/* Right Column - Registration Sidebar (remaining space ≈ 35.2% ≈ 4 cols out of 12) */}
         <div className="col-span-4">
           {/* Registration Card */}
-          <div className="sticky top-8">
-            {/* Registration content will go here */}
-            <div className="bg-gray-100 rounded-lg p-6">
-              <h3 className="text-lg font-semibold mb-4">Register for Event</h3>
-              <p className="text-gray-600 text-sm">
-                Registration form will be implemented here.
-              </p>
-            </div>
-          </div>
+          <EventDetailsRegistrationCard
+            event={event}
+            availableCapacity={state.availableCapacity}
+          />
         </div>
       </div>
+
+      {/* Other Events Section - Full Width Below Grid */}
+      <EventDetailsOtherEvents currentEventId={event._id} />
     </div>
   );
 }
