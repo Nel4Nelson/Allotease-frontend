@@ -38,15 +38,15 @@ export function StatsSection({ stats, loading = false }: StatsSectionProps) {
         {stats.map((stat, index) => (
           <div
             key={index}
-            className="rounded-2xl p-4 border border-gray-100 shadow-sm transition hover:shadow-md bg-gradient-to-br from-green-100/30 via-white/20 to-white/10 backdrop-blur-md"
+            className="rounded-2xl p-2 px-5 w-[160px] border border-[#8AAEA433] shadow-xs transition backdrop-blur-sm hover:bg-fancy-gradient"
           >
-            <h3 className="text-sm font-medium text-gray-600">{stat.title}</h3>
+            <h3 className="font-semibold text-[#71727A]">{stat.title}</h3>
 
             <div className="flex justify-between items-center mt-2">
               <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
               <span
-                className={`text-sm font-semibold ${
-                  stat.trend === "down" ? "text-red-600" : "text-green-600"
+                className={`text-sm font-semibold bg-[#8AAEA433] py-1 px-3 rounded-sm ${
+                  stat.trend === "down" ? "text-red-600" : "text-[#1F3A3A]"
                 }`}
               >
                 {stat.percentage}

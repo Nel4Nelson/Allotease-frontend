@@ -101,24 +101,24 @@ export function OverviewPage({ onWithdraw }: OverviewPageProps) {
         </div>
       )}
 
-      {/* Stats Section */}
-      <StatsSection
-        stats={getCurrentStats()}
-        loading={
-          (activeTab === "stays" && (stayStatsLoading || !stayStats)) ||
-          (activeTab === "events" && (eventStatsLoading || !eventStats))
-        }
-      />
-
       {/* Reservations Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 max-w-[400px]">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="pt-10 ">
+        <TabsList className="grid w-full grid-cols-3 max-w-[265px] text-[18px]">
           <TabsTrigger value="stays">Stays</TabsTrigger>
           <TabsTrigger value="events">Events</TabsTrigger>
           <TabsTrigger value="parking">Car Parks</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="stays" className="mt-6">
+        {/* Stats Section */}
+        <StatsSection
+          stats={getCurrentStats()}
+          loading={
+            (activeTab === "stays" && (stayStatsLoading || !stayStats)) ||
+            (activeTab === "events" && (eventStatsLoading || !eventStats))
+          }
+        />
+
+        <TabsContent value="stays" className="">
           {stayReservationsError ? (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-600 text-sm">
@@ -136,7 +136,7 @@ export function OverviewPage({ onWithdraw }: OverviewPageProps) {
           )}
         </TabsContent>
 
-        <TabsContent value="events" className="mt-6">
+        <TabsContent value="events">
           {eventReservationsError ? (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-600 text-sm">

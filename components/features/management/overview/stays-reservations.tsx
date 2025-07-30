@@ -69,7 +69,8 @@ export function StaysReservations({
   return (
     <div className="overflow-x-auto rounded-md bg-[#F2F4F7]/50 border">
       <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <h2 className="text-xl font-bold text-[#1F2024] mb-6">
+          {" "}
           Recent Reservations
         </h2>
 

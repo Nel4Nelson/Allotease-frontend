@@ -454,3 +454,13 @@
 .form-input:-webkit-autofill {
   transition: background-color 5000s ease-in-out 0s;
 }
+
+@layer utilities {
+  .hover\:bg-fancy-gradient:hover {
+    background: linear-gradient(
+      5.96deg,
+      rgba(22, 244, 118, 0.08) 33.76%,
+      rgba(255, 255, 255, 0.08) 56.29%
+    );
+  }
+}
