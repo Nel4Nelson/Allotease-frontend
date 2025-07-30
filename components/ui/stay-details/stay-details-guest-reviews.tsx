@@ -2,24 +2,20 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
-import {
-  EventService,
-  Event,
-  GetEventsParams,
-} from "@/services/events-service";
-import { EventCard } from "@/components/ui/event-card";
+import { RatingService, Review } from "@/services/rating-service";
+import { ReviewCard } from "@/components/ui/review-card";
 import { LeftArrowIcon, RightArrowIcon } from "@/components/icons";
 
-interface EventDetailsOtherEventsProps {
-  currentEventId: string;
+interface StayDetailsGuestReviewsProps {
+  ownerId: string;
   className?: string;
 }
 
-export function EventDetailsOtherEvents({
-  currentEventId,
+export function StayDetailsGuestReviews({
+  ownerId,
   className = "",
-}: EventDetailsOtherEventsProps) {
-  const [events, setEvents] = useState<Event[]>([]);
+}: StayDetailsGuestReviewsProps) {
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,58 +58,50 @@ export function EventDetailsOtherEvents({
     emblaApi.on("reInit", onSelect);
   }, [emblaApi, onSelect]);
 
-  // Load other events
-  const loadOtherEvents = async () => {
+  // Load reviews
+  const loadReviews = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const params: GetEventsParams = {
+      const response = await RatingService.getReviewsByAllocator(ownerId, {
         page: 1,
-        limit: 10, // Get more events to filter out current one
-      };
-
-      const response = await EventService.getAllEvents(params);
+        limit: 10, // Get up to 10 reviews for the carousel
+      });
 
       if (response.status === "success") {
-        // Filter out the current event and take first 6
-        const otherEvents = response.data.items
-          .filter((event) => event._id !== currentEventId)
-          .slice(0, 6);
-
-        setEvents(otherEvents);
+        // Sort reviews by newest first
+        const sortedReviews = RatingService.sortReviews(
+          response.data.reviews,
+          "newest"
+        );
+        setReviews(sortedReviews);
       } else {
-        setError("Failed to load other events");
+        setError("Failed to load reviews");
       }
     } catch (error) {
-      console.error("Failed to load other events:", error);
-      setError("Failed to load other events");
+      console.error("Failed to load reviews:", error);
+      setError("Failed to load reviews");
     } finally {
       setLoading(false);
     }
   };
 
-  // Load events on mount
+  // Load reviews on mount
   useEffect(() => {
-    if (currentEventId) {
-      loadOtherEvents();
+    if (ownerId) {
+      loadReviews();
     }
-  }, [currentEventId]);
+  }, [ownerId]);
 
-  // Handle event card click
-  const handleEventClick = (eventId: string) => {
-    // Navigate to the event details page
-    window.location.href = `/${eventId}?type=events`;
-  };
-
-  // Don't render if loading or no events
+  // Don't render if loading or no reviews
   if (loading) {
     return (
-      <div className={`py-12 ${className}`}>
+      <div className={`my-8 ${className}`}>
         <div className="mb-8">
           <h2
             style={{
-              color: "var(--Title, #1F2024)",
+              color: "#1F2024",
               fontFamily: "var(--font-space-grotesk), sans-serif",
               fontSize: "28px",
               fontStyle: "normal",
@@ -124,13 +112,12 @@ export function EventDetailsOtherEvents({
               marginBottom: "8px",
             }}
           >
-            Other events you may like
+            Guest Reviews
           </h2>
           <p
             style={{
-              color: "var(--Body, #71727A)",
+              color: "#71727A",
               fontFamily: "var(--font-source-sans), sans-serif",
-
               fontSize: "16px",
               fontStyle: "normal",
               fontWeight: 400,
@@ -139,11 +126,10 @@ export function EventDetailsOtherEvents({
               margin: 0,
             }}
           >
-            Get to know the peers in the room. An interactive activity to get
-            conversations going before we head into lunch.
+            Hear what others think of the place.
           </p>
         </div>
-        <div className="flex gap-6">
+        <div className="mt-4 flex gap-6">
           {Array(3)
             .fill(0)
             .map((_, index) => (
@@ -152,11 +138,35 @@ export function EventDetailsOtherEvents({
                 className="flex-none animate-pulse"
                 style={{ width: "300px" }}
               >
-                <div className="bg-gray-200 rounded-[24px] h-[176px] mb-2" />
-                <div className="bg-gray-200 h-4 rounded mb-2" />
-                <div className="bg-gray-200 h-4 rounded w-2/3 mb-2" />
-                <div className="bg-gray-200 h-6 rounded w-16 mb-2" />
-                <div className="bg-gray-200 h-4 rounded w-3/4" />
+                <div
+                  className="bg-gray-200 rounded-[12px] p-4"
+                  style={{ height: "180px" }}
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-gray-300 rounded-full" />
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-300 rounded mb-1 w-24" />
+                      <div className="h-3 bg-gray-300 rounded w-16" />
+                    </div>
+                  </div>
+                  <div className="flex justify-center mb-4">
+                    <div className="flex gap-1">
+                      {Array(5)
+                        .fill(0)
+                        .map((_, i) => (
+                          <div
+                            key={i}
+                            className="w-4 h-4 bg-gray-300 rounded"
+                          />
+                        ))}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-3 bg-gray-300 rounded" />
+                    <div className="h-3 bg-gray-300 rounded w-3/4" />
+                    <div className="h-3 bg-gray-300 rounded w-1/2" />
+                  </div>
+                </div>
               </div>
             ))}
         </div>
@@ -164,17 +174,17 @@ export function EventDetailsOtherEvents({
     );
   }
 
-  if (error || events.length === 0) {
-    return null; // Don't show section if there are no other events
+  if (error || reviews.length === 0) {
+    return null; // Don't show section if there are no reviews
   }
 
   return (
-    <section className={`py-12 ${className}`}>
+    <section className={`my-10 ${className}`}>
       {/* Header */}
-      <div className="mb-8">
+      <div>
         <h2
           style={{
-            color: "var(--Title, #1F2024)",
+            color: "#1F2024",
             fontFamily: "var(--font-space-grotesk), sans-serif",
             fontSize: "28px",
             fontStyle: "normal",
@@ -185,11 +195,11 @@ export function EventDetailsOtherEvents({
             marginBottom: "8px",
           }}
         >
-          Other events you may like
+          Guest Reviews
         </h2>
         <p
           style={{
-            color: "var(--Body, #71727A)",
+            color: "#71727A",
             fontFamily: "var(--font-source-sans), sans-serif",
             fontSize: "16px",
             fontStyle: "normal",
@@ -199,13 +209,12 @@ export function EventDetailsOtherEvents({
             margin: 0,
           }}
         >
-          Get to know the peers in the room. An interactive activity to get
-          conversations going before we head into lunch.
+          Hear what others think of the place.
         </p>
       </div>
 
       {/* Carousel */}
-      <div className="relative">
+      <div className="relative mt-4">
         {/* Left Navigation */}
         <button
           onClick={scrollPrev}
@@ -213,7 +222,7 @@ export function EventDetailsOtherEvents({
           className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 transition-all hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
             borderRadius: "51px",
-            border: "1px solid var(--Orange-Red, #FF5B00)",
+            border: "1px solid #FF5B00",
             display: "flex",
             padding: "12px",
             justifyContent: "center",
@@ -229,21 +238,13 @@ export function EventDetailsOtherEvents({
         {/* Carousel Container */}
         <div className="overflow-hidden w-full" ref={emblaRef}>
           <div className="flex gap-6">
-            {events.map((event) => (
+            {reviews.map((review) => (
               <div
-                key={event._id}
+                key={review._id}
                 className="flex-none"
                 style={{ width: "300px" }}
               >
-                <EventCard
-                  title={event.title}
-                  dateTime={EventService.formatEventDateTime(event.startTime)}
-                  imageUrl={EventService.getEventCoverImage(event)}
-                  badgeText={EventService.formatEventPrice(event.price)}
-                  organizerName="Flend Worldwide"
-                  followerCount="117.5K Followers"
-                  onClick={() => handleEventClick(event._id)}
-                />
+                <ReviewCard review={review} />
               </div>
             ))}
           </div>
@@ -256,7 +257,7 @@ export function EventDetailsOtherEvents({
           className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 transition-all hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
             borderRadius: "51px",
-            border: "1px solid var(--Orange-Red, #FF5B00)",
+            border: "1px solid #FF5B00",
             display: "flex",
             padding: "12px",
             justifyContent: "center",

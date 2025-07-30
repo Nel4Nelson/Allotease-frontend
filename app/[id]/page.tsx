@@ -2,6 +2,7 @@
 import { useSearchParams } from 'next/navigation';
 import { Suspense, use } from 'react';
 import { EventDetailsPage } from '@/components/features/home/event-details-page';
+import { StayDetailsPage } from '@/components/features/home/stay-details-page';
 
 interface DynamicPageProps {
   params: Promise<{
@@ -24,19 +25,7 @@ function DynamicPageContent({ id }: { id: string }) {
   if (type === 'stays') {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-4">Stay Details</h1>
-          <p className="text-lg text-gray-600 mb-6">Stay ID: {id}</p>
-          
-          {/* Placeholder content - you can replace this with your actual stay details component */}
-          <div className="bg-blue-50 rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">Accommodation Information</h2>
-            <p className="text-gray-700">
-              This is where your stay/accommodation details will be displayed. 
-              You can fetch the stay data using the ID: <code className="bg-gray-200 px-2 py-1 rounded">{id}</code>
-            </p>
-          </div>
-        </div>
+         <StayDetailsPage id={id} />
       </div>
     );
   }

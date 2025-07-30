@@ -283,11 +283,11 @@
 
 /* Typography classes*/
 .font-space-grotesk {
-  font-family: var(--font-space-grotesk), sans-serif; /* Updated */
+  font-family: var(--font-space-grotesk), sans-serif; 
 }
 
 .font-source-sans-pro {
-  font-family: var(--font-source-sans), sans-serif; /* Updated */
+  font-family: var(--font-source-sans), sans-serif;
 }
 
 /* Custom Utilities for Complex Shadows (Tailwind can't handle these) */

@@ -14,7 +14,7 @@ export function BusinessName({ name, className = "" }: BusinessNameProps) {
         color: "var(--Title, #1F2024)",
         textOverflow: "ellipsis",
         whiteSpace: "nowrap",
-        fontFamily: '"Space Grotesk"',
+        fontFamily: "var(--font-space-grotesk), sans-serif",
         fontSize: "14px",
         fontStyle: "normal",
         fontWeight: 700,

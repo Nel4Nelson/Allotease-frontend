@@ -133,7 +133,7 @@ export function EventDetailsRegistrationCard({
             style={{
               color: "#1F2024",
               textAlign: "center",
-              fontFamily: '"Space Grotesk", sans-serif',
+              fontFamily: "var(--font-space-grotesk), sans-serif",
               fontSize: "20px",
               fontWeight: 700,
               lineHeight: "28px", // 140% of 20px
@@ -243,7 +243,8 @@ export function EventDetailsRegistrationCard({
                   justifyContent: "center",
                   alignItems: "center",
                   background: "transparent",
-                  cursor: quantity >= availableCapacity ? "not-allowed" : "pointer",
+                  cursor:
+                    quantity >= availableCapacity ? "not-allowed" : "pointer",
                   opacity: quantity >= availableCapacity ? 0.5 : 1,
                   padding: 0,
                 }}

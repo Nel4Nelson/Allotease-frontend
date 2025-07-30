@@ -58,7 +58,8 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
   // Refresh follow status without reloading all data
   const refreshFollowStatus = async () => {
     try {
-      const updatedAllocators = await AllocatorService.updateAllocatorsFollowStatus(allocators);
+      const updatedAllocators =
+        await AllocatorService.updateAllocatorsFollowStatus(allocators);
       setAllocators(updatedAllocators);
     } catch (error) {
       console.error("Failed to refresh follow status:", error);
@@ -79,17 +80,17 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [allocators]);
 
   // Handle follow/unfollow with optimistic updates and error recovery
   const handleFollowClick = async (allocatorId: string) => {
     // Find the current allocator
-    const currentAllocator = allocators.find(a => a._id === allocatorId);
+    const currentAllocator = allocators.find((a) => a._id === allocatorId);
     if (!currentAllocator) return;
 
     // Optimistic update
@@ -110,7 +111,11 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
     try {
       await AllocatorService.followUser(allocatorId);
       // Success - optimistic update was correct
-      console.log(`Successfully ${currentAllocator.isFollowing ? 'unfollowed' : 'followed'} ${currentAllocator.firstname}`);
+      console.log(
+        `Successfully ${
+          currentAllocator.isFollowing ? "unfollowed" : "followed"
+        } ${currentAllocator.firstname}`
+      );
     } catch (error) {
       console.error("Failed to follow/unfollow:", error);
 
@@ -149,7 +154,7 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
           <h2
             style={{
               color: "var(--System-Teal, #1F3A3A)",
-              fontFamily: '"Space Grotesk"',
+              fontFamily: "var(--font-space-grotesk), sans-serif",
               fontSize: "28px",
               fontStyle: "normal",
               fontWeight: 700,
@@ -166,7 +171,7 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
           <p
             style={{
               color: "var(--Body, #71727A)",
-              fontFamily: 'var(--font-source-sans), sans-serif',
+              fontFamily: "var(--font-source-sans), sans-serif",
               fontSize: "16px",
               fontStyle: "normal",
               fontWeight: 400,
@@ -192,7 +197,9 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
         ) : (
           // Carousel with real data
           <AllocationAdminCarousel
-            profiles={allocators.map(allocator => AllocatorService.mapToProfile(allocator))}
+            profiles={allocators.map((allocator) =>
+              AllocatorService.mapToProfile(allocator)
+            )}
             onFollowClick={handleFollowClick}
             onLoadMore={handleLoadMore}
             hasMore={hasNextPage}

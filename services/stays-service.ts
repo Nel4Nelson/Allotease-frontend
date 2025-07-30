@@ -15,9 +15,46 @@ export interface Stay {
     state: string;
     country: string;
   };
+  geoLocation: {
+    type: string;
+    coordinates: [number, number]; // [longitude, latitude]
+  };
   facilities: string[];
   images: string[];
   ownerId: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+// Stay Unit interface
+export interface StayUnit {
+  _id: string;
+  title: string;
+  description: string;
+  price: number;
+  frequency: string;
+  quantity: number;
+  totalBooked: number;
+  facilities: string[];
+  ownerId: string;
+}
+
+// Stay Facility interface (resolved from facilities IDs)
+export interface StayFacility {
+  _id: string;
+  name: string;
+  icon: string;
+}
+
+// Single stay response interface
+export interface GetStayByIdResponse {
+  status: string;
+  data: {
+    stay: Stay;
+    stayFacilities: StayFacility[];
+    stayUnits: StayUnit[];
+  };
 }
 
 // API response interface for getting stays
@@ -92,8 +129,25 @@ export class StaysService {
     SEARCH_FACILITIES: "/facilities/",
     CREATE_STAY: "/stays/",
     GET_STAYS: "/stays/",
+    GET_STAY_BY_ID: "/stays/", // Will append ID
     DELETE_STAY: "/stays/", // Will append ID
   } as const;
+
+  /**
+   * Get stay by ID with full details
+   */
+  static async getStayById(id: string): Promise<GetStayByIdResponse> {
+    try {
+      const response = await apiClient.get<GetStayByIdResponse>(
+        `${this.ENDPOINTS.GET_STAY_BY_ID}${id}`
+      );
+      
+      return response;
+    } catch (error) {
+      console.error(`Failed to fetch stay with ID ${id}:`, error);
+      throw error;
+    }
+  }
 
   /**
    * Get all stays with pagination and filters
@@ -183,6 +237,33 @@ export class StaysService {
     };
     
     return typeMap[type.toLowerCase()] || type;
+  }
+
+  /**
+   * Format unit price for display
+   */
+  static formatUnitPrice(unit: StayUnit): string {
+    const formatter = new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN'
+    });
+    
+    return `${formatter.format(unit.price)} per ${unit.frequency}`;
+  }
+
+  /**
+   * Get availability status for unit
+   */
+  static getUnitAvailability(unit: StayUnit): { available: number; status: 'available' | 'limited' | 'unavailable' } {
+    const available = unit.quantity - unit.totalBooked;
+    
+    if (available <= 0) {
+      return { available: 0, status: 'unavailable' };
+    } else if (available <= 5) {
+      return { available, status: 'limited' };
+    } else {
+      return { available, status: 'available' };
+    }
   }
 
   /**

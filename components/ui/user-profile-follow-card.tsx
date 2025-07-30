@@ -49,7 +49,7 @@ export function UserProfileFollowCard({
             className="text-title font-space-grotesk text-lg font-bold leading-[140%] tracking-[-0.36px]"
             style={{
               color: "#1F2024",
-              fontFamily: '"Space Grotesk"',
+              fontFamily: "var(--font-space-grotesk), sans-serif",
               fontSize: "18px",
               fontWeight: 700,
               lineHeight: "140%",

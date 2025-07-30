@@ -78,7 +78,7 @@ export function TicketEventsContent({
           <h2
             style={{
               color: "var(--Title, #1F2024)",
-              fontFamily: '"Space Grotesk"',
+              fontFamily: "var(--font-space-grotesk), sans-serif",
               fontSize: "24px",
               fontStyle: "normal",
               fontWeight: 700,
@@ -128,7 +128,7 @@ export function TicketEventsContent({
           <h2
             style={{
               color: "var(--Title, #1F2024)",
-              fontFamily: '"Space Grotesk"',
+              fontFamily: "var(--font-space-grotesk), sans-serif",
               fontSize: "24px",
               fontStyle: "normal",
               fontWeight: 700,

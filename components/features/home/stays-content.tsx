@@ -8,12 +8,14 @@ import { VariantSelect } from "@/components/ui/variant-select";
 import { StayCard } from "@/components/ui/stays-card";
 import { Button } from "@/components/ui/button";
 import { StaysService, Stay, GetStaysParams } from "@/services/stays-service";
+import { useRouter } from "next/navigation";
 
 interface StaysContentProps {
   className?: string;
 }
 
 export function StaysContent({ className = "" }: StaysContentProps) {
+   const router = useRouter();
   const [selectedLocation, setSelectedLocation] = useState("awka-anambra");
   const [selectedType, setSelectedType] = useState("all");
 
@@ -32,7 +34,8 @@ export function StaysContent({ className = "" }: StaysContentProps) {
       const params: GetStaysParams = {
         page,
         limit: 6,
-        ...(selectedType && selectedType !== "all" && { accommodationType: selectedType }),
+        ...(selectedType &&
+          selectedType !== "all" && { accommodationType: selectedType }),
       };
 
       const response = await StaysService.getAllStays(params);
@@ -88,9 +91,7 @@ export function StaysContent({ className = "" }: StaysContentProps) {
 
   // Handle stay card click
   const handleStayClick = (stayId: string) => {
-    // TODO: Navigate to /stays/{stayId}
-    console.log("Navigate to stay:", stayId);
-    toast.success(`Stay ${stayId} clicked! Navigation coming soon.`);
+    router.push(`/${stayId}?type=stays`);
   };
 
   // Show different buttons based on state
@@ -140,11 +141,11 @@ export function StaysContent({ className = "" }: StaysContentProps) {
       </div>
 
       {/* Phase 3: Stays Cards */}
-      <div 
+      <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '24px'
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: "24px",
         }}
         className="w-full"
       >
@@ -173,7 +174,9 @@ export function StaysContent({ className = "" }: StaysContentProps) {
       {!loading && stays.length === 0 && !isInitialLoad && (
         <div className="flex flex-col items-center py-12 text-center">
           <div className="text-gray-500 mb-2">No accommodations found</div>
-          <div className="text-sm text-gray-400">Try adjusting your filters</div>
+          <div className="text-sm text-gray-400">
+            Try adjusting your filters
+          </div>
         </div>
       )}
 

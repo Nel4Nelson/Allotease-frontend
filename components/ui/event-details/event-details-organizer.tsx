@@ -10,7 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { FallbackImage } from "@/components/ui/fallback-image"; // Import your FallbackImage component
+import { FallbackImage } from "@/components/ui/fallback-image";
 import { apiClient } from "@/services/api-client";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -53,15 +53,23 @@ interface FollowStatusResponse {
 interface EventDetailsOrganizerProps {
   ownerId?: string;
   className?: string;
+  showTitle?: boolean; // New prop to control title display
+  title?: string; // New prop to customize title text
 }
 
 export function EventDetailsOrganizer({
   ownerId,
   className = "",
+  showTitle = true, // Default to true for backward compatibility
+  title = "Organizer", // Default title
 }: EventDetailsOrganizerProps) {
   const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading, checkTokenExpiry } = useAuthStore();
-  
+  const {
+    isAuthenticated,
+    isLoading: authLoading,
+    checkTokenExpiry,
+  } = useAuthStore();
+
   const [organizer, setOrganizer] = useState<Organizer | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -80,8 +88,14 @@ export function EventDetailsOrganizer({
         `/users/allocators/?allocatorId=${ownerId}`
       );
 
-      if (response.status === "success" && response.data.items.length > 0) {
-        setOrganizer(response.data.items[0]); // Get the first item from the array
+      if (response.status === "success") {
+        if (response.data.items.length > 0) {
+          setOrganizer(response.data.items[0]);
+        } else {
+          // Handle empty array case - not an error, just no organizer found
+          setOrganizer(null);
+          setError(null); // Don't set error for empty results
+        }
       } else {
         setError("Failed to load organizer information");
       }
@@ -95,35 +109,34 @@ export function EventDetailsOrganizer({
   const checkFollowStatus = async () => {
     if (!isAuthenticated || !ownerId) return;
 
-    // Verify token is still valid before making API call
     if (!checkTokenExpiry()) {
       return;
     }
 
     try {
-      const response = await apiClient.get<FollowStatusResponse>("/users/follow/");
-      
+      const response = await apiClient.get<FollowStatusResponse>(
+        "/users/follow/"
+      );
+
       if (response.status === "success" && Array.isArray(response.data)) {
-        // Check if the current organizer is in the followed users list
-        const isFollowingUser = response.data.some(user => user._id === ownerId);
+        const isFollowingUser = response.data.some(
+          (user) => user._id === ownerId
+        );
         setIsFollowing(isFollowingUser);
       }
     } catch (error) {
       console.error("Error checking follow status:", error);
-      // Don't set error state for follow status check failure
-      setIsFollowing(false); // Default to not following on error
+      setIsFollowing(false);
     }
   };
 
   // Handle follow/unfollow
   const handleFollowToggle = async () => {
     if (!isAuthenticated) {
-      // Navigate to sign in
       router.push("/signin");
       return;
     }
 
-    // Verify token is still valid before making API call
     if (!checkTokenExpiry()) {
       router.push("/signin");
       return;
@@ -134,29 +147,34 @@ export function EventDetailsOrganizer({
     setFollowLoading(true);
     try {
       if (isFollowing) {
-        // Unfollow
         await apiClient.delete(`/users/follow/${organizer._id}`);
         setIsFollowing(false);
-        // Update the local organizer data to reflect the follower count change
-        setOrganizer(prev => prev ? {
-          ...prev,
-          followersCount: (prev.followersCount || 0) > 0 ? (prev.followersCount || 0) - 1 : 0
-        } : null);
+        setOrganizer((prev) =>
+          prev
+            ? {
+                ...prev,
+                followersCount:
+                  (prev.followersCount || 0) > 0
+                    ? (prev.followersCount || 0) - 1
+                    : 0,
+              }
+            : null
+        );
       } else {
-        // Follow
         await apiClient.post(`/users/follow/${organizer._id}`);
         setIsFollowing(true);
-        // Update the local organizer data to reflect the follower count change
-        setOrganizer(prev => prev ? {
-          ...prev,
-          followersCount: (prev.followersCount || 0) + 1
-        } : null);
+        setOrganizer((prev) =>
+          prev
+            ? {
+                ...prev,
+                followersCount: (prev.followersCount || 0) + 1,
+              }
+            : null
+        );
       }
     } catch (error) {
       console.error("Error toggling follow status:", error);
-      // Revert the follow status on error
       setIsFollowing(!isFollowing);
-      // Optionally show a toast or error message
     } finally {
       setFollowLoading(false);
     }
@@ -164,18 +182,17 @@ export function EventDetailsOrganizer({
 
   useEffect(() => {
     const loadData = async () => {
-      // Wait for auth store to finish loading/rehydrating
       if (authLoading) {
         return;
       }
 
       setLoading(true);
       await fetchOrganizer();
-      
+
       if (isAuthenticated) {
         await checkFollowStatus();
       }
-      
+
       setLoading(false);
     };
 
@@ -186,9 +203,11 @@ export function EventDetailsOrganizer({
   if (authLoading || loading) {
     return (
       <div className={className}>
-        <h3 className="text-[var(--Title,#1F2024)] font-space-grotesk text-xl font-bold leading-[140%] tracking-[-0.4px] mb-4">
-          Organizer
-        </h3>
+        {showTitle && (
+          <h3 className="text-[var(--Title,#1F2024)] font-space-grotesk text-xl font-bold leading-[140%] tracking-[-0.4px] mb-4">
+            {title}
+          </h3>
+        )}
         <div className="flex w-full p-5 justify-center items-center gap-7 rounded-2xl border animate-pulse">
           <div className="w-12 h-12 rounded-full bg-gray-200"></div>
           <div className="flex-1">
@@ -201,16 +220,36 @@ export function EventDetailsOrganizer({
     );
   }
 
-  // Error or no organizer data
-  if (error || !organizer) {
+  // Handle API error (not empty results)
+  if (error) {
     return (
       <div className={className}>
-        <h3 className="text-[var(--Title,#1F2024)] font-space-grotesk text-xl font-bold leading-[140%] tracking-[-0.4px] mb-4">
-          Organizer
-        </h3>
+        {showTitle && (
+          <h3 className="text-[var(--Title,#1F2024)] font-space-grotesk text-xl font-bold leading-[140%] tracking-[-0.4px] mb-4">
+            {title}
+          </h3>
+        )}
         <div className="text-center py-6">
           <p className="text-[var(--body-text,#6B7280)] font-source-sans-pro text-base font-normal leading-[142.745%] tracking-[-0.32px]">
-            {error || "No organizer information available for this event."}
+            {error}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle no organizer found (empty array from API)
+  if (!organizer) {
+    return (
+      <div className={className}>
+        {showTitle && (
+          <h3 className="text-[var(--Title,#1F2024)] font-space-grotesk text-xl font-bold leading-[140%] tracking-[-0.4px] mb-4">
+            {title}
+          </h3>
+        )}
+        <div className="text-center py-6">
+          <p className="text-[var(--body-text,#6B7280)] font-source-sans-pro text-base font-normal leading-[142.745%] tracking-[-0.32px]">
+            No organizer information available.
           </p>
         </div>
       </div>
@@ -238,16 +277,18 @@ export function EventDetailsOrganizer({
   };
 
   const getTooltipText = () => {
-    if (!isAuthenticated) return "Sign in to follow organizers";
+    if (!isAuthenticated) return "Sign in to follow";
     if (isFollowing) return "Click to unfollow";
     return "Click to follow";
   };
 
   return (
     <div className={className}>
-      <h3 className="text-[var(--Title,#1F2024)] font-space-grotesk text-xl font-bold leading-[140%] tracking-[-0.4px] mb-4">
-        Organizer
-      </h3>
+      {showTitle && (
+        <h3 className="text-[var(--Title,#1F2024)] font-space-grotesk text-xl font-bold leading-[140%] tracking-[-0.4px] mb-4">
+          {title}
+        </h3>
+      )}
 
       <TooltipProvider>
         <div
@@ -262,7 +303,9 @@ export function EventDetailsOrganizer({
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full overflow-hidden">
               <FallbackImage
-                src={organizer.avatar || "/icons/encircle-star-orange-avatar.svg"}
+                src={
+                  organizer.avatar || "/icons/encircle-star-orange-avatar.svg"
+                }
                 fallbackSrc="/icons/encircle-star-orange-avatar.svg"
                 alt={`${getDisplayName(organizer)} avatar`}
                 fallbackAlt={`${getDisplayName(organizer)} default avatar`}
@@ -276,7 +319,7 @@ export function EventDetailsOrganizer({
               className="text-title font-space-grotesk text-lg font-bold leading-[140%] tracking-[-0.36px]"
               style={{
                 color: "#1F2024",
-                fontFamily: '"Space Grotesk"',
+                fontFamily: "var(--font-space-grotesk), sans-serif",
                 fontSize: "18px",
                 fontWeight: 700,
                 lineHeight: "140%",
@@ -287,7 +330,7 @@ export function EventDetailsOrganizer({
             </h4>
           </div>
 
-          {/* Spacer - flex-1 pushes the followers and button to the right */}
+          {/* Spacer */}
           <div className="flex-1" />
 
           {/* Followers Count */}
@@ -315,10 +358,16 @@ export function EventDetailsOrganizer({
                   isFollowing
                     ? "border-gray-400 bg-gray-100"
                     : "border-orange-red"
-                } ${followLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                } ${
+                  followLoading
+                    ? "opacity-50 cursor-not-allowed"
+                    : "cursor-pointer"
+                }`}
                 style={{
                   borderRadius: "51px",
-                  border: isFollowing ? "1px solid #9CA3AF" : "1px solid #FF5B00",
+                  border: isFollowing
+                    ? "1px solid #9CA3AF"
+                    : "1px solid #FF5B00",
                   padding: "6px 12px",
                   backgroundColor: isFollowing ? "#F3F4F6" : "transparent",
                 }}

@@ -3,23 +3,23 @@
 import React, { useState, useEffect, useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import {
-  EventService,
-  Event,
-  GetEventsParams,
-} from "@/services/events-service";
-import { EventCard } from "@/components/ui/event-card";
+  StaysService,
+  Stay,
+  GetStaysParams,
+} from "@/services/stays-service";
 import { LeftArrowIcon, RightArrowIcon } from "@/components/icons";
+import { StayCard } from "../stays-card";
 
-interface EventDetailsOtherEventsProps {
-  currentEventId: string;
+interface StayDetailsOtherStaysProps {
+  currentStayId: string;
   className?: string;
 }
 
-export function EventDetailsOtherEvents({
-  currentEventId,
+export function StayDetailsOtherStays({
+  currentStayId,
   className = "",
-}: EventDetailsOtherEventsProps) {
-  const [events, setEvents] = useState<Event[]>([]);
+}: StayDetailsOtherStaysProps) {
+  const [stays, setStays] = useState<Stay[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,58 +62,70 @@ export function EventDetailsOtherEvents({
     emblaApi.on("reInit", onSelect);
   }, [emblaApi, onSelect]);
 
-  // Load other events
-  const loadOtherEvents = async () => {
+  // Load other stays
+  const loadOtherStays = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const params: GetEventsParams = {
+      const params: GetStaysParams = {
         page: 1,
-        limit: 10, // Get more events to filter out current one
+        limit: 10, // Get more stays to filter out current one
       };
 
-      const response = await EventService.getAllEvents(params);
+      const response = await StaysService.getAllStays(params);
 
       if (response.status === "success") {
-        // Filter out the current event and take first 6
-        const otherEvents = response.data.items
-          .filter((event) => event._id !== currentEventId)
+        // Filter out the current stay and take first 6
+        const otherStays = response.data.items
+          .filter((stay) => stay._id !== currentStayId)
           .slice(0, 6);
 
-        setEvents(otherEvents);
+        setStays(otherStays);
       } else {
-        setError("Failed to load other events");
+        setError("Failed to load other stays");
       }
     } catch (error) {
-      console.error("Failed to load other events:", error);
-      setError("Failed to load other events");
+      console.error("Failed to load other stays:", error);
+      setError("Failed to load other stays");
     } finally {
       setLoading(false);
     }
   };
 
-  // Load events on mount
+  // Load stays on mount
   useEffect(() => {
-    if (currentEventId) {
-      loadOtherEvents();
+    if (currentStayId) {
+      loadOtherStays();
     }
-  }, [currentEventId]);
+  }, [currentStayId]);
 
-  // Handle event card click
-  const handleEventClick = (eventId: string) => {
-    // Navigate to the event details page
-    window.location.href = `/${eventId}?type=events`;
+  // Handle stay card click
+  const handleStayClick = (stayId: string) => {
+    // Navigate to the stay details page
+    window.location.href = `/${stayId}?type=stays`;
   };
 
-  // Don't render if loading or no events
+  // Format stay data for StayCard props
+  const formatStayForCard = (stay: Stay) => {
+    return {
+      title: stay.title,
+      location: StaysService.formatStayLocation(stay.location),
+      rating: StaysService.getMockRating(), // Using mock rating as per existing service
+      reviewCount: StaysService.getMockReviewCount(), // Using mock review count
+      description: stay.description,
+      imageUrl: StaysService.getStayBannerImage(stay),
+    };
+  };
+
+  // Don't render if loading
   if (loading) {
     return (
-      <div className={`py-12 ${className}`}>
-        <div className="mb-8">
+      <div className={`my-8 ${className}`}>
+        <div>
           <h2
             style={{
-              color: "var(--Title, #1F2024)",
+              color: "#1F2024",
               fontFamily: "var(--font-space-grotesk), sans-serif",
               fontSize: "28px",
               fontStyle: "normal",
@@ -124,13 +136,12 @@ export function EventDetailsOtherEvents({
               marginBottom: "8px",
             }}
           >
-            Other events you may like
+            Other stays you may like
           </h2>
           <p
             style={{
-              color: "var(--Body, #71727A)",
+              color: "#71727A",
               fontFamily: "var(--font-source-sans), sans-serif",
-
               fontSize: "16px",
               fontStyle: "normal",
               fontWeight: 400,
@@ -139,8 +150,7 @@ export function EventDetailsOtherEvents({
               margin: 0,
             }}
           >
-            Get to know the peers in the room. An interactive activity to get
-            conversations going before we head into lunch.
+            Suggestions based on browse history.
           </p>
         </div>
         <div className="flex gap-6">
@@ -153,10 +163,18 @@ export function EventDetailsOtherEvents({
                 style={{ width: "300px" }}
               >
                 <div className="bg-gray-200 rounded-[24px] h-[176px] mb-2" />
-                <div className="bg-gray-200 h-4 rounded mb-2" />
-                <div className="bg-gray-200 h-4 rounded w-2/3 mb-2" />
-                <div className="bg-gray-200 h-6 rounded w-16 mb-2" />
-                <div className="bg-gray-200 h-4 rounded w-3/4" />
+                <div className="bg-gray-200 h-5 rounded mb-2 w-48" />
+                <div className="bg-gray-200 h-4 rounded mb-4 w-32" />
+                <div className="w-full h-px bg-gray-200 mb-4" />
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="bg-gray-200 h-6 rounded-xl w-12" />
+                  <div className="bg-gray-200 h-4 rounded w-20" />
+                </div>
+                <div className="space-y-2 mb-4">
+                  <div className="bg-gray-200 h-4 rounded" />
+                  <div className="bg-gray-200 h-4 rounded w-3/4" />
+                </div>
+                <div className="bg-gray-200 h-10 rounded-[51px]" />
               </div>
             ))}
         </div>
@@ -164,17 +182,17 @@ export function EventDetailsOtherEvents({
     );
   }
 
-  if (error || events.length === 0) {
-    return null; // Don't show section if there are no other events
+  if (error || stays.length === 0) {
+    return null; // Don't show section if there are no other stays
   }
 
   return (
-    <section className={`py-12 ${className}`}>
+    <section className={`my-10 ${className}`}>
       {/* Header */}
-      <div className="mb-8">
+      <div>
         <h2
           style={{
-            color: "var(--Title, #1F2024)",
+            color: "#1F2024",
             fontFamily: "var(--font-space-grotesk), sans-serif",
             fontSize: "28px",
             fontStyle: "normal",
@@ -185,11 +203,11 @@ export function EventDetailsOtherEvents({
             marginBottom: "8px",
           }}
         >
-          Other events you may like
+          Other stays you may like
         </h2>
         <p
           style={{
-            color: "var(--Body, #71727A)",
+            color: "#71727A",
             fontFamily: "var(--font-source-sans), sans-serif",
             fontSize: "16px",
             fontStyle: "normal",
@@ -199,8 +217,7 @@ export function EventDetailsOtherEvents({
             margin: 0,
           }}
         >
-          Get to know the peers in the room. An interactive activity to get
-          conversations going before we head into lunch.
+          Suggestions based on browse history.
         </p>
       </div>
 
@@ -213,7 +230,7 @@ export function EventDetailsOtherEvents({
           className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 transition-all hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
             borderRadius: "51px",
-            border: "1px solid var(--Orange-Red, #FF5B00)",
+            border: "1px solid #FF5B00",
             display: "flex",
             padding: "12px",
             justifyContent: "center",
@@ -227,25 +244,23 @@ export function EventDetailsOtherEvents({
         </button>
 
         {/* Carousel Container */}
-        <div className="overflow-hidden w-full" ref={emblaRef}>
+        <div className="overflow-hidden w-full mt-4" ref={emblaRef}>
           <div className="flex gap-6">
-            {events.map((event) => (
-              <div
-                key={event._id}
-                className="flex-none"
-                style={{ width: "300px" }}
-              >
-                <EventCard
-                  title={event.title}
-                  dateTime={EventService.formatEventDateTime(event.startTime)}
-                  imageUrl={EventService.getEventCoverImage(event)}
-                  badgeText={EventService.formatEventPrice(event.price)}
-                  organizerName="Flend Worldwide"
-                  followerCount="117.5K Followers"
-                  onClick={() => handleEventClick(event._id)}
-                />
-              </div>
-            ))}
+            {stays.map((stay) => {
+              const stayCardProps = formatStayForCard(stay);
+              return (
+                <div
+                  key={stay._id}
+                  className="flex-none"
+                  style={{ width: "300px" }}
+                >
+                  <StayCard
+                    {...stayCardProps}
+                    onClick={() => handleStayClick(stay._id)}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -256,7 +271,7 @@ export function EventDetailsOtherEvents({
           className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 transition-all hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
             borderRadius: "51px",
-            border: "1px solid var(--Orange-Red, #FF5B00)",
+            border: "1px solid #FF5B00",
             display: "flex",
             padding: "12px",
             justifyContent: "center",

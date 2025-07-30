@@ -194,7 +194,7 @@ export function EventRegistrationModal({
             <h3
               style={{
                 color: "#1F2024",
-                fontFamily: '"Space Grotesk", sans-serif',
+                fontFamily: "var(--font-space-grotesk), sans-serif",
                 fontSize: "18px",
                 fontWeight: 700,
                 lineHeight: "140%",
@@ -221,7 +221,7 @@ export function EventRegistrationModal({
                 <span
                   style={{
                     color: "#20232A",
-                    fontFamily: '"Source Sans Pro", sans-serif',
+                    fontFamily: "var(--font-source-sans), sans-serif",
                     fontSize: "14px",
                     fontWeight: 400,
                     lineHeight: "160%",
@@ -232,7 +232,7 @@ export function EventRegistrationModal({
                 <span
                   style={{
                     color: "#20232A",
-                    fontFamily: '"Source Sans Pro", sans-serif',
+                    fontFamily: "var(--font-source-sans), sans-serif",
                     fontSize: "14px",
                     fontWeight: 400,
                     lineHeight: "160%",
@@ -247,7 +247,7 @@ export function EventRegistrationModal({
                 <span
                   style={{
                     color: "#20232A",
-                    fontFamily: '"Source Sans Pro", sans-serif',
+                    fontFamily: "var(--font-source-sans), sans-serif",
                     fontSize: "16px",
                     fontWeight: 600,
                     lineHeight: "normal",
@@ -258,7 +258,7 @@ export function EventRegistrationModal({
                 <span
                   style={{
                     color: "#20232A",
-                    fontFamily: '"Source Sans Pro", sans-serif',
+                    fontFamily: "var(--font-source-sans), sans-serif",
                     fontSize: "16px",
                     fontWeight: 600,
                     lineHeight: "normal",
@@ -278,7 +278,7 @@ export function EventRegistrationModal({
             <h2
               style={{
                 color: "#1F2024",
-                fontFamily: '"Space Grotesk", sans-serif',
+                fontFamily: "var(--font-space-grotesk), sans-serif",
                 fontSize: "20px",
                 fontWeight: 700,
                 lineHeight: "140%",
@@ -347,7 +347,7 @@ export function EventRegistrationModal({
               <p
                 style={{
                   color: "#71727A",
-                  fontFamily: '"Source Sans Pro", sans-serif',
+                  fontFamily: "var(--font-source-sans), sans-serif",
                   fontSize: "12px",
                   fontWeight: 400,
                   lineHeight: "160%",
@@ -370,7 +370,7 @@ export function EventRegistrationModal({
               <p
                 style={{
                   color: "#71727A",
-                  fontFamily: '"Source Sans Pro", sans-serif',
+                  fontFamily: "var(--font-source-sans), sans-serif",
                   fontSize: "12px",
                   fontWeight: 400,
                   lineHeight: "160%",

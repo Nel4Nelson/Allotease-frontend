@@ -10,7 +10,7 @@ export function SectionTitle({ children, className = "" }: SectionTitleProps) {
     <h2
       className={`text-[28px] font-bold leading-[110%] tracking-[-0.56px] text-[var(--Title,#1F2024)] ${className}`}
       style={{
-        fontFamily: '"Space Grotesk"',
+        fontFamily: "var(--font-space-grotesk), sans-serif",
         color: "var(--Title, #1F2024)",
         fontSize: "28px",
         fontStyle: "normal",

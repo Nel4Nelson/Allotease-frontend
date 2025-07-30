@@ -26,7 +26,7 @@ export function ReviewBadge({ rating, className = "" }: ReviewBadgeProps) {
       <span
         style={{
           color: "#F2F4F7",
-          fontFamily: '"Space Grotesk"',
+          fontFamily: "var(--font-space-grotesk), sans-serif",
           fontSize: "12px",
           fontStyle: "normal",
           fontWeight: 700,
