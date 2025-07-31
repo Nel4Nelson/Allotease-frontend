@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef, useState } from "react";
-import { useStaysFormStore } from "@/stores/stay-form-store";
 
 const LocationIcon = () => (
   <svg
@@ -23,7 +22,7 @@ const LocationIcon = () => (
       strokeLinejoin="round"
     />
     <path
-      d="M5.07814 4.84375L4.37501 6.5C4.31377 6.64704 4.31097 6.81191 4.3672 6.96094L5.26564 9.35156C5.30075 9.45121 5.36085 9.54017 5.44019 9.60993C5.51953 9.67969 5.61545 9.72792 5.71876 9.75L7.39064 10.1094C7.48343 10.1281 7.57058 10.1683 7.64516 10.2266C7.71975 10.2849 7.77972 10.3598 7.82033 10.4453L8.1172 11.0625C8.16995 11.1669 8.25025 11.2548 8.34941 11.3168C8.44856 11.3787 8.56278 11.4124 8.6797 11.4141H9.73439"
+      d="M5.07814 4.84375L4.37501 6.5C4.31377 6.64704 4.31097 6.81191 4.3672 6.96094L5.26564 9.35156C5.30075 9.45121 5.36085 9.54017 5.44019 9.60993C5.51953 9.67969 5.61545 9.72792 5.71876 9.75L7.39064 10.1094C7.48343 10.1281 7.57058 10.1683 7.64516 10.2266C7.71975 10.2849 7.77972 10.3598 7.82033 10.4453L8.1172 11.0625C8.16995 11.1669 8.25025 11.2548 8.34941 11.3168C8.44856 11.3787 8.56276 11.4124 8.6797 11.4141H9.73439"
       stroke="#1F3A3A"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -37,12 +36,27 @@ const LocationIcon = () => (
   </svg>
 );
 
-interface EventLocationProps {
+interface EventDetailsLocationProps {
+  eventType: "remote" | "physical";
+  location?: {
+    country: string;
+    city?: string;
+    state?: string;
+    address?: string;
+  };
+  geoLocation?: {
+    type: "Point";
+    coordinates: [number, number]; // [longitude, latitude]
+  };
   className?: string;
 }
 
-export function EventLocation({ className = "" }: EventLocationProps) {
-  const { formData } = useStaysFormStore();
+export function EventDetailsLocation({
+  eventType,
+  location,
+  geoLocation,
+  className = "",
+}: EventDetailsLocationProps) {
   const [mounted, setMounted] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [mapboxgl, setMapboxgl] = useState<any>(null);
@@ -87,9 +101,12 @@ export function EventLocation({ className = "" }: EventLocationProps) {
     };
   }, [mounted]);
 
-  // Initialize Mapbox for accommodation locations
+  // Initialize Mapbox for event locations
   useEffect(() => {
     if (!mounted || !mapRef.current || !isOnline || !mapboxgl) return;
+
+    // Only initialize map for physical events
+    if (eventType !== "physical") return;
 
     try {
       mapboxgl.accessToken =
@@ -110,12 +127,35 @@ export function EventLocation({ className = "" }: EventLocationProps) {
         "top-right"
       );
 
-      // If location exists, center map and add marker
-      if (formData.location && formData.location.address) {
+      // Use coordinates if provided, otherwise geocode address
+      if (
+        geoLocation &&
+        geoLocation.coordinates &&
+        geoLocation.coordinates.length === 2
+      ) {
+        const [lng, lat] = geoLocation.coordinates;
+
+        // Center map on coordinates
+        mapInstance.current.flyTo({
+          center: [lng, lat],
+          zoom: 14,
+        });
+
+        // Add marker
+        if (markerRef.current) {
+          markerRef.current.remove();
+        }
+
+        markerRef.current = new mapboxgl.Marker({
+          color: "#FF5722",
+        })
+          .setLngLat([lng, lat])
+          .addTo(mapInstance.current);
+      } else if (location && location.address) {
         // Geocode the address to get coordinates
         const geocodeAddress = async () => {
           try {
-            const query = `${formData.location?.address}, ${formData.location?.city}, ${formData.location?.state}`;
+            const query = `${location.address}, ${location.city}, ${location.state}`;
             const response = await fetch(
               `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
                 query
@@ -163,17 +203,71 @@ export function EventLocation({ className = "" }: EventLocationProps) {
         markerRef.current = null;
       }
     };
-  }, [mounted, isOnline, mapboxgl, formData.location]);
+  }, [mounted, isOnline, mapboxgl, eventType, location, geoLocation]);
 
   // Don't render until mounted
   if (!mounted) {
     return <div className={className}>Loading location...</div>;
   }
 
-  // Handle accommodation location display
-  const location = formData.location;
+  // Handle event location display based on event type
   const hasLocation = location && location.address;
 
+  // For remote events, show different content
+  if (eventType === "remote") {
+    return (
+      <div className={className}>
+        {/* Section Title */}
+        <h3 className="text-[var(--Title,#1F2024)] font-space-grotesk text-xl font-bold leading-[140%] tracking-[-0.4px] mb-4">
+          Location
+        </h3>
+
+        {/* Remote Event Info */}
+        <div className="flex items-start gap-3 mb-4">
+          <div className="mt-[1px]">
+            <LocationIcon />
+          </div>
+          <div>
+            <div className="text-[var(--Title,#1F2024)] font-source-sans-pro text-base font-semibold leading-[142.745%] tracking-[-0.32px]">
+              Online Event
+            </div>
+            <div className="text-[var(--Body,#71727A)] font-source-sans-pro text-base font-normal leading-[142.745%] tracking-[-0.32px] mt-1">
+              Join from anywhere with an internet connection
+            </div>
+          </div>
+        </div>
+
+        {/* Remote Event Card with neutral gray colors */}
+        <div className="w-full max-w-[565px] h-[198px] rounded-[24px] bg-[#D9D9D9] border border-gray-300 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-8 h-8 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+            <p className="text-gray-800 font-semibold text-lg mb-2">
+              Online Event
+            </p>
+            <p className="text-gray-600 text-sm">
+              Access details will be provided after registration
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // For physical events, show location and map
   return (
     <div className={className}>
       {/* Section Title */}
@@ -195,14 +289,16 @@ export function EventLocation({ className = "" }: EventLocationProps) {
               </div>
               {/* City, State (Secondary) */}
               <div className="text-[var(--Body,#71727A)] font-source-sans-pro text-base font-normal leading-[142.745%] tracking-[-0.32px] mt-1">
-                {location.city}, {location.state}, {location.country}
+                {location.city && location.state
+                  ? `${location.city}, ${location.state}, ${location.country}`
+                  : location.country}
               </div>
             </>
           ) : (
             <>
               {/* Placeholder */}
               <div className="text-gray-400 font-source-sans-pro text-base font-semibold leading-[142.745%] tracking-[-0.32px]">
-                Accommodation Address
+                Event Address
               </div>
               <div className="text-gray-400 font-source-sans-pro text-base font-normal leading-[142.745%] tracking-[-0.32px] mt-1">
                 City, State, Country will appear here

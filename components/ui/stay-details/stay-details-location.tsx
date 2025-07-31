@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef, useState } from "react";
-import { useStaysFormStore } from "@/stores/stay-form-store";
+import type { Stay } from "@/services/stays-service";
 
 const LocationIcon = () => (
   <svg
@@ -37,12 +37,15 @@ const LocationIcon = () => (
   </svg>
 );
 
-interface EventLocationProps {
+interface StayDetailsLocationProps {
+  stay: Stay;
   className?: string;
 }
 
-export function EventLocation({ className = "" }: EventLocationProps) {
-  const { formData } = useStaysFormStore();
+export function StayDetailsLocation({
+  stay,
+  className = "",
+}: StayDetailsLocationProps) {
   const [mounted, setMounted] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [mapboxgl, setMapboxgl] = useState<any>(null);
@@ -87,35 +90,46 @@ export function EventLocation({ className = "" }: EventLocationProps) {
     };
   }, [mounted]);
 
-  // Initialize Mapbox for accommodation locations
+  // Initialize Mapbox for stay location
   useEffect(() => {
     if (!mounted || !mapRef.current || !isOnline || !mapboxgl) return;
 
-    try {
-      mapboxgl.accessToken =
-        process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "your_mapbox_token_here";
+    const initializeMap = async () => {
+      try {
+        mapboxgl.accessToken =
+          process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ||
+          "your_mapbox_token_here";
 
-      mapInstance.current = new mapboxgl.Map({
-        container: mapRef.current,
-        style: "mapbox://styles/mapbox/streets-v11",
-        center: [7.4951, 9.0579], // Nigeria coordinates
-        zoom: 6,
-        attributionControl: false,
-        interactive: true, // Allow zoom/pan
-      });
+        mapInstance.current = new mapboxgl.Map({
+          container: mapRef.current,
+          style: "mapbox://styles/mapbox/streets-v11",
+          center: [7.4951, 9.0579], // Default Nigeria coordinates
+          zoom: 6,
+          attributionControl: false,
+          interactive: true,
+        });
 
-      // Add navigation control
-      mapInstance.current.addControl(
-        new mapboxgl.NavigationControl(),
-        "top-right"
-      );
+        // Add navigation control
+        mapInstance.current.addControl(
+          new mapboxgl.NavigationControl(),
+          "top-right"
+        );
 
-      // If location exists, center map and add marker
-      if (formData.location && formData.location.address) {
-        // Geocode the address to get coordinates
-        const geocodeAddress = async () => {
+        // Get coordinates - priority: geoLocation > geocode address
+        let coordinates: [number, number] | null = null;
+
+        // Check if we have stored coordinates
+        if (
+          stay.geoLocation &&
+          stay.geoLocation.coordinates &&
+          stay.geoLocation.coordinates.length === 2
+        ) {
+          const [lng, lat] = stay.geoLocation.coordinates;
+          coordinates = [lng, lat];
+        } else if (stay.location && stay.location.address) {
+          // Fallback: Geocode the address
           try {
-            const query = `${formData.location?.address}, ${formData.location?.city}, ${formData.location?.state}`;
+            const query = `${stay.location.address}, ${stay.location.city}, ${stay.location.state}`;
             const response = await fetch(
               `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
                 query
@@ -125,34 +139,37 @@ export function EventLocation({ className = "" }: EventLocationProps) {
 
             if (data.features && data.features.length > 0) {
               const [lng, lat] = data.features[0].center;
-
-              // Center map on location
-              mapInstance.current.flyTo({
-                center: [lng, lat],
-                zoom: 14,
-              });
-
-              // Add marker
-              if (markerRef.current) {
-                markerRef.current.remove();
-              }
-
-              markerRef.current = new mapboxgl.Marker({
-                color: "#FF5722",
-              })
-                .setLngLat([lng, lat])
-                .addTo(mapInstance.current);
+              coordinates = [lng, lat];
             }
           } catch (error) {
             console.error("Geocoding error:", error);
           }
-        };
+        }
 
-        geocodeAddress();
+        // If we have coordinates, center map and add marker
+        if (coordinates) {
+          mapInstance.current.flyTo({
+            center: coordinates,
+            zoom: 14,
+          });
+
+          // Add marker
+          if (markerRef.current) {
+            markerRef.current.remove();
+          }
+
+          markerRef.current = new mapboxgl.Marker({
+            color: "#FF5722",
+          })
+            .setLngLat(coordinates)
+            .addTo(mapInstance.current);
+        }
+      } catch (error) {
+        console.error("Mapbox initialization error:", error);
       }
-    } catch (error) {
-      console.error("Mapbox initialization error:", error);
-    }
+    };
+
+    initializeMap();
 
     return () => {
       if (mapInstance.current) {
@@ -163,15 +180,14 @@ export function EventLocation({ className = "" }: EventLocationProps) {
         markerRef.current = null;
       }
     };
-  }, [mounted, isOnline, mapboxgl, formData.location]);
+  }, [mounted, isOnline, mapboxgl, stay]);
 
   // Don't render until mounted
   if (!mounted) {
     return <div className={className}>Loading location...</div>;
   }
 
-  // Handle accommodation location display
-  const location = formData.location;
+  const location = stay.location;
   const hasLocation = location && location.address;
 
   return (
@@ -193,19 +209,19 @@ export function EventLocation({ className = "" }: EventLocationProps) {
               <div className="text-[var(--Title,#1F2024)] font-source-sans-pro text-base font-semibold leading-[142.745%] tracking-[-0.32px]">
                 {location.address}
               </div>
-              {/* City, State (Secondary) */}
+              {/* City, State, Country (Secondary) */}
               <div className="text-[var(--Body,#71727A)] font-source-sans-pro text-base font-normal leading-[142.745%] tracking-[-0.32px] mt-1">
                 {location.city}, {location.state}, {location.country}
               </div>
             </>
           ) : (
             <>
-              {/* Placeholder */}
+              {/* No location available */}
               <div className="text-gray-400 font-source-sans-pro text-base font-semibold leading-[142.745%] tracking-[-0.32px]">
-                Accommodation Address
+                Location not available
               </div>
               <div className="text-gray-400 font-source-sans-pro text-base font-normal leading-[142.745%] tracking-[-0.32px] mt-1">
-                City, State, Country will appear here
+                Address information not provided
               </div>
             </>
           )}

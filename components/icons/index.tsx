@@ -646,3 +646,66 @@ export function EyeClosedIcon({
     </svg>
   );
 }
+
+export const PlusIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+  >
+    <path
+      d="M16.4167 10H3.58341"
+      stroke="#1F2024"
+      strokeWidth="0.777778"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10 16.416V3.58268"
+      stroke="#1F2024"
+      strokeWidth="0.777778"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+// Check Icon Component
+export const CheckIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+  >
+    <path
+      d="M16.4165 5.91699L8.24984 14.0837L4.1665 10.0003"
+      stroke="#15BA6B"
+      strokeWidth="0.777778"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+// Minus Icon Component
+export const MinusIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+  >
+    <path
+      d="M16.4167 10H3.58341"
+      stroke="#1F2024"
+      strokeWidth="0.777778"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);

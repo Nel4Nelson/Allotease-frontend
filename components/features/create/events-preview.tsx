@@ -19,7 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { StaysLocation } from "@/components/ui/event-location";
+import { EventLocation } from "@/components/ui/event-location";
 
 interface EventsPreviewProps {
   className?: string;
@@ -125,7 +125,7 @@ function EventsPreviewContent({ className = "" }: EventsPreviewProps) {
 
           {/* Location Section */}
           <div className="mb-8">
-            <StaysLocation />
+            <EventLocation />
           </div>
 
           {/* Event Details Section */}
@@ -203,7 +203,6 @@ function EventsPreviewContent({ className = "" }: EventsPreviewProps) {
               </Tooltip>
             </TooltipProvider>
           </div>
-          
         </div>
 
         {/* Right Column - Registration Sidebar (remaining space ≈ 35.2% ≈ 4 cols out of 12) */}

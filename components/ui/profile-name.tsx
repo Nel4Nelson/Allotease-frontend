@@ -12,7 +12,7 @@ export function ProfileName({ name, className = "" }: ProfileNameProps) {
       <h1
         style={{
           color: "var(--Title, #1F2024)",
-          fontFamily: '"Space Grotesk"',
+          fontFamily: "var(--font-space-grotesk), sans-serif",
           fontSize: "20px",
           fontStyle: "normal",
           fontWeight: 700,

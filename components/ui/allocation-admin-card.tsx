@@ -71,7 +71,7 @@ export function AllocationAdminCard({
       <h3
         style={{
           color: "var(--Title, #1F2024)",
-          fontFamily: '"Space Grotesk"',
+          fontFamily: "var(--font-space-grotesk), sans-serif",
           fontSize: "18px",
           fontStyle: "normal",
           fontWeight: 700,
