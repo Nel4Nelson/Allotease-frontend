@@ -1,21 +1,40 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Image from "next/image";
 import Link from "next/link";
+import toast from "react-hot-toast";
 import { FormInput } from "@/components/ui/form-input";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 import { Event, EventService } from "@/services/events-service";
+import { useEventBookingStore } from "@/stores/event-booking-store";
+import { apiClient } from "@/services/api-client";
 
 interface EventRegistrationModalProps {
   isOpen: boolean;
   onClose: () => void;
   event: Event;
-  quantity: number;
   className?: string;
+}
+
+interface EventBookingResponse {
+  message: string;
+  data: string; // Paystack URL
+  status: string;
+  expiresIn: number;
+  timeoutInSeconds: number;
+}
+
+interface ApiError {
+  status: string;
+  message: string;
+  isOperational?: boolean;
 }
 
 const registrationFormSchema = z.object({
@@ -44,10 +63,15 @@ export function EventRegistrationModal({
   isOpen,
   onClose,
   event,
-  quantity,
   className = "",
 }: EventRegistrationModalProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [showTimer, setShowTimer] = useState(false);
+  const [timerExpired, setTimerExpired] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { bookingData, getEventBookingPayload } = useEventBookingStore();
 
   const {
     register,
@@ -89,24 +113,105 @@ export function EventRegistrationModal({
     return `NGN ${price.toLocaleString()}.00`;
   };
 
+  // Handle payment success callback
+  const handlePaymentSuccess = () => {
+    toast.success("Event registration completed successfully!");
+    onClose();
+  };
+
+  // Listen for successful payment callback
+  useEffect(() => {
+    const handleCallback = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const type = urlParams.get("type");
+      const trxref = urlParams.get("trxref");
+      const reference = urlParams.get("reference");
+
+      if (type === "events" && (trxref || reference)) {
+        handlePaymentSuccess();
+      }
+    };
+
+    // Check on component mount
+    handleCallback();
+
+    // Listen for popstate events (back/forward navigation)
+    window.addEventListener("popstate", handleCallback);
+
+    return () => {
+      window.removeEventListener("popstate", handleCallback);
+    };
+  }, []);
+
+  // Timer countdown effect
+  useEffect(() => {
+    if (showTimer && timeLeft > 0) {
+      const timer = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            setTimerExpired(true);
+            setShowTimer(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [showTimer, timeLeft]);
+
+  // Format timer display
+  const formatTimer = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
+
+  // Handle registration submission
   const handleRegistration = async (data: RegistrationFormData) => {
     setIsLoading(true);
+    setError(null);
+
     try {
-      // TODO: Implement registration logic
-      console.log("Registration data:", {
-        ...data,
-        eventId: event._id,
-        quantity,
-      });
+      const payload = getEventBookingPayload();
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Create event booking
+      const response = await apiClient.post<EventBookingResponse>(
+        "/book/event",
+        payload
+      );
 
-      // Close modal and reset form on success
-      onClose();
-      reset();
-    } catch (error) {
+      if (response.status === "success") {
+        setPaymentUrl(response.data);
+        setTimeLeft(response.timeoutInSeconds);
+        setShowTimer(true);
+        setTimerExpired(false);
+
+        toast.success("Redirecting to payment...");
+
+        // Redirect to Paystack
+        window.location.href = response.data;
+      } else {
+        throw new Error(response.message || "Registration failed");
+      }
+    } catch (error: any) {
       console.error("Registration failed:", error);
+
+      let errorMessage = "Registration failed. Please try again.";
+
+      // Handle API error response format
+      if (error?.response?.data) {
+        const apiError = error.response.data as ApiError;
+        if (apiError.status === "fail" && apiError.message) {
+          errorMessage = apiError.message;
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -116,10 +221,70 @@ export function EventRegistrationModal({
     if (!isLoading) {
       onClose();
       reset();
+      setPaymentUrl(null);
+      setShowTimer(false);
+      setTimerExpired(false);
+      setTimeLeft(0);
+      setError(null);
     }
   };
 
+  const handleRetryRegistration = () => {
+    setTimerExpired(false);
+    setPaymentUrl(null);
+    setShowTimer(false);
+    setTimeLeft(0);
+    setError(null);
+  };
+
   if (!isOpen) return null;
+
+  // Timer expired state
+  if (timerExpired) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/20" onClick={handleClose} />
+        <div className="relative bg-white rounded-xl p-8 max-w-md w-full text-center">
+          <div className="mb-4">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-8 h-8 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Payment Time Expired
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Your registration session has expired. Please re-initiate your registration
+              to continue.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={handleClose} className="flex-1">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRetryRegistration}
+              className="flex-1"
+              style={{ background: "#FF5B06" }}
+            >
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -149,8 +314,27 @@ export function EventRegistrationModal({
           className="absolute top-4 right-4 p-2 hover:bg-black/5 rounded-full transition-colors disabled:cursor-not-allowed"
           style={{ zIndex: 10 }}
         >
-          <Image src="/icons/close.svg" alt="Close" width={20} height={20} />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
         </button>
+
+        {/* Timer Display */}
+        {showTimer && (
+          <div className="absolute top-4 left-4 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+            ⏱️ {formatTimer(timeLeft)}
+          </div>
+        )}
 
         {/* Left Side - Order Summary */}
         <div
@@ -227,7 +411,7 @@ export function EventRegistrationModal({
                     lineHeight: "160%",
                   }}
                 >
-                  {quantity}x Entry
+                  {bookingData.numberOfTickets}x Entry
                 </span>
                 <span
                   style={{
@@ -238,7 +422,7 @@ export function EventRegistrationModal({
                     lineHeight: "160%",
                   }}
                 >
-                  {formatPrice(event.price * quantity)}
+                  {formatPrice(event.price * bookingData.numberOfTickets)}
                 </span>
               </div>
 
@@ -264,7 +448,7 @@ export function EventRegistrationModal({
                     lineHeight: "normal",
                   }}
                 >
-                  {formatPrice(event.price * quantity)}
+                  {formatPrice(event.price * bookingData.numberOfTickets)}
                 </span>
               </div>
             </div>
@@ -289,6 +473,13 @@ export function EventRegistrationModal({
               Enter your info
             </h2>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg mb-4">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
 
           {/* Registration Form */}
           <form

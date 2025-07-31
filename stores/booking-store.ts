@@ -29,7 +29,7 @@ interface BookingState {
   getTotalUnits: () => number;
   isUnitSelected: (unitId: string) => boolean;
   getUnitQuantity: (unitId: string) => number;
-  getBookingPayload: () => BookingData;
+  getBookingPayload: () => BookingData & { callbackURL: string };
 }
 
 // Initial state
@@ -45,14 +45,29 @@ export const useBookingStore = create<BookingState>()(
     (set, get) => ({
       bookingData: initialBookingData,
 
-      // Set the stay ID
+      // Set the stay ID and clear units if switching to a different stay
       setStayId: (stayId: string) => {
-        set((state) => ({
-          bookingData: {
-            ...state.bookingData,
-            stayId,
-          },
-        }));
+        set((state) => {
+          // If switching to a different stay, clear the units
+          if (state.bookingData.stayId && state.bookingData.stayId !== stayId) {
+            return {
+              bookingData: {
+                stayId,
+                units: [],
+                checkInDate: null,
+                checkOutDate: null,
+              },
+            };
+          }
+
+          // Same stay or first time setting, just update stayId
+          return {
+            bookingData: {
+              ...state.bookingData,
+              stayId,
+            },
+          };
+        });
       },
 
       // Add a unit to selection
@@ -145,13 +160,15 @@ export const useBookingStore = create<BookingState>()(
       // Get the complete booking payload ready for API
       getBookingPayload: () => {
         const { bookingData } = get();
+        const currentStayId = bookingData.stayId || "";
+        
         return {
-          ...bookingData,
-          // Ensure dates are properly formatted for API
+          stayId: currentStayId,
+          units: bookingData.units,
+          // Use the actual selected dates, not current time
           checkInDate: bookingData.checkInDate || new Date().toISOString(),
-          checkOutDate:
-            bookingData.checkOutDate ||
-            new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          checkOutDate: bookingData.checkOutDate || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          callbackURL: `${window.location.origin}/${currentStayId}?type=stays`,
         };
       },
     }),

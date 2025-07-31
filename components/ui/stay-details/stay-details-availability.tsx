@@ -59,7 +59,7 @@ export function StayDetailsAvailability({
       {/* Placeholder Date Range Selector */}
       <div className="mb-6">
         <div
-          className="flex items-center w-[250px] gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50 cursor-not-allowed"
+          className="flex items-center w-[50%] gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50 cursor-not-allowed"
           title="Date selection coming soon"
         >
           <svg

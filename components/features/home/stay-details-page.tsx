@@ -1,6 +1,8 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import toast from "react-hot-toast";
 import { StayDetailsBanner } from "@/components/ui/stay-details/stay-details-banner";
 import { StaysService, GetStayByIdResponse } from "@/services/stays-service";
 import { RatingService, ReviewAllocator } from "@/services/rating-service";
@@ -14,6 +16,7 @@ import { ReviewBadge } from "@/components/ui/review-badge";
 import { EventDetailsOrganizer } from "@/components/ui/event-details/event-details-organizer";
 import { StayDetailsGuestReviews } from "@/components/ui/stay-details/stay-details-guest-reviews";
 import { StayDetailsOtherStays } from "@/components/ui/stay-details/stay-details-other-stays";
+import { useBookingStore } from "@/stores/booking-store";
 
 interface StayDetailsPageProps {
   id: string;
@@ -29,6 +32,10 @@ interface StayDetailsState {
 }
 
 export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { clearBookingData } = useBookingStore();
+  
   const [state, setState] = useState<StayDetailsState>({
     stayData: null,
     reviewsData: null,
@@ -36,6 +43,31 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
     reviewsLoading: false,
     error: null,
   });
+
+  // Handle payment callback
+  useEffect(() => {
+    const type = searchParams.get('type');
+    const status = searchParams.get('status');
+    
+    if (type === 'stays') {
+      if (status === 'success') {
+        // Payment successful
+        clearBookingData();
+        toast.success("Booking completed successfully!");
+        
+        // Clean up URL by removing query parameters
+        const newUrl = window.location.pathname;
+        router.replace(newUrl);
+      } else if (status === 'failed' || status === 'cancelled') {
+        // Payment failed or cancelled
+        toast.error("Payment was not completed. Please try again.");
+        
+        // Clean up URL by removing query parameters
+        const newUrl = window.location.pathname;
+        router.replace(newUrl);
+      }
+    }
+  }, [searchParams, clearBookingData, router]);
 
   useEffect(() => {
     const fetchStayData = async () => {
@@ -239,7 +271,7 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
         {/* Right Column - Booking Sidebar (remaining space ≈ 35.2% ≈ 4 cols out of 12) */}
         <div className="col-span-4">
           {/* Reservation Card */}
-          <StayDetailsReservationCard stayId={stay._id} units={stayUnits} />
+          <StayDetailsReservationCard stay={stay} stayUnits={stayUnits} />
         </div>
       </div>
 

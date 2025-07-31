@@ -1,8 +1,9 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Event } from "@/services/events-service";
 import { EventRegistrationModal } from "@/components/ui/modals/event-registration-modal";
+import { useEventBookingStore } from "@/stores/event-booking-store";
 
 interface EventDetailsRegistrationCardProps {
   event: Event;
@@ -60,8 +61,44 @@ export function EventDetailsRegistrationCard({
   availableCapacity,
   className = "",
 }: EventDetailsRegistrationCardProps) {
-  const [quantity, setQuantity] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { 
+    bookingData, 
+    setEventId, 
+    setNumberOfTickets 
+  } = useEventBookingStore();
+
+  // Set event ID when component mounts
+  useEffect(() => {
+    setEventId(event._id);
+  }, [event._id, setEventId]);
+
+  // Listen for successful payment callback
+  useEffect(() => {
+    const handleCallback = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const type = urlParams.get("type");
+      const trxref = urlParams.get("trxref");
+      const reference = urlParams.get("reference");
+
+      // Check if this is a successful payment callback from Paystack
+      // Paystack returns trxref and reference parameters on successful payment
+      if (type === "events" && (trxref || reference)) {
+        // Close booking modal
+        setIsModalOpen(false);
+      }
+    };
+
+    // Check on component mount
+    handleCallback();
+
+    // Listen for popstate events (back/forward navigation)
+    window.addEventListener("popstate", handleCallback);
+
+    return () => {
+      window.removeEventListener("popstate", handleCallback);
+    };
+  }, []);
 
   // Format end date for ticket sales
   const formatTicketSalesEndDate = (startTime: string) => {
@@ -82,14 +119,14 @@ export function EventDetailsRegistrationCard({
 
   // Handle quantity change
   const handleDecrement = () => {
-    if (quantity > 1) {
-      setQuantity(quantity - 1);
+    if (bookingData.numberOfTickets > 1) {
+      setNumberOfTickets(bookingData.numberOfTickets - 1);
     }
   };
 
   const handleIncrement = () => {
-    if (quantity < availableCapacity) {
-      setQuantity(quantity + 1);
+    if (bookingData.numberOfTickets < availableCapacity) {
+      setNumberOfTickets(bookingData.numberOfTickets + 1);
     }
   };
 
@@ -199,7 +236,7 @@ export function EventDetailsRegistrationCard({
             >
               <button
                 onClick={handleDecrement}
-                disabled={quantity <= 1}
+                disabled={bookingData.numberOfTickets <= 1}
                 style={{
                   borderRadius: "50%",
                   border: "0.778px solid rgba(138, 174, 164, 0.50)",
@@ -209,8 +246,8 @@ export function EventDetailsRegistrationCard({
                   justifyContent: "center",
                   alignItems: "center",
                   background: "transparent",
-                  cursor: quantity <= 1 ? "not-allowed" : "pointer",
-                  opacity: quantity <= 1 ? 0.5 : 1,
+                  cursor: bookingData.numberOfTickets <= 1 ? "not-allowed" : "pointer",
+                  opacity: bookingData.numberOfTickets <= 1 ? 0.5 : 1,
                   padding: 0,
                 }}
               >
@@ -228,12 +265,12 @@ export function EventDetailsRegistrationCard({
                   minWidth: "20px",
                 }}
               >
-                {quantity}
+                {bookingData.numberOfTickets}
               </span>
 
               <button
                 onClick={handleIncrement}
-                disabled={quantity >= availableCapacity}
+                disabled={bookingData.numberOfTickets >= availableCapacity}
                 style={{
                   borderRadius: "50%",
                   border: "0.778px solid rgba(138, 174, 164, 0.50)",
@@ -244,8 +281,8 @@ export function EventDetailsRegistrationCard({
                   alignItems: "center",
                   background: "transparent",
                   cursor:
-                    quantity >= availableCapacity ? "not-allowed" : "pointer",
-                  opacity: quantity >= availableCapacity ? 0.5 : 1,
+                    bookingData.numberOfTickets >= availableCapacity ? "not-allowed" : "pointer",
+                  opacity: bookingData.numberOfTickets >= availableCapacity ? 0.5 : 1,
                   padding: 0,
                 }}
               >
@@ -284,7 +321,7 @@ export function EventDetailsRegistrationCard({
                 margin: 0,
               }}
             >
-              {formatPrice(event.price * quantity)}
+              {formatPrice(event.price * bookingData.numberOfTickets)}
             </span>
           </div>
 
@@ -317,7 +354,6 @@ export function EventDetailsRegistrationCard({
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         event={event}
-        quantity={quantity}
       />
     </>
   );

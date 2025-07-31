@@ -2,6 +2,7 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,14 +71,16 @@ export default function Header() {
           {/* Left Section: Logo + Search */}
           <div className="flex items-center flex-1 mr-8">
             {/* Logo */}
-            <Image
-              src="/images/logo.svg"
-              alt="Allotease Logo"
-              width={120}
-              height={40}
-              priority
-              className="mr-6 mt-1"
-            />
+            <Link href="/" className="cursor-pointer">
+              <Image
+                src="/images/logo.svg"
+                alt="Allotease Logo"
+                width={120}
+                height={40}
+                priority
+                className="mr-6 mt-1"
+              />
+            </Link>
 
             {/* Search Bar */}
             <div className="flex items-center gap-3 h-10 max-w-[300px] px-3 flex-1 rounded-full border border-gray-300/20 bg-gray-100/50">
@@ -95,7 +98,7 @@ export default function Header() {
           <div className="flex items-center gap-8">
             {/* Create an event */}
             <button
-              className="flex items-center gap-2 hover:opacity-70 transition-opacity"
+              className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
               onClick={handleCreateEvent}
             >
               <PencilIcon />
@@ -108,7 +111,10 @@ export default function Header() {
             </button>
 
             {/* Ticket */}
-            <button className="flex items-center gap-2 hover:opacity-70 transition-opacity">
+            <Link 
+              href="/tickets" 
+              className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
+            >
               <TicketIcon />
               <span
                 className="font-source-sans text-base font-semibold"
@@ -116,13 +122,13 @@ export default function Header() {
               >
                 Ticket
               </span>
-            </button>
+            </Link>
 
             {/* User Profile Dropdown - Only show if authenticated */}
             {isAuthenticated && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-3 hover:bg-gray-50 rounded-lg px-2 py-1 transition-colors">
+                  <button className="flex items-center gap-3 hover:bg-gray-50 rounded-lg px-2 py-1 transition-colors cursor-pointer">
                     {/* Avatar */}
                     <div className="w-8 h-8 rounded-full overflow-hidden">
                       <Image
@@ -224,7 +230,8 @@ export default function Header() {
                       }}
                     >
                       {/* Ticket - First item with conditional top rounded corners */}
-                      <div
+                      <Link
+                        href="/tickets"
                         className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
                         style={{
                           padding: "16px 20px",
@@ -251,11 +258,12 @@ export default function Header() {
                         >
                           Ticket
                         </span>
-                      </div>
+                      </Link>
 
                       {/* Manage my resources - Only show if user is allocation-admin */}
                       {isAllocationAdmin && (
-                        <div
+                        <Link
+                          href="/allocation-admin"
                           className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
                           style={{
                             padding: "16px 20px",
@@ -279,7 +287,7 @@ export default function Header() {
                           >
                             Manage my resources
                           </span>
-                        </div>
+                        </Link>
                       )}
 
                       {/* Create new event */}
@@ -311,7 +319,8 @@ export default function Header() {
                       </div>
 
                       {/* About Allotease - Last item with bottom rounded corners */}
-                      <div
+                      <Link
+                        href="/about"
                         className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
                         style={{
                           padding: "16px 20px",
@@ -335,7 +344,7 @@ export default function Header() {
                         >
                           About Allotease
                         </span>
-                      </div>
+                      </Link>
                     </div>
 
                     {/* Logout Section */}
@@ -374,18 +383,18 @@ export default function Header() {
             {/* Show login/signup buttons if not authenticated and not loading */}
             {!isAuthenticated && !isLoading && (
               <div className="flex items-center gap-4">
-                <button
-                  className="font-source-sans text-base font-semibold text-[#1F3A3A] hover:opacity-70 transition-opacity"
-                  onClick={() => (window.location.href = "/login")}
+                <Link
+                  href="/signin"
+                  className="font-source-sans text-base font-semibold text-[#1F3A3A] hover:opacity-70 transition-opacity cursor-pointer"
                 >
-                  Login
-                </button>
-                <button
-                  className="font-source-sans text-base font-semibold bg-[#1F3A3A] text-white px-4 py-2 rounded-lg hover:opacity-80 transition-opacity"
-                  onClick={() => (window.location.href = "/signup")}
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="font-source-sans text-base font-semibold bg-[#1F3A3A] text-white px-4 py-2 rounded-lg hover:opacity-80 transition-opacity cursor-pointer"
                 >
                   Sign Up
-                </button>
+                </Link>
               </div>
             )}
 
