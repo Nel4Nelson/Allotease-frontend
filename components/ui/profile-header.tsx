@@ -20,7 +20,7 @@ export function ProfileHeader({
   className = "",
 }: ProfileHeaderProps) {
   return (
-    <div className={`flex flex-col items-center gap-4 py-8 ${className}`}>
+    <div className={`flex flex-col items-center gap-4 ${className}`}>
       {/* Avatar */}
       <ProfileAvatar avatarUrl={avatarUrl} name={name} size={80} />
 

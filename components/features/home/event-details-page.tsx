@@ -236,10 +236,10 @@ export function EventDetailsPage({
 
       {/* Success Modal */}
       <BookingSuccessModal
-  isOpen={showSuccessModal}
-  onClose={handleCloseSuccessModal}
-  type="events"
-/>
+        isOpen={showSuccessModal}
+        onClose={handleCloseSuccessModal}
+        type="events"
+      />
     </>
   );
 }
