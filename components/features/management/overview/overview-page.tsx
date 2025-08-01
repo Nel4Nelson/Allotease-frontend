@@ -17,9 +17,18 @@ import { transformEventReservationData } from "@/utils/events-reservation-tranfo
 
 interface OverviewPageProps {
   onWithdraw?: () => void;
+  balance?: number;
+  formattedBalance?: string;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
-export function OverviewPage({ onWithdraw }: OverviewPageProps) {
+export function OverviewPage({
+  onWithdraw,
+  balance = 0,
+  isLoading = false,
+  error = null,
+}: OverviewPageProps) {
   const [activeTab, setActiveTab] = useState("stays");
 
   // Fetch data using hooks
@@ -79,14 +88,20 @@ export function OverviewPage({ onWithdraw }: OverviewPageProps) {
   const transformedEventReservations = eventReservations?.events
     ? transformEventReservationData(eventReservations.events)
     : [];
+
   return (
     <div className="space-y-6">
-      {/* Balance Card with Withdrawal */}
-      <BalanceCard balance={2150500} onWithdraw={onWithdraw} />
+      {/* Balance Card with Withdrawal - now uses dynamic balance */}
+      <BalanceCard
+        balance={balance}
+        onWithdraw={onWithdraw}
+        isLoading={isLoading}
+        error={error}
+      />
 
       {/* Error Handling for Stats */}
       {activeTab === "stays" && stayStatsError && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg mt-8">
           <p className="text-red-600 text-sm">
             {stayStatsError.message || "Failed to load stay statistics."}
           </p>
@@ -94,7 +109,7 @@ export function OverviewPage({ onWithdraw }: OverviewPageProps) {
       )}
 
       {activeTab === "events" && eventStatsError && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg mt-8">
           <p className="text-red-600 text-sm">
             {eventStatsError.message || "Failed to load event statistics."}
           </p>

@@ -1,7 +1,6 @@
 "use client";
-
-import { Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PencilSimple } from "phosphor-react";
 
 interface BankDetailItem {
   label: string;
@@ -22,10 +21,10 @@ const defaultBankDetails: BankDetailItem[] = [
   { label: "SWIFT/BIC Code", value: "GBINUS33" },
 ];
 
-export function BankDetails({ 
-  bankDetails = defaultBankDetails, 
+export function BankDetails({
+  bankDetails = defaultBankDetails,
   onEdit,
-  loading = false 
+  loading = false,
 }: BankDetailsProps) {
   if (loading) {
     return (
@@ -34,7 +33,7 @@ export function BankDetails({
           <div className="h-6 bg-gray-200 rounded w-32"></div>
           <div className="h-4 w-4 bg-gray-200 rounded"></div>
         </div>
-        
+
         <div className="space-y-4">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="flex justify-between">
@@ -50,28 +49,28 @@ export function BankDetails({
   return (
     <div className="md:w-[70%] lg:px-10">
       {/* Header */}
-      <div className="flex gap-2 items-center mb-6">
-        <h2 className="font-bold text-2xl text-[#1F2024]">Bank Details</h2>
+      <div className="flex gap-2 items-center mb-1">
+        <h2 className="font-bold text-2xl text-[#1F2024] font-space-grotesk flex items-center">
+          Bank Details
+        </h2>
         <Button
           variant="ghost"
           size="sm"
           onClick={onEdit}
           className="p-1 h-auto hover:bg-gray-100"
         >
-          <Edit2 size={16} className="text-[#71727A]" />
+          <PencilSimple size={18} className="text-[#71727A]" />
         </Button>
       </div>
 
       {/* Details List */}
-      <div className="space-y-4">
+      <div className="">
         {bankDetails.map((detail, index) => (
           <div key={index} className="flex justify-between items-center py-2">
             <h4 className="text-[#1F2024] font-semibold text-sm">
               {detail.label}
             </h4>
-            <p className="text-[#71727A] text-sm font-medium">
-              {detail.value}
-            </p>
+            <p className="text-[#71727A] text-sm font-medium">{detail.value}</p>
           </div>
         ))}
       </div>

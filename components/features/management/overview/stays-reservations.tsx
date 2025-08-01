@@ -69,9 +69,9 @@ export function StaysReservations({
   return (
     <div className="overflow-x-auto rounded-md bg-[#F2F4F7]/50 border">
       <div className="p-4 border-b">
-        <h2 className="text-xl font-bold text-[#1F2024] mb-6">
+        <h2 className="text-xl font-bold text-[#1F2024] mb-6 font-space-grotesk">
           {" "}
-          Recent Reservations
+          All reservations
         </h2>
 
         <SearchHeader
@@ -84,20 +84,20 @@ export function StaysReservations({
         />
       </div>
 
-      <Table className="min-w-full w-full">
-        <TableHeader className="bg-[#F2F4F7CC]">
+      <Table className="min-w-full w-full text-md">
+        <TableHeader className="bg-[#F2F4F7CC] font-space-grotesk">
           <TableRow>
-            <TableHead className="w-[140px] text-[#20232A] font-medium">
+            <TableHead className="w-[140px] text-[#20232A] font-medium ">
               Reservation ID
             </TableHead>
             <TableHead className="text-[#20232A] font-medium">Guest</TableHead>
-            <TableHead className="text-[#20232A] font-medium hidden sm:table-cell">
+            <TableHead className="text-[#20232A] font-medium  sm:table-cell">
               Room
             </TableHead>
-            <TableHead className="text-[#20232A] font-medium hidden sm:table-cell">
+            <TableHead className="text-[#20232A] font-medium sm:table-cell">
               Dates
             </TableHead>
-            <TableHead className="text-[#20232A] font-medium hidden sm:table-cell">
+            <TableHead className="text-[#20232A] font-medium sm:table-cell">
               Status
             </TableHead>
           </TableRow>

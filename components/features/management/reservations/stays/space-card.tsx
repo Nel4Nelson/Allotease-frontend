@@ -26,17 +26,17 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
   extraInfo,
 }) => {
   return (
-    <div className="border rounded-xl p-4 shadow-md space-y-6 font-source">
+    <div className="border rounded-xl p-4 shadow-md space-y-6 bg-[#FFFFFF] font-source-sans">
       {/* Header */}
-      <div className="flex justify-between items-center mb-2">
+      <div className="flex font-semibold text-md justify-between items-center mb-2">
         <h3>{title}</h3>
-        <span className="text-sm md:text-lg text-[#71727A] font-bold">
+        <span className="text-sm md:text-md text-[#71727A] font-bold bg-[#F2F4F780] p-2 rounded-full">
           {spacesLeft} Spaces left
         </span>
       </div>
 
       {/* Price */}
-      <p className="text-[#1F3A3A] font-semibold bg-[#8AAEA433] px-2 py-1 rounded-md w-[120px] text-start text-base">
+      <p className="text-[#1F3A3A] font-semibold bg-[#8AAEA433] px-2 py-1 rounded-md w-[120px] text-start text-sm">
         {price}
       </p>
 
@@ -57,16 +57,20 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
       </div>
 
       {/* Buttons */}
-      <div className="flex gap-2">
+      <div className="flex justify-between">
         <Button
           variant="outline"
-          className="border border-[#FF5B00] rounded-full font-semibold md:font-bold md:text-lg text-[#FF5B00] hover:bg-[#F2F4F780] hover:border-transparent hover:text-[#FF5B00] flex items-center gap-2"
+          className="border border-[#FF5B00] rounded-full font-semibold md:font-bold md:text-md text-[#FF5B00] hover:bg-[#F2F4F780] hover:border-transparent hover:text-[#FF5B00] flex items-center gap-2"
         >
-          View Reservation <ArrowUpRight size={18} />
+          <span className="flex justify-between items-center">
+            View Reservation <ArrowUpRight size={16} />
+          </span>
         </Button>
 
-        <Button className="bg-[#F2F4F799] text-[#1F2024] font-semibold md:font-bold md:text-lg hover:bg-[#F2F4F780] hover:text-[#1F2024] rounded-full flex items-center gap-2">
-          Edit Space <PencilSimpleLine size={32} />
+        <Button className="bg-[#F2F4F799] text-[#1F2024] font-semibold md:font-bold md:text-md hover:bg-[#F2F4F780] hover:text-[#1F2024] rounded-full flex items-center gap-2">
+          <span className="flex justify-between items-center gap-1">
+            Edit Space <PencilSimpleLine size={16} />
+          </span>
         </Button>
       </div>
     </div>

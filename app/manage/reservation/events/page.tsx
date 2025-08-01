@@ -1,3 +1,5 @@
+"use client";
+
 import EventPageHero from "@/components/features/management/reservations/events/EventPageHero";
 import React from "react";
 import ReservationboardLayout from "../../../../components/features/management/reservations/reservation-boardLayout";

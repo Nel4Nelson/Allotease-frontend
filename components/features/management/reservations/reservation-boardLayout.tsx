@@ -1,14 +1,14 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import ButtonLink from "../../../../app/manage/reservation/components/ui/ButtonLink";
 
 type DashboardLayoutProps = {
   children: React.ReactNode;
   imageSrc: string;
   headerTitle: string;
-  buttonText: string;
-  buttonHref: string;
+  buttonText?: string;
+  buttonHref?: string;
 };
 
 export default function ReservationboardLayout({
@@ -16,11 +16,10 @@ export default function ReservationboardLayout({
   imageSrc,
   headerTitle,
   buttonText,
-  buttonHref,
 }: DashboardLayoutProps) {
   return (
     <div className="w-full">
-      <div className="relative w-full h-[400px]">
+      <div className="relative w-full h-[320px]">
         <Image
           src={imageSrc}
           alt={headerTitle}
@@ -30,8 +29,14 @@ export default function ReservationboardLayout({
       </div>
 
       <div className="flex items-center justify-between py-8">
-        <h2>{headerTitle}</h2>
-        <ButtonLink text={buttonText} href={buttonHref} />
+        <h2 className="text-2xl font-bold font-space-grotesk">{headerTitle}</h2>
+        {/* <ButtonLink text={buttonText} href={buttonHref} /> */}
+        <Button
+          variant="allotease-primary"
+          className="border border-[#FF5B00] rounded-full font-semibold"
+        >
+          {buttonText}
+        </Button>
       </div>
 
       <main className="flex-1 p-4 overflow-y-auto">{children}</main>

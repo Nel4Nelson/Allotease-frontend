@@ -35,7 +35,7 @@ const defaultHistories: WithdrawalHistoryItem[] = [
   },
   {
     id: "2",
-    amountRequested: "₦300,000", 
+    amountRequested: "₦300,000",
     withdrawalFees: "₦3,000",
     dateRequested: "October 10, 2024",
     payoutDate: "October 10, 2024",
@@ -44,14 +44,14 @@ const defaultHistories: WithdrawalHistoryItem[] = [
   {
     id: "3",
     amountRequested: "₦150,000",
-    withdrawalFees: "₦1,500", 
+    withdrawalFees: "₦1,500",
     dateRequested: "October 15, 2024",
     payoutDate: "",
     status: "Pending",
   },
 ];
 
-const getStatusConfig = (status: WithdrawalHistoryItem['status']) => {
+const getStatusConfig = (status: WithdrawalHistoryItem["status"]) => {
   switch (status) {
     case "Paid":
       return {
@@ -80,9 +80,9 @@ const getStatusConfig = (status: WithdrawalHistoryItem['status']) => {
   }
 };
 
-export function WithdrawalHistory({ 
-  histories = defaultHistories, 
-  loading = false 
+export function WithdrawalHistory({
+  histories = defaultHistories,
+  loading = false,
 }: WithdrawalHistoryProps) {
   if (loading) {
     return (
@@ -112,13 +112,13 @@ export function WithdrawalHistory({
 
   return (
     <div className="px-4 md:px-8 py-4 md:py-6">
-      <h2 className="text-xl font-bold text-[#1F2024] mb-6">
-        Withdrawal History
+      <h2 className="text-xl font-bold text-[#1F2024] mb-6 font-space-grotesk">
+        Withdrawals
       </h2>
 
       <div className="overflow-x-auto rounded-lg border border-gray-200">
         <Table>
-          <TableHeader className="bg-[#F2F4F780]">
+          <TableHeader className="bg-[#F2F4F780] font-space-grotesk">
             <TableRow>
               <TableHead className="text-[#20232A] font-medium">
                 Amount Requested
@@ -141,9 +141,12 @@ export function WithdrawalHistory({
           <TableBody>
             {histories.map((history) => {
               const statusConfig = getStatusConfig(history.status);
-              
+
               return (
-                <TableRow key={history.id} className="text-[#71727A] border-b-0">
+                <TableRow
+                  key={history.id}
+                  className="text-[#71727A] border-b-0"
+                >
                   <TableCell className="font-medium">
                     {history.amountRequested}
                   </TableCell>

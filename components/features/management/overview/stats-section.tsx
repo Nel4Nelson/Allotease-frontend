@@ -43,7 +43,9 @@ export function StatsSection({ stats, loading = false }: StatsSectionProps) {
             <h3 className="font-semibold text-[#71727A]">{stat.title}</h3>
 
             <div className="flex justify-between items-center mt-2">
-              <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+              <p className="text-3xl font-bold text-gray-900 font-space-grotesk">
+                {stat.value}
+              </p>
               <span
                 className={`text-sm font-semibold bg-[#8AAEA433] py-1 px-3 rounded-sm ${
                   stat.trend === "down" ? "text-red-600" : "text-[#1F3A3A]"

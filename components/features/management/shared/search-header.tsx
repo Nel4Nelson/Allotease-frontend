@@ -36,12 +36,12 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
     setSelectedSort(option);
     setDropdownOpen(false);
     onSortChange?.(option);
-};
+  };
 
   return (
     <div className="w-full flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 font-source">
       {/* Search Input */}
-      <div className="relative w-full md:max-w-sm">
+      <div className="relative w-full md:max-w-xs">
         <Search
           className="absolute left-3 top-1/2 -translate-y-1/2 text-[#71727A]"
           size={18}
@@ -61,7 +61,7 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
           <div className="relative">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2 border border-[#8AAEA433] text-[#1F3A3A] font-semibold md:font-bold md:text-lg px-4 py-2 rounded-full cursor-pointer"
+              className="flex items-center gap-2 border border-[#8AAEA433] text-[#1F3A3A] font-semibold md:font-bold md:text-md px-4 py-2 rounded-full cursor-pointer"
             >
               Sort By: {selectedSort}
               <ChevronDown size={18} color="#71727A" />
@@ -85,7 +85,7 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
         {showExport && (
           <button
             onClick={onExport}
-            className="flex items-center gap-2 border border-[#8AAEA433] text-[#1F3A3A] font-semibold md:font-bold md:text-lg px-4 py-2 rounded-full cursor-pointer"
+            className="flex items-center gap-2 border border-[#8AAEA433] text-[#1F3A3A] font-semibold md:font-bold md:text-md px-4 py-2 rounded-full cursor-pointer"
           >
             Export Table
             <Export size={18} color="#71727A" />{" "}

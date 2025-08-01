@@ -26,7 +26,7 @@ export function ManagementLayout({ children }: ManagementLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col font-space-grotesk">
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-white border-b border-gray-200 p-4">
         <button
@@ -63,7 +63,9 @@ export function ManagementLayout({ children }: ManagementLayoutProps) {
         >
           {/* Mobile close button */}
           <div className="md:hidden flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Management</h3>
+            <h3 className="text-lg font-semibold text-gray-900 font-space-grotesk">
+              Management
+            </h3>
             <button
               onClick={() => setIsMobileMenuOpen(false)}
               className="text-gray-400 hover:text-gray-600"
@@ -85,7 +87,7 @@ export function ManagementLayout({ children }: ManagementLayoutProps) {
           </div>
 
           {/* Desktop title */}
-          <h3 className="hidden md:block text-lg font-semibold text-gray-900 mb-6">
+          <h3 className="hidden md:block text-lg font-semibold text-gray-900 mb-6 font-space-grotesk">
             Management
           </h3>
 
