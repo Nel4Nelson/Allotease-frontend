@@ -38,9 +38,11 @@ export function StatsSection({ stats, loading = false }: StatsSectionProps) {
         {stats.map((stat, index) => (
           <div
             key={index}
-            className="rounded-2xl p-2 px-5 w-[160px] border border-[#8AAEA433] shadow-xs transition backdrop-blur-sm hover:bg-fancy-gradient"
+            className="rounded-2xl p-4 px-5 w-[160px] border border-[#8AAEA433] shadow-xs transition backdrop-blur-sm hover:bg-fancy-gradient flex flex-col justify-center"
           >
-            <h3 className="font-semibold text-[#71727A]">{stat.title}</h3>
+            <h3 className="font-semibold text-[#71727A] text-sm">
+              {stat.title}
+            </h3>
 
             <div className="flex justify-between items-center mt-2">
               <p className="text-3xl font-bold text-gray-900 font-space-grotesk">

@@ -23,6 +23,7 @@ import SearchHeader from "../shared/search-header";
 interface StaysReservationsProps {
   reservations: TransformedReservation[];
   loading?: boolean;
+  searchHeader?: boolean;
   onSearch?: (value: string) => void;
   onSort?: (value: string) => void;
   onExport?: () => void;
@@ -31,6 +32,7 @@ interface StaysReservationsProps {
 export function StaysReservations({
   reservations,
   loading = false,
+  searchHeader = false,
 }: StaysReservationsProps) {
   const handleSearch = (value: string) => {
     console.log("Searching:", value);
@@ -71,17 +73,20 @@ export function StaysReservations({
       <div className="p-4 border-b">
         <h2 className="text-xl font-bold text-[#1F2024] mb-6 font-space-grotesk">
           {" "}
-          All reservations
+          Recent reservations
         </h2>
-
-        <SearchHeader
-          onSearch={handleSearch}
-          sortOptions={["Time", "Date", "Price"]}
-          onSortChange={handleSortChange}
-          onExport={handleExport}
-          showSort={true}
-          showExport={true}
-        />
+        {searchHeader && (
+          <div>
+            <SearchHeader
+              onSearch={handleSearch}
+              sortOptions={["Time", "Date", "Price"]}
+              onSortChange={handleSortChange}
+              onExport={handleExport}
+              showSort={true}
+              showExport={true}
+            />
+          </div>
+        )}
       </div>
 
       <Table className="min-w-full w-full text-md">

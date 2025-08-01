@@ -21,6 +21,7 @@ interface EventReservation {
 interface EventsReservationsProps {
   reservations: EventReservation[];
   loading?: boolean;
+  searchHeader?: boolean;
   onSearch?: (value: string) => void;
   onSort?: (value: string) => void;
   onExport?: () => void;
@@ -29,6 +30,7 @@ interface EventsReservationsProps {
 export function EventsReservations({
   reservations,
   loading = false,
+  searchHeader = false,
   onSearch,
   onSort,
   onExport,
@@ -71,19 +73,23 @@ export function EventsReservations({
 
   return (
     <div className="overflow-x-auto rounded-md bg-[#F2F4F7]/50 border">
-      <h2 className="text-xl font-bold text-[#1F2024] mb-6 font-space-grotesk">
-        <h2>Recent reservations</h2>
-      </h2>
+      <div className="p-4 border-b">
+        <h2 className="text-xl font-bold text-[#1F2024] mb-6 font-space-grotesk">
+          <h2>Recent reservations</h2>
+        </h2>
 
-      <div className="p-4">
-        <SearchHeader
-          onSearch={handleSearch}
-          sortOptions={["Time", "Date", "Price"]}
-          onSortChange={handleSortChange}
-          onExport={handleExport}
-          showSort={true}
-          showExport={true}
-        />
+        {searchHeader && (
+          <div>
+            <SearchHeader
+              onSearch={handleSearch}
+              sortOptions={["Time", "Date", "Price"]}
+              onSortChange={handleSortChange}
+              onExport={handleExport}
+              showSort={true}
+              showExport={true}
+            />
+          </div>
+        )}
       </div>
 
       <Table className="min-w-full w-full text-md">

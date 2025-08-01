@@ -46,7 +46,7 @@ export function EventsListings({
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h2 className="text-xl font-bold text-[#1F2024] mb-1">
+          <h2 className="text-2xl font-bold text-[#1F2024] mb-1 font-space-grotesk">
             Created Events
           </h2>
           <p className="text-[#71727A] text-sm">Events you created</p>
