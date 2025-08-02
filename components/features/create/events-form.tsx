@@ -1,93 +1,93 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-unescaped-entities */
-"use client";
-import React, { Suspense } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { FormInput } from "@/components/ui/form-input";
-import { FormTextarea } from "@/components/ui/form-textarea";
-import { ImageUpload } from "@/components/ui/image-upload";
-import { DateTimePicker } from "@/components/ui/datetime-picker";
+'use client';
+import React, { Suspense } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { FormInput } from '@/components/ui/form-input';
+import { FormTextarea } from '@/components/ui/form-textarea';
+import { ImageUpload } from '@/components/ui/image-upload';
+import { DateTimePicker } from '@/components/ui/datetime-picker';
 import {
   AgendaManager,
   type AgendaItemData,
-} from "@/components/ui/agenda-manager";
-import { Divider } from "@/components/ui/divider";
-import { CategorySelector } from "@/components/ui/category-selector";
+} from '@/components/ui/agenda-manager';
+import { Divider } from '@/components/ui/divider';
+import { CategorySelector } from '@/components/ui/category-selector';
 import {
   LocationSelector,
   type LocationData,
   type EventType,
-} from "@/components/ui/location-selector";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useDebouncedFormStore } from "@/hooks/use-debounced-form-store";
-import { debounce } from "lodash";
+} from '@/components/ui/location-selector';
+import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useDebouncedFormStore } from '@/hooks/use-debounced-form-store';
+import { debounce } from 'lodash';
 
 const eventsFormSchema = z
   .object({
     eventTitle: z
       .string()
-      .min(1, { message: "Event title is required." })
-      .max(100, { message: "Title must not exceed 100 characters." }),
+      .min(1, { message: 'Event title is required.' })
+      .max(100, { message: 'Title must not exceed 100 characters.' }),
     eventDescription: z
       .string()
-      .min(1, { message: "Event description is required." })
-      .max(1000, { message: "Description must not exceed 1000 characters." }),
+      .min(1, { message: 'Event description is required.' })
+      .max(1000, { message: 'Description must not exceed 1000 characters.' }),
     image: z
-      .array(z.instanceof(File))
-      .min(1, { message: "A cover image is required." })
-      .max(1, { message: "Only one image allowed." }),
-    eventDate: z.date({ message: "Event date is required." }),
-    startTime: z.string().min(1, { message: "Start time is required." }),
-    endTime: z.string().min(1, { message: "End time is required." }),
+      .array(z.any())
+      .min(1, { message: 'A cover image is required.' })
+      .max(1, { message: 'Only one image allowed.' }),
+    eventDate: z.date({ message: 'Event date is required.' }),
+    startTime: z.string().min(1, { message: 'Start time is required.' }),
+    endTime: z.string().min(1, { message: 'End time is required.' }),
     agenda: z
       .array(
         z.object({
           id: z.string(),
-          title: z.string().min(1, { message: "Agenda title is required." }),
+          title: z.string().min(1, { message: 'Agenda title is required.' }),
           description: z
             .string()
-            .min(1, { message: "Agenda description is required." }),
-          startTime: z.string().min(1, { message: "Start time is required." }),
-          endTime: z.string().min(1, { message: "End time is required." }),
+            .min(1, { message: 'Agenda description is required.' }),
+          startTime: z.string().min(1, { message: 'Start time is required.' }),
+          endTime: z.string().min(1, { message: 'End time is required.' }),
         })
       )
-      .min(1, { message: "At least one agenda item is required." }),
+      .min(1, { message: 'At least one agenda item is required.' }),
     categories: z
       .array(z.string())
-      .min(1, { message: "At least one category is required." }),
-    eventType: z.enum(["remote", "venue"], {
-      message: "Event type is required.",
+      .min(1, { message: 'At least one category is required.' }),
+    eventType: z.enum(['remote', 'venue'], {
+      message: 'Event type is required.',
     }),
     location: z
       .object({
-        address: z.string().min(1, { message: "Address is required." }),
-        city: z.string().min(1, { message: "City is required." }),
-        state: z.string().min(1, { message: "State is required." }),
-        country: z.string().min(1, { message: "Country is required." }),
+        address: z.string().min(1, { message: 'Address is required.' }),
+        city: z.string().min(1, { message: 'City is required.' }),
+        state: z.string().min(1, { message: 'State is required.' }),
+        country: z.string().min(1, { message: 'Country is required.' }),
       })
       .optional(),
     capacity: z
       .number()
-      .min(1, { message: "Capacity is required." })
-      .max(100000, { message: "Capacity cannot exceed 100,000." }),
+      .min(1, { message: 'Capacity is required.' })
+      .max(100000, { message: 'Capacity cannot exceed 100,000.' }),
     price: z.number().min(0),
     isFree: z.boolean(),
   })
   .refine(
     (data) => {
       // If eventType is venue, location is required
-      if (data.eventType === "venue" && !data.location) {
+      if (data.eventType === 'venue' && !data.location) {
         return false;
       }
       return true;
     },
     {
-      message: "Location is required for venue events.",
-      path: ["location"],
+      message: 'Location is required for venue events.',
+      path: ['location'],
     }
   )
   .refine(
@@ -99,8 +99,8 @@ const eventsFormSchema = z
       return true;
     },
     {
-      message: "Price is required for paid events.",
-      path: ["price"],
+      message: 'Price must be greater than 0 for paid events.',
+      path: ['price'],
     }
   );
 
@@ -124,10 +124,14 @@ export interface EventsFormData {
 function EventsFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   // Zustand store integration
-  const { formData: storeData, updateFormDataImmediate, updateFormDataDebounced } = useDebouncedFormStore();
-  
+  const {
+    formData: storeData,
+    updateFormDataImmediate,
+    updateFormDataDebounced,
+  } = useDebouncedFormStore();
+
   const {
     register,
     setValue,
@@ -135,17 +139,17 @@ function EventsFormContent() {
     formState: { errors },
   } = useForm<EventsFormData>({
     resolver: zodResolver(eventsFormSchema),
-    mode: "onChange",
+    mode: 'onChange',
     defaultValues: {
-      eventTitle: storeData.eventTitle || "",
-      eventDescription: storeData.eventDescription || "",
+      eventTitle: storeData.eventTitle || '',
+      eventDescription: storeData.eventDescription || '',
       image: storeData.image || [],
       eventDate: storeData.eventDate || undefined,
-      startTime: storeData.startTime || "",
-      endTime: storeData.endTime || "",
+      startTime: storeData.startTime || '',
+      endTime: storeData.endTime || '',
       agenda: storeData.agenda || [],
       categories: storeData.categories || [],
-      eventType: storeData.eventType || "remote",
+      eventType: storeData.eventType || 'remote',
       location: storeData.location || undefined,
       capacity: storeData.capacity || 0,
       price: storeData.price || 0,
@@ -153,66 +157,66 @@ function EventsFormContent() {
     },
   });
 
-  const eventDate = watch("eventDate");
-  const startTime = watch("startTime");
-  const endTime = watch("endTime");
-  const agenda = watch("agenda");
-  const categories = watch("categories");
-  const eventType = watch("eventType");
-  const location = watch("location");
-  const capacity = watch("capacity");
-  const price = watch("price");
-  const isFree = watch("isFree");
-  
+  const eventDate = watch('eventDate');
+  const startTime = watch('startTime');
+  const endTime = watch('endTime');
+  const agenda = watch('agenda');
+  const categories = watch('categories');
+  const eventType = watch('eventType');
+  const location = watch('location');
+  const capacity = watch('capacity');
+  const price = watch('price');
+  const isFree = watch('isFree');
+
   // Watch for text input changes
-  const eventTitle = watch("eventTitle");
-  const eventDescription = watch("eventDescription");
+  const eventTitle = watch('eventTitle');
+  const eventDescription = watch('eventDescription');
 
   const handleImageChange = (images: File[]) => {
-    setValue("image", images, { shouldValidate: true });
+    setValue('image', images, { shouldValidate: true });
     // Immediately sync to store for files
     updateFormDataImmediate({ image: images });
   };
 
   const handleDateChange = (date: Date | undefined) => {
-    setValue("eventDate", date!, { shouldValidate: true });
+    setValue('eventDate', date!, { shouldValidate: true });
     // Immediately sync critical data
     updateFormDataImmediate({ eventDate: date! });
   };
 
   const handleStartTimeChange = (time: string) => {
-    setValue("startTime", time, { shouldValidate: true });
+    setValue('startTime', time, { shouldValidate: true });
     updateFormDataDebounced({ startTime: time });
   };
 
   const handleEndTimeChange = (time: string) => {
-    setValue("endTime", time, { shouldValidate: true });
+    setValue('endTime', time, { shouldValidate: true });
     updateFormDataDebounced({ endTime: time });
   };
 
   const handleAgendaChange = (newAgenda: AgendaItemData[]) => {
-    setValue("agenda", newAgenda, { shouldValidate: true });
+    setValue('agenda', newAgenda, { shouldValidate: true });
     updateFormDataImmediate({ agenda: newAgenda });
   };
 
   const handleCategoriesChange = (selectedCategories: string[]) => {
-    setValue("categories", selectedCategories, { shouldValidate: true });
+    setValue('categories', selectedCategories, { shouldValidate: true });
     updateFormDataImmediate({ categories: selectedCategories });
   };
 
   const handleEventTypeChange = (newEventType: EventType) => {
-    setValue("eventType", newEventType, { shouldValidate: true });
+    setValue('eventType', newEventType, { shouldValidate: true });
     updateFormDataImmediate({ eventType: newEventType });
 
     // Clear location when switching to remote
-    if (newEventType === "remote") {
-      setValue("location", undefined, { shouldValidate: true });
+    if (newEventType === 'remote') {
+      setValue('location', undefined, { shouldValidate: true });
       updateFormDataImmediate({ location: undefined });
     }
   };
 
   const handleLocationChange = (selectedLocation: LocationData | null) => {
-    setValue("location", selectedLocation || undefined, {
+    setValue('location', selectedLocation || undefined, {
       shouldValidate: true,
     });
     updateFormDataImmediate({ location: selectedLocation || undefined });
@@ -221,33 +225,34 @@ function EventsFormContent() {
   const handleCapacityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const numValue = value ? parseInt(value, 10) : 0;
-    setValue("capacity", numValue, { shouldValidate: true });
+    setValue('capacity', numValue, { shouldValidate: true });
     updateFormDataDebounced({ capacity: numValue });
   };
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const numValue = value ? parseFloat(value) : 0;
-    setValue("price", numValue, { shouldValidate: true });
+    setValue('price', numValue, { shouldValidate: true });
     updateFormDataDebounced({ price: numValue });
   };
 
   const handleIsFreeChange = (checked: boolean) => {
-    setValue("isFree", checked, { shouldValidate: true });
+    setValue('isFree', checked, { shouldValidate: true });
     updateFormDataImmediate({ isFree: checked });
 
     // If event is free, set price to 0
     if (checked) {
-      setValue("price", 0, { shouldValidate: true });
+      setValue('price', 0, { shouldValidate: true });
       updateFormDataImmediate({ price: 0 });
     }
   };
 
   // Debounced sync for text inputs
   const debouncedSyncTextInputs = React.useMemo(
-    () => debounce((data: { eventTitle?: string; eventDescription?: string }) => {
-      updateFormDataDebounced(data);
-    }, 500),
+    () =>
+      debounce((data: { eventTitle?: string; eventDescription?: string }) => {
+        updateFormDataDebounced(data);
+      }, 500),
     [updateFormDataDebounced]
   );
 
@@ -260,16 +265,16 @@ function EventsFormContent() {
   }, [eventTitle, eventDescription, debouncedSyncTextInputs]);
 
   const handleExitClick = () => {
-    router.push("/");
+    router.push('/');
   };
 
   const handlePreviewClick = () => {
     // Preserve the type parameter when navigating to preview
-    const currentType = searchParams.get("type");
+    const currentType = searchParams.get('type');
     if (currentType) {
       router.push(`/allocation-admin/create/preview?type=${currentType}`);
     } else {
-      router.push("/allocation-admin/create/preview");
+      router.push('/allocation-admin/create/preview');
     }
   };
 
@@ -292,7 +297,7 @@ function EventsFormContent() {
             placeholder="Event title*"
             required={true}
             error={errors.eventTitle?.message}
-            {...register("eventTitle")}
+            {...register('eventTitle')}
           />
         </div>
 
@@ -306,7 +311,7 @@ function EventsFormContent() {
             placeholder="Event description*"
             required={true}
             error={errors.eventDescription?.message}
-            {...register("eventDescription")}
+            {...register('eventDescription')}
           />
         </div>
 
@@ -377,8 +382,8 @@ function EventsFormContent() {
             }
           />
           {errors.agenda &&
-            typeof errors.agenda === "object" &&
-            "message" in errors.agenda && (
+            typeof errors.agenda === 'object' &&
+            'message' in errors.agenda && (
               <p
                 className="text-red-500 text-sm font-source-sans-pro mt-2"
                 role="alert"
@@ -423,7 +428,7 @@ function EventsFormContent() {
               errors.location?.country?.message ||
               (errors.location as any)?.message
             }
-            required={eventType === "venue"}
+            required={eventType === 'venue'}
           />
         </div>
 

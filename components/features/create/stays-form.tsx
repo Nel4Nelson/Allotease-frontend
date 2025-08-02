@@ -1,45 +1,45 @@
 /* eslint-disable react/no-unescaped-entities */
-"use client";
-import React, { Suspense } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
-import { z } from "zod";
-import { FormInput } from "@/components/ui/form-input";
-import { FormTextarea } from "@/components/ui/form-textarea";
-import { ImageUpload } from "@/components/ui/image-upload";
-import { Divider } from "@/components/ui/divider";
+'use client';
+import React, { Suspense } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { FormInput } from '@/components/ui/form-input';
+import { FormTextarea } from '@/components/ui/form-textarea';
+import { ImageUpload } from '@/components/ui/image-upload';
+import { Divider } from '@/components/ui/divider';
 import {
   LocationSelector,
   type LocationData,
-} from "@/components/ui/location-selector";
-import { FormSelect } from "@/components/ui/form-select";
-import { Button } from "@/components/ui/button";
-import { useRouter, useSearchParams } from "next/navigation";
-import { debounce } from "lodash";
-import { useDebouncedStaysFormStore } from "@/hooks/use-debounced-stay-store";
+} from '@/components/ui/location-selector';
+import { FormSelect } from '@/components/ui/form-select';
+import { Button } from '@/components/ui/button';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { debounce } from 'lodash';
+import { useDebouncedStaysFormStore } from '@/hooks/use-debounced-stay-store';
 
 const staysFormSchema = z.object({
   accommodationTitle: z
     .string()
-    .min(1, { message: "Accommodation title is required." })
-    .max(100, { message: "Title must not exceed 100 characters." }),
+    .min(1, { message: 'Accommodation title is required.' })
+    .max(100, { message: 'Title must not exceed 100 characters.' }),
   accommodationDescription: z
     .string()
-    .min(1, { message: "Accommodation description is required." })
-    .max(1000, { message: "Description must not exceed 1000 characters." }),
+    .min(1, { message: 'Accommodation description is required.' })
+    .max(1000, { message: 'Description must not exceed 1000 characters.' }),
   images: z
-    .array(z.instanceof(File))
-    .min(1, { message: "At least one image is required." })
-    .max(10, { message: "Maximum 10 images allowed." }),
+    .array(z.any())
+    .min(1, { message: 'At least one image is required.' })
+    .max(10, { message: 'Maximum 10 images allowed.' }),
   location: z.object({
-    address: z.string().min(1, { message: "Address is required." }),
-    city: z.string().min(1, { message: "City is required." }),
-    state: z.string().min(1, { message: "State is required." }),
-    country: z.string().min(1, { message: "Country is required." }),
+    address: z.string().min(1, { message: 'Address is required.' }),
+    city: z.string().min(1, { message: 'City is required.' }),
+    state: z.string().min(1, { message: 'State is required.' }),
+    country: z.string().min(1, { message: 'Country is required.' }),
   }),
   accommodationType: z
     .string()
-    .min(1, { message: "Accommodation type is required." }),
+    .min(1, { message: 'Accommodation type is required.' }),
 });
 
 export interface StaysFormData {
@@ -51,9 +51,9 @@ export interface StaysFormData {
 }
 
 const accommodationTypes = [
-  { value: "hotel-lodging", label: "Hotel & Lodging" },
-  { value: "apartments", label: "Apartments" },
-  { value: "school-lodges", label: "School Lodges" },
+  { value: 'hotel-lodging', label: 'Hotel & Lodging' },
+  { value: 'apartments', label: 'Apartments' },
+  { value: 'school-lodges', label: 'School Lodges' },
 ];
 
 interface StaysFormProps {
@@ -80,35 +80,35 @@ function StaysFormContent({}: StaysFormProps) {
     formState: { errors },
   } = useForm<StaysFormData>({
     resolver: zodResolver(staysFormSchema),
-    mode: "onChange",
+    mode: 'onChange',
     defaultValues: {
-      accommodationTitle: storeData.accommodationTitle || "",
-      accommodationDescription: storeData.accommodationDescription || "",
+      accommodationTitle: storeData.accommodationTitle || '',
+      accommodationDescription: storeData.accommodationDescription || '',
       images: storeData.images || [],
       location: storeData.location || undefined,
-      accommodationType: storeData.accommodationType || "",
+      accommodationType: storeData.accommodationType || '',
     },
   });
 
-  const location = watch("location");
+  const location = watch('location');
 
   // Watch for text input changes
-  const accommodationTitle = watch("accommodationTitle");
-  const accommodationDescription = watch("accommodationDescription");
+  const accommodationTitle = watch('accommodationTitle');
+  const accommodationDescription = watch('accommodationDescription');
 
   const handleImagesChange = (images: File[]) => {
-    setValue("images", images, { shouldValidate: true });
+    setValue('images', images, { shouldValidate: true });
     // Immediately sync to store for files
     updateFormDataImmediate({ images });
   };
 
   const handleLocationChange = (selectedLocation: LocationData | null) => {
-    setValue("location", selectedLocation!, { shouldValidate: true });
+    setValue('location', selectedLocation!, { shouldValidate: true });
     updateFormDataImmediate({ location: selectedLocation || undefined });
   };
 
   const handleAccommodationTypeChange = (value: string) => {
-    setValue("accommodationType", value, { shouldValidate: true });
+    setValue('accommodationType', value, { shouldValidate: true });
     updateFormDataImmediate({ accommodationType: value });
   };
 
@@ -136,16 +136,16 @@ function StaysFormContent({}: StaysFormProps) {
   }, [accommodationTitle, accommodationDescription, debouncedSyncTextInputs]);
 
   const handleExitClick = () => {
-    router.push("/");
+    router.push('/');
   };
 
   const handlePreviewClick = () => {
     // Preserve the type parameter when navigating to preview
-    const currentType = searchParams.get("type");
+    const currentType = searchParams.get('type');
     if (currentType) {
       router.push(`/allocation-admin/create/preview?type=${currentType}`);
     } else {
-      router.push("/allocation-admin/create/preview");
+      router.push('/allocation-admin/create/preview');
     }
   };
 
@@ -168,7 +168,7 @@ function StaysFormContent({}: StaysFormProps) {
             placeholder="Accommodation title*"
             required={true}
             error={errors.accommodationTitle?.message}
-            {...register("accommodationTitle")}
+            {...register('accommodationTitle')}
           />
         </div>
 
@@ -182,7 +182,7 @@ function StaysFormContent({}: StaysFormProps) {
             placeholder="Accommodation description*"
             required={true}
             error={errors.accommodationDescription?.message}
-            {...register("accommodationDescription")}
+            {...register('accommodationDescription')}
           />
         </div>
 

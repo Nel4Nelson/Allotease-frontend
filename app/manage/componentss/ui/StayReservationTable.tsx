@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   Table,
   TableBody,
@@ -6,62 +6,62 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Header2 } from "@/components/ui/header";
-import SearchHeader from "../../../../components/features/management/shared/search-header";
+} from '@/components/ui/table';
+// import { Header2 } from "@/components/ui/header";
+import SearchHeader from '../../../../components/features/management/shared/search-header';
 
 type Reservation = {
   id: string;
   guest: string;
   room: string;
   dates: string;
-  status: "Pending" | "Confirmed" | "Cancelled";
+  status: 'Pending' | 'Confirmed' | 'Cancelled';
 };
 
 const reservations: Reservation[] = [
   {
-    id: "RES-1001",
-    guest: "Kingsley Promise",
-    room: "Classic King Room",
-    dates: "May 31 - Jun 1",
-    status: "Pending",
+    id: 'RES-1001',
+    guest: 'Kingsley Promise',
+    room: 'Classic King Room',
+    dates: 'May 31 - Jun 1',
+    status: 'Pending',
   },
   {
-    id: "RES-1002",
-    guest: "Amaka Onyeka",
-    room: "Deluxe Twin Room",
-    dates: "June 5 - June 6",
-    status: "Confirmed",
+    id: 'RES-1002',
+    guest: 'Amaka Onyeka',
+    room: 'Deluxe Twin Room',
+    dates: 'June 5 - June 6',
+    status: 'Confirmed',
   },
   {
-    id: "RES-1003",
-    guest: "Michael Obasi",
-    room: "Standard Suite",
-    dates: "June 10 - June 12",
-    status: "Cancelled",
+    id: 'RES-1003',
+    guest: 'Michael Obasi',
+    room: 'Standard Suite',
+    dates: 'June 10 - June 12',
+    status: 'Cancelled',
   },
   {
-    id: "RES-1004",
-    guest: "Sandra Umeh",
-    room: "Executive Suite",
-    dates: "June 18 - June 19",
-    status: "Pending",
+    id: 'RES-1004',
+    guest: 'Sandra Umeh',
+    room: 'Executive Suite',
+    dates: 'June 18 - June 19',
+    status: 'Pending',
   },
   {
-    id: "RES-1005",
-    guest: "Chukwuemeka Udo",
-    room: "Classic King Room",
-    dates: "July 1 - July 3",
-    status: "Confirmed",
+    id: 'RES-1005',
+    guest: 'Chukwuemeka Udo',
+    room: 'Classic King Room',
+    dates: 'July 1 - July 3',
+    status: 'Confirmed',
   },
 ];
 
 const getStatusStyle = (status: string) => {
   switch (status) {
-    case "Pending":
+    case 'Pending':
       return {
-        bg: "bg-[#FEEDD6]",
-        text: "text-[#F07C29]",
+        bg: 'bg-[#FEEDD6]',
+        text: 'text-[#F07C29]',
         icon: (
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -74,10 +74,10 @@ const getStatusStyle = (status: string) => {
           </svg>
         ),
       };
-    case "Confirmed":
+    case 'Confirmed':
       return {
-        bg: "bg-[#ECFDF3]",
-        text: "text-[#0A9355]",
+        bg: 'bg-[#ECFDF3]',
+        text: 'text-[#0A9355]',
         icon: (
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -90,10 +90,10 @@ const getStatusStyle = (status: string) => {
           </svg>
         ),
       };
-    case "Cancelled":
+    case 'Cancelled':
       return {
-        bg: "bg-[#FFE2E7]",
-        text: "text-[#EB4244]",
+        bg: 'bg-[#FFE2E7]',
+        text: 'text-[#EB4244]',
         icon: (
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -107,36 +107,36 @@ const getStatusStyle = (status: string) => {
         ),
       };
     default:
-      return { bg: "", text: "", icon: null };
+      return { bg: '', text: '', icon: null };
   }
 };
 
 export function StayReservationTable() {
   const handleSearch = (value: string) => {
-    console.log("Searching:", value);
+    console.log('Searching:', value);
     // Filter table or API call
   };
 
   const handleSortChange = (option: string) => {
-    console.log("Sort changed to:", option);
+    console.log('Sort changed to:', option);
     // Sort your data
   };
 
   const handleExport = () => {
-    console.log("Exporting table...");
+    console.log('Exporting table...');
     // Export logic
   };
 
   return (
     <div className="overflow-x-auto rounded-md bg-[#F2F4F7]/50 border">
-      <h2 className="p-3">
+      {/* <h2 className="p-3">
         <Header2 title="Recent reservations" />
-      </h2>
+      </h2> */}
 
       <div className="p-4">
         <SearchHeader
           onSearch={handleSearch}
-          sortOptions={["Time", "Date", "Price"]}
+          sortOptions={['Time', 'Date', 'Price']}
           onSortChange={handleSortChange}
           onExport={handleExport}
           showSort={true}

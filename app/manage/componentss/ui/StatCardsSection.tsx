@@ -1,26 +1,31 @@
-import { ReservationStatCard } from "@/types/index";
-import React from "react";
+import React from 'react';
+
+interface ReservationStatCard {
+  title: string;
+  totalNo: number;
+  percentage: string;
+}
 
 const stats: ReservationStatCard[] = [
   {
-    title: "Total Reservation",
+    title: 'Total Reservation',
     totalNo: 124,
-    percentage: "+12%",
+    percentage: '+12%',
   },
   {
-    title: "Pending Reservations",
+    title: 'Pending Reservations',
     totalNo: 30,
-    percentage: "-8%",
+    percentage: '-8%',
   },
   {
-    title: "Confirmed Reservations",
+    title: 'Confirmed Reservations',
     totalNo: 80,
-    percentage: "+20%",
+    percentage: '+20%',
   },
   {
-    title: "Cancelled Reservations",
+    title: 'Cancelled Reservations',
     totalNo: 14,
-    percentage: "-5%",
+    percentage: '-5%',
   },
 ];
 
@@ -40,9 +45,9 @@ const StatCardsSection: React.FC = () => {
               <p className="text-3xl font-bold text-gray-900">{item.totalNo}</p>
               <span
                 className={`text-sm font-semibold ${
-                  item.percentage.startsWith("-")
-                    ? "text-red-600"
-                    : "text-green-600"
+                  item.percentage.startsWith('-')
+                    ? 'text-red-600'
+                    : 'text-green-600'
                 }`}
               >
                 {item.percentage}
