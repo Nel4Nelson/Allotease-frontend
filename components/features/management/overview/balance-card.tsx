@@ -6,13 +6,19 @@ import { Button } from "@/components/ui/button";
 interface BalanceCardProps {
   balance: number;
   currency?: string;
+  formattedBalance?: string;
   onWithdraw?: () => void;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
 export function BalanceCard({
   balance,
   currency = "NGN",
+  formattedBalance,
   onWithdraw,
+  isLoading = false,
+  error = null,
 }: BalanceCardProps) {
   const [showBalance, setShowBalance] = useState(false);
 
@@ -22,6 +28,23 @@ export function BalanceCard({
       currency: "NGN",
       minimumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const getDisplayBalance = () => {
+    if (formattedBalance) return formattedBalance;
+    return formatBalance(balance);
+  };
+
+  const renderBalance = () => {
+    if (isLoading) {
+      return <div className="h-6 bg-gray-300 rounded animate-pulse w-32"></div>;
+    }
+
+    if (!showBalance) {
+      return "••••••••";
+    }
+
+    return getDisplayBalance();
   };
 
   return (
@@ -52,9 +75,17 @@ export function BalanceCard({
             <p className="text-sm">Your {currency} Balance</p>
             {showBalance ? <Eye size={16} /> : <EyeSlash size={16} />}
           </div>
-          <h3 className="text-2xl text-white font-bold font-source">
-            {showBalance ? formatBalance(balance) : "••••••••"}
-          </h3>
+
+          <div className="flex flex-col items-center min-h-[32px]">
+            <h3 className="text-2xl text-white font-bold font-source">
+              {renderBalance()}
+            </h3>
+
+            {/* Error Message */}
+            {error && showBalance && (
+              <p className="text-red-400 text-xs mt-1">Error loading balance</p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -69,12 +100,16 @@ export function BalanceCard({
             </div>
             <h5 className="font-semibold text-[#1F2024]">Flend Worldwide</h5>
           </div>
-
           <Button
             onClick={onWithdraw}
-            className="font-semibold text-white text-sm bg-[#FF5B00] hover:bg-[#E04F00] px-4 py-2 rounded-full"
+            disabled={isLoading}
+            className={`font-semibold text-white text-sm px-4 py-2 rounded-full transition-colors ${
+              isLoading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-[#FF5B00] hover:bg-[#E04F00]"
+            }`}
           >
-            Withdraw
+            {isLoading ? "Loading..." : "Withdraw"}
           </Button>
         </div>
       </div>

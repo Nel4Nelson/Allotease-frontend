@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Ticket } from "lucide-react";
+import SearchHeader from "../shared/search-header";
 
 interface EventReservation {
   id: string;
@@ -20,6 +21,7 @@ interface EventReservation {
 interface EventsReservationsProps {
   reservations: EventReservation[];
   loading?: boolean;
+  searchHeader?: boolean;
   onSearch?: (value: string) => void;
   onSort?: (value: string) => void;
   onExport?: () => void;
@@ -28,7 +30,28 @@ interface EventsReservationsProps {
 export function EventsReservations({
   reservations,
   loading = false,
+  searchHeader = false,
+  onSearch,
+  onSort,
+  onExport,
 }: EventsReservationsProps) {
+  const handleSortChange = (value: string) => {
+    if (onSort) {
+      onSort(value);
+    }
+  };
+
+  const handleExport = () => {
+    if (onExport) {
+      onExport();
+    }
+  };
+
+  const handleSearch = () => {
+    if (onSearch) {
+    }
+  };
+
   if (loading) {
     return (
       <div className="overflow-x-auto rounded-md bg-[#F2F4F7]/50 border">
@@ -51,55 +74,63 @@ export function EventsReservations({
   return (
     <div className="overflow-x-auto rounded-md bg-[#F2F4F7]/50 border">
       <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Recent Reservations
+        <h2 className="text-xl font-bold text-[#1F2024] mb-6 font-space-grotesk">
+          <h2>Recent reservations</h2>
         </h2>
+
+        {searchHeader && (
+          <div>
+            <SearchHeader
+              onSearch={handleSearch}
+              sortOptions={["Time", "Date", "Price"]}
+              onSortChange={handleSortChange}
+              onExport={handleExport}
+              showSort={true}
+              showExport={true}
+            />
+          </div>
+        )}
       </div>
 
-      <Table className="min-w-full w-full">
-        <TableHeader className="bg-[#F2F4F7CC]">
+      <Table className="min-w-full w-full text-md">
+        <TableHeader className="bg-[#F2F4F7CC] font-space-grotesk">
           <TableRow>
-            <TableHead className="w-[140px] text-[#20232A] font-medium">
+            <TableHead className="w-[140px] border-[#8AAEA433] text-[#20232A] font-medium">
               Reservation ID
             </TableHead>
             <TableHead className="text-[#20232A] font-medium">
               Attendee
             </TableHead>
-            <TableHead className="text-[#20232A] font-medium hidden md:table-cell">
+            <TableHead className="text-[#20232A] font-medium md:table-cell">
               Tickets
             </TableHead>
-            <TableHead className="text-[#20232A] font-medium hidden md:table-cell">
+            <TableHead className="text-[#20232A] font-medium md:table-cell">
               Date
             </TableHead>
           </TableRow>
         </TableHeader>
 
         <TableBody>
-          {reservations.map((reservation) => (
-            <TableRow
-              key={reservation.id}
-              className="text-[#71727A] border-none"
-            >
-              <TableCell className="font-medium">{reservation.id}</TableCell>
-              <TableCell>{reservation.attendee}</TableCell>
+          {reservations.map((r) => (
+            <TableRow key={r.id} className="text-[#71727A] border-none">
+              <TableCell className="font-medium">{r.id}</TableCell>
+              <TableCell>{r.attendee}</TableCell>
+
               <TableCell className="hidden md:table-cell">
                 <div className="flex flex-wrap gap-2">
-                  {Array.from({ length: reservation.ticketCount }).map(
-                    (_, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center gap-1 border border-[#0A9355] rounded-md px-2 py-1 text-[#0A9355]"
-                      >
-                        <Ticket size={16} />
-                        <span className="text-sm font-medium">#{i + 1}</span>
-                      </div>
-                    )
-                  )}
+                  {Array.from({ length: r.ticketCount }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-1 border border-[#0A9355] rounded-md px-2 py-1 text-[#0A9355]"
+                    >
+                      <Ticket size={20} />
+                      <span className="text-sm font-medium">#{i + 1}</span>
+                    </div>
+                  ))}
                 </div>
               </TableCell>
-              <TableCell className="hidden md:table-cell">
-                {reservation.date}
-              </TableCell>
+
+              <TableCell className="hidden md:table-cell">{r.date}</TableCell>
             </TableRow>
           ))}
         </TableBody>

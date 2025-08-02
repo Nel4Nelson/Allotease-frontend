@@ -9,10 +9,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ReservationStatusBadge } from "../shared/reservation-status-badge";
-import {
- 
-  TransformedReservation,
-} from "@/utils/stay-reservation-transformer";
+import { TransformedReservation } from "@/utils/stay-reservation-transformer";
+import SearchHeader from "../shared/search-header";
 
 // interface StayReservation {
 //   id: string;
@@ -25,6 +23,7 @@ import {
 interface StaysReservationsProps {
   reservations: TransformedReservation[];
   loading?: boolean;
+  searchHeader?: boolean;
   onSearch?: (value: string) => void;
   onSort?: (value: string) => void;
   onExport?: () => void;
@@ -33,7 +32,23 @@ interface StaysReservationsProps {
 export function StaysReservations({
   reservations,
   loading = false,
+  searchHeader = false,
 }: StaysReservationsProps) {
+  const handleSearch = (value: string) => {
+    console.log("Searching:", value);
+    // Filter table or API call
+  };
+
+  const handleSortChange = (option: string) => {
+    console.log("Sort changed to:", option);
+    // Sort your data
+  };
+
+  const handleExport = () => {
+    console.log("Exporting table...");
+    // Export logic
+  };
+
   if (loading) {
     return (
       <div className="overflow-x-auto rounded-md bg-[#F2F4F7]/50 border">
@@ -56,25 +71,38 @@ export function StaysReservations({
   return (
     <div className="overflow-x-auto rounded-md bg-[#F2F4F7]/50 border">
       <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Recent Reservations
+        <h2 className="text-xl font-bold text-[#1F2024] mb-6 font-space-grotesk">
+          {" "}
+          Recent reservations
         </h2>
+        {searchHeader && (
+          <div>
+            <SearchHeader
+              onSearch={handleSearch}
+              sortOptions={["Time", "Date", "Price"]}
+              onSortChange={handleSortChange}
+              onExport={handleExport}
+              showSort={true}
+              showExport={true}
+            />
+          </div>
+        )}
       </div>
 
-      <Table className="min-w-full w-full">
-        <TableHeader className="bg-[#F2F4F7CC]">
+      <Table className="min-w-full w-full text-md">
+        <TableHeader className="bg-[#F2F4F7CC] font-space-grotesk">
           <TableRow>
-            <TableHead className="w-[140px] text-[#20232A] font-medium">
+            <TableHead className="w-[140px] text-[#20232A] font-medium ">
               Reservation ID
             </TableHead>
             <TableHead className="text-[#20232A] font-medium">Guest</TableHead>
-            <TableHead className="text-[#20232A] font-medium hidden sm:table-cell">
+            <TableHead className="text-[#20232A] font-medium  sm:table-cell">
               Room
             </TableHead>
-            <TableHead className="text-[#20232A] font-medium hidden sm:table-cell">
+            <TableHead className="text-[#20232A] font-medium sm:table-cell">
               Dates
             </TableHead>
-            <TableHead className="text-[#20232A] font-medium hidden sm:table-cell">
+            <TableHead className="text-[#20232A] font-medium sm:table-cell">
               Status
             </TableHead>
           </TableRow>

@@ -40,13 +40,13 @@ export function ListingCard({
           height={200}
           width={320}
           alt={listing.title}
-          className="rounded-2xl w-full h-[200px] object-cover"
+          className="rounded-2xl w-full h-[130px] object-cover"
         />
       </div>
 
       <div className="flex flex-col gap-2 mt-3">
         {/* Title */}
-        <h3 className="text-[#1F2024] font-bold text-lg leading-tight">
+        <h3 className="text-[#1F2024] font-bold text-lg leading-tight font-space-grotesk">
           {listing.title}
         </h3>
 
@@ -101,9 +101,11 @@ export function ListingCard({
             <Button
               asChild
               variant="outline"
-              className="w-full bg-[#F2F4F799] hover:bg-[#F2F4F7] border-transparent text-[#1F2024] font-bold rounded-full"
+              className="w-full bg-[#F2F4F799] hover:bg-[#F2F4F7] border-transparent text-[#1F2024] font-bold rounded-full flex justify-center"
             >
-              <Link href={listing.manageUrl || "#"}>Manage</Link>
+              <Link href={listing.manageUrl || "#"} className="">
+                Manage
+              </Link>
             </Button>
           </div>
         )}
