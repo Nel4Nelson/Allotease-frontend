@@ -38,7 +38,7 @@ export function AboutNavbar() {
         <div className="container mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-10">
             {/* Logo */}
-            <Link href="/" className="flex items-center group h-full">
+            <Link href="/about" className="flex items-center group h-full">
               <Image
                 src="/images/brand-logo/about-header-logo.svg"
                 alt="Allotease Logo"

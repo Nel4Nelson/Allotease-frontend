@@ -8,6 +8,12 @@ interface IconProps {
   height?: number;
 }
 
+interface HeroBackgroundProps {
+  className?: string;
+  width?: number | string;
+  height?: number | string;
+}
+
 export const MenuIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -709,3 +715,541 @@ export const MinusIcon = () => (
     />
   </svg>
 );
+
+export const HeroBackground: React.FC<HeroBackgroundProps> = ({
+  className = "",
+  width = 1922,
+  height = 982,
+}) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      xmlnsXlink="http://www.w3.org/1999/xlink"
+      width={width}
+      height={height}
+      viewBox="0 0 1922 982"
+      fill="none"
+      className={className}
+      preserveAspectRatio="xMidYMid slice"
+    >
+      <g clipPath="url(#clip0_451_6722)">
+        <rect
+          width="2157"
+          height="982"
+          transform="translate(-118)"
+          fill="#2F4F4F"
+        />
+        <rect
+          opacity="0.4"
+          x="-98.5"
+          y="-704"
+          width="1540"
+          height="1061.38"
+          fill="url(#pattern0_451_6722)"
+        />
+
+        <g filter="url(#filter0_f_451_6722)">
+          <rect
+            x="-27.5"
+            y="237"
+            width="1513"
+            height="298"
+            rx="149"
+            fill="url(#paint0_linear_451_6722)"
+          />
+        </g>
+
+        <g filter="url(#filter1_f_451_6722)">
+          <rect
+            x="-347.5"
+            y="318"
+            width="2037"
+            height="153"
+            rx="76.5"
+            fill="#2F4F4F"
+            fillOpacity="0.72"
+          />
+        </g>
+
+        <g filter="url(#filter2_f_451_6722)">
+          <rect x="-129.5" y="343" width="1724" height="179" fill="#2F4F4F" />
+        </g>
+
+        <g filter="url(#filter3_d_451_6722)">
+          <g filter="url(#filter4_i_451_6722)">
+            <path
+              d="M1596.09 468.139L1561.57 136.397L1865.06 267.609L1904.81 597.275L1596.09 468.139Z"
+              fill="url(#paint1_linear_451_6722)"
+            />
+          </g>
+          <path
+            d="M1335.51 659.28L1597.67 464.483L1904.81 597.276L1637.42 794.149L1335.51 659.28Z"
+            fill="url(#paint2_linear_451_6722)"
+          />
+          <path
+            d="M1597.67 464.482L1335.51 659.279L1294.18 333.27L1561.57 136.397L1597.67 464.482Z"
+            fill="#FF7058"
+          />
+        </g>
+
+        <g opacity="0.7" filter="url(#filter5_d_451_6722)">
+          <g filter="url(#filter6_i_451_6722)">
+            <path
+              d="M1229.85 301.307L1209.36 104.329L1389.56 182.239L1413.16 377.984L1229.85 301.307Z"
+              fill="url(#paint3_linear_451_6722)"
+            />
+          </g>
+          <path
+            d="M1075.13 414.801L1230.79 299.136L1413.16 377.985L1254.39 494.882L1075.13 414.801Z"
+            fill="url(#paint4_linear_451_6722)"
+          />
+          <path
+            d="M1230.79 299.136L1075.13 414.8L1050.58 221.226L1209.36 104.329L1230.79 299.136Z"
+            fill="white"
+          />
+        </g>
+      </g>
+
+      <defs>
+        <pattern
+          id="pattern0_451_6722"
+          patternContentUnits="objectBoundingBox"
+          width="1"
+          height="1"
+        >
+          <use
+            xlinkHref="#image0_451_6722"
+            transform="scale(0.000244141 0.000354233)"
+          />
+        </pattern>
+
+        <filter
+          id="filter0_f_451_6722"
+          x="-282.034"
+          y="-17.5341"
+          width="2022.07"
+          height="807.068"
+          filterUnits="userSpaceOnUse"
+          colorInterpolationFilters="sRGB"
+        >
+          <feFlood floodOpacity="0" result="BackgroundImageFix" />
+          <feBlend
+            mode="normal"
+            in="SourceGraphic"
+            in2="BackgroundImageFix"
+            result="shape"
+          />
+          <feGaussianBlur
+            stdDeviation="127.267"
+            result="effect1_foregroundBlur_451_6722"
+          />
+        </filter>
+
+        <filter
+          id="filter1_f_451_6722"
+          x="-544.2"
+          y="121.3"
+          width="2430.4"
+          height="546.4"
+          filterUnits="userSpaceOnUse"
+          colorInterpolationFilters="sRGB"
+        >
+          <feFlood floodOpacity="0" result="BackgroundImageFix" />
+          <feBlend
+            mode="normal"
+            in="SourceGraphic"
+            in2="BackgroundImageFix"
+            result="shape"
+          />
+          <feGaussianBlur
+            stdDeviation="98.35"
+            result="effect1_foregroundBlur_451_6722"
+          />
+        </filter>
+
+        <filter
+          id="filter2_f_451_6722"
+          x="-198.3"
+          y="274.2"
+          width="1861.6"
+          height="316.6"
+          filterUnits="userSpaceOnUse"
+          colorInterpolationFilters="sRGB"
+        >
+          <feFlood floodOpacity="0" result="BackgroundImageFix" />
+          <feBlend
+            mode="normal"
+            in="SourceGraphic"
+            in2="BackgroundImageFix"
+            result="shape"
+          />
+          <feGaussianBlur
+            stdDeviation="34.4"
+            result="effect1_foregroundBlur_451_6722"
+          />
+        </filter>
+
+        <filter
+          id="filter3_d_451_6722"
+          x="1102.32"
+          y="-11.3308"
+          width="994.346"
+          height="1041.46"
+          filterUnits="userSpaceOnUse"
+          colorInterpolationFilters="sRGB"
+        >
+          <feFlood floodOpacity="0" result="BackgroundImageFix" />
+          <feColorMatrix
+            in="SourceAlpha"
+            type="matrix"
+            values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+            result="hardAlpha"
+          />
+          <feOffset dy="44.1264" />
+          <feGaussianBlur stdDeviation="95.9268" />
+          <feComposite in2="hardAlpha" operator="out" />
+          <feColorMatrix
+            type="matrix"
+            values="0 0 0 0 0.917647 0 0 0 0 0.247059 0 0 0 0 0.137255 0 0 0 0.4 0"
+          />
+          <feBlend
+            mode="normal"
+            in2="BackgroundImageFix"
+            result="effect1_dropShadow_451_6722"
+          />
+          <feBlend
+            mode="normal"
+            in="SourceGraphic"
+            in2="effect1_dropShadow_451_6722"
+            result="shape"
+          />
+        </filter>
+
+        <filter
+          id="filter4_i_451_6722"
+          x="1561.57"
+          y="132.56"
+          width="343.243"
+          height="464.715"
+          filterUnits="userSpaceOnUse"
+          colorInterpolationFilters="sRGB"
+        >
+          <feFlood floodOpacity="0" result="BackgroundImageFix" />
+          <feBlend
+            mode="normal"
+            in="SourceGraphic"
+            in2="BackgroundImageFix"
+            result="shape"
+          />
+          <feColorMatrix
+            in="SourceAlpha"
+            type="matrix"
+            values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+            result="hardAlpha"
+          />
+          <feOffset dy="-3.83707" />
+          <feGaussianBlur stdDeviation="12.4225" />
+          <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1" />
+          <feColorMatrix
+            type="matrix"
+            values="0 0 0 0 1 0 0 0 0 0.439216 0 0 0 0 0.345098 0 0 0 0.5 0"
+          />
+          <feBlend
+            mode="normal"
+            in2="shape"
+            result="effect1_innerShadow_451_6722"
+          />
+        </filter>
+
+        <filter
+          id="filter5_d_451_6722"
+          x="936.668"
+          y="16.6131"
+          width="590.412"
+          height="618.386"
+          filterUnits="userSpaceOnUse"
+          colorInterpolationFilters="sRGB"
+        >
+          <feFlood floodOpacity="0" result="BackgroundImageFix" />
+          <feColorMatrix
+            in="SourceAlpha"
+            type="matrix"
+            values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+            result="hardAlpha"
+          />
+          <feOffset dy="26.2008" />
+          <feGaussianBlur stdDeviation="56.9584" />
+          <feComposite in2="hardAlpha" operator="out" />
+          <feColorMatrix
+            type="matrix"
+            values="0 0 0 0 0.533333 0 0 0 0 0.533333 0 0 0 0 0.533333 0 0 0 0.4 0"
+          />
+          <feBlend
+            mode="normal"
+            in2="BackgroundImageFix"
+            result="effect1_dropShadow_451_6722"
+          />
+          <feBlend
+            mode="normal"
+            in="SourceGraphic"
+            in2="effect1_dropShadow_451_6722"
+            result="shape"
+          />
+        </filter>
+
+        <filter
+          id="filter6_i_451_6722"
+          x="1209.36"
+          y="102.051"
+          width="203.807"
+          height="275.933"
+          filterUnits="userSpaceOnUse"
+          colorInterpolationFilters="sRGB"
+        >
+          <feFlood floodOpacity="0" result="BackgroundImageFix" />
+          <feBlend
+            mode="normal"
+            in="SourceGraphic"
+            in2="BackgroundImageFix"
+            result="shape"
+          />
+          <feColorMatrix
+            in="SourceAlpha"
+            type="matrix"
+            values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+            result="hardAlpha"
+          />
+          <feOffset dy="-2.27833" />
+          <feGaussianBlur stdDeviation="7.37611" />
+          <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1" />
+          <feColorMatrix
+            type="matrix"
+            values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.5 0"
+          />
+          <feBlend
+            mode="normal"
+            in2="shape"
+            result="effect1_innerShadow_451_6722"
+          />
+        </filter>
+
+        <linearGradient
+          id="paint0_linear_451_6722"
+          x1="729.406"
+          y1="290.33"
+          x2="729.374"
+          y2="330.841"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor="#16F476" stopOpacity="0.4" />
+          <stop offset="0.375" stopColor="#2F4F4F" />
+        </linearGradient>
+
+        <linearGradient
+          id="paint1_linear_451_6722"
+          x1="1554.73"
+          y1="151.207"
+          x2="1674.7"
+          y2="502.127"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor="#FF7058" />
+          <stop offset="1" stopColor="#F95034" />
+        </linearGradient>
+
+        <linearGradient
+          id="paint2_linear_451_6722"
+          x1="1676.28"
+          y1="498.471"
+          x2="1433.26"
+          y2="821.362"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor="#F95034" />
+          <stop offset="1" stopColor="#D02407" />
+        </linearGradient>
+
+        <linearGradient
+          id="paint3_linear_451_6722"
+          x1="1205.3"
+          y1="113.123"
+          x2="1276.53"
+          y2="321.488"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor="#F8F8F8" />
+          <stop offset="1" stopColor="#E0E0E0" />
+        </linearGradient>
+
+        <linearGradient
+          id="paint4_linear_451_6722"
+          x1="1277.47"
+          y1="319.318"
+          x2="1133.17"
+          y2="511.04"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor="#F1F1F1" />
+          <stop offset="1" stopColor="#818181" />
+        </linearGradient>
+
+        <clipPath id="clip0_451_6722">
+          <rect
+            width="2157"
+            height="982"
+            fill="white"
+            transform="translate(-118)"
+          />
+        </clipPath>
+      </defs>
+    </svg>
+  );
+};
+
+export const InstagramIcon: React.FC<IconProps> = ({ className }) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="27"
+      height="28"
+      viewBox="0 0 27 28"
+      fill="none"
+      className={className}
+    >
+      <path
+        d="M13.3425 24.3432C10.6078 24.3432 10.2854 24.3288 9.21819 24.2821C8.38596 24.2547 7.56449 24.0855 6.78917 23.7818C5.44772 23.2598 4.38698 22.1987 3.86545 20.857C3.57342 20.0789 3.41591 19.2567 3.39966 18.4258C3.3374 17.3608 3.3374 17.0117 3.3374 14.2981C3.3374 11.5556 3.35185 11.2354 3.39966 10.1738C3.41626 9.34391 3.57377 8.52292 3.86545 7.74585C4.38642 6.40242 5.44887 5.34036 6.7925 4.81991C7.56917 4.52665 8.39037 4.36872 9.22042 4.353C10.2821 4.29297 10.6311 4.29297 13.3425 4.29297C16.0995 4.29297 16.4163 4.30742 17.4669 4.353C18.2991 4.36886 19.1224 4.52677 19.9014 4.81991C21.2447 5.34095 22.3069 6.4028 22.8285 7.74585C23.1255 8.53425 23.2838 9.36807 23.2965 10.2104C23.3588 11.2754 23.3588 11.6234 23.3588 14.3359C23.3588 17.0484 23.3432 17.4041 23.2965 18.4569C23.28 19.2886 23.1221 20.1115 22.8296 20.8904C22.3067 22.2329 21.2444 23.2945 19.9014 23.8163C19.1235 24.1078 18.3019 24.2653 17.4713 24.2821C16.4097 24.3432 16.0617 24.3432 13.3425 24.3432ZM13.3047 6.05276C10.5856 6.05276 10.3032 6.0661 9.24154 6.1139C8.60786 6.1223 7.98031 6.23923 7.38614 6.45963C6.50875 6.79537 5.81448 7.48682 5.47516 8.36283C5.25306 8.96347 5.13611 9.59788 5.12943 10.2382C5.07051 11.3155 5.07051 11.5978 5.07051 14.2981C5.07051 16.9661 5.08052 17.2896 5.12943 18.3602C5.13938 18.9941 5.25627 19.6217 5.47516 20.2167C5.81498 21.0921 6.50913 21.783 7.38614 22.1188C7.97991 22.3406 8.60771 22.4576 9.24154 22.4645C10.3176 22.5268 10.6011 22.5268 13.3047 22.5268C16.0317 22.5268 16.314 22.5134 17.3668 22.4645C18.0009 22.4568 18.6289 22.3398 19.2233 22.1188C20.0954 21.7801 20.7851 21.0908 21.1243 20.2189C21.346 19.6178 21.4629 18.9831 21.47 18.3424H21.4822C21.5301 17.2796 21.5301 16.9961 21.5301 14.2803C21.5301 11.5645 21.5178 11.2788 21.47 10.2171C21.4601 9.58396 21.3432 8.95704 21.1243 8.36283C20.7859 7.48969 20.0961 6.79902 19.2233 6.45963C18.6291 6.23812 18.001 6.12115 17.3668 6.1139C16.2918 6.05276 16.0106 6.05276 13.3047 6.05276ZM13.3425 19.4329C11.2637 19.4343 9.38874 18.1831 8.59216 16.2629C7.79558 14.3428 8.23425 12.1318 9.70359 10.6612C11.1729 9.19058 13.3835 8.75 15.3044 9.54492C17.2252 10.3398 18.478 12.2137 18.4785 14.2925C18.4754 17.1285 16.1785 19.4274 13.3425 19.4329ZM13.3425 10.9553C11.5006 10.9553 10.0075 12.4484 10.0075 14.2903C10.0075 16.1322 11.5006 17.6254 13.3425 17.6254C15.1844 17.6254 16.6776 16.1322 16.6776 14.2903C16.6733 12.4502 15.1826 10.9595 13.3425 10.9553ZM18.6786 10.1626C18.0176 10.1602 17.4834 9.62302 17.4846 8.96204C17.4859 8.30105 18.0221 7.76587 18.683 7.76587C19.344 7.76587 19.8802 8.30104 19.8814 8.96203C19.8817 9.28093 19.755 9.58682 19.5293 9.8121C19.3036 10.0374 18.9975 10.1635 18.6786 10.1626Z"
+        fill="#D5FFEB"
+        fillOpacity="0.5"
+      />
+    </svg>
+  );
+};
+
+export const TwitterIcon: React.FC<IconProps> = ({ className }) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="28"
+      height="28"
+      viewBox="0 0 28 28"
+      fill="none"
+      className={className}
+    >
+      <path
+        d="M23.0069 8.38857C24.0034 7.79281 24.7491 6.85471 25.1046 5.74944C24.1682 6.30506 23.1437 6.69646 22.0753 6.9067C20.5941 5.33982 18.2472 4.95851 16.3461 5.97584C14.445 6.99317 13.4603 9.15729 13.9423 11.2589C10.1065 11.0664 6.53286 9.25448 4.11055 6.27415C2.84639 8.45463 3.4924 11.242 5.58686 12.6441C4.82948 12.6197 4.0889 12.4147 3.42687 12.046C3.42687 12.066 3.42687 12.086 3.42687 12.106C3.4273 14.3774 5.0281 16.3338 7.25438 16.784C6.55187 16.9751 5.81499 17.0032 5.09995 16.8662C5.72604 18.8087 7.51624 20.1394 9.55667 20.1791C7.86673 21.5054 5.77971 22.2247 3.63142 22.2212C3.25063 22.2218 2.87015 22.1999 2.49194 22.1556C4.67349 23.5575 7.21255 24.3016 9.80569 24.2989C13.4134 24.3237 16.8805 22.9015 19.4314 20.3503C21.9824 17.7991 23.4044 14.3319 23.3793 10.7242C23.3793 10.5174 23.3745 10.3118 23.3649 10.1072C24.2992 9.432 25.1055 8.59551 25.7461 7.63707C24.8756 8.0229 23.9523 8.2762 23.0069 8.38857Z"
+        fill="#D5FFEB"
+        fillOpacity="0.5"
+      />
+    </svg>
+  );
+};
+
+export const WhatsAppIcon: React.FC<IconProps> = ({ className }) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="22"
+      height="23"
+      viewBox="0 0 22 23"
+      fill="none"
+      className={className}
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M11.2786 21.5709C17.1597 21.5709 21.9273 16.8033 21.9273 10.9222C21.9273 5.04103 17.1597 0.273438 11.2786 0.273438C5.39748 0.273438 0.629883 5.04103 0.629883 10.9222C0.629883 12.832 1.13265 14.6244 2.01306 16.1742L0.629883 21.5709L6.19374 20.2807C7.70473 21.1034 9.43708 21.5709 11.2786 21.5709ZM11.2786 19.9326C16.2549 19.9326 20.2891 15.8985 20.2891 10.9222C20.2891 5.94582 16.2549 1.9117 11.2786 1.9117C6.30227 1.9117 2.26815 5.94582 2.26815 10.9222C2.26815 12.8435 2.86954 14.6245 3.89436 16.087L3.08728 19.1135L6.16717 18.3435C7.61953 19.3457 9.38053 19.9326 11.2786 19.9326Z"
+        fill="#D5FFEB"
+        fillOpacity="0.5"
+      />
+      <path
+        d="M8.61618 5.97625C8.363 5.46772 7.9746 5.51274 7.58223 5.51274C6.881 5.51274 5.7876 6.35268 5.7876 7.91589C5.7876 9.19703 6.35213 10.5994 8.25443 12.6973C10.0903 14.7219 12.5025 15.7692 14.5051 15.7336C16.5076 15.6979 16.9197 13.9746 16.9197 13.3927C16.9197 13.1347 16.7596 13.006 16.6493 12.971C15.9669 12.6435 14.7083 12.0333 14.4219 11.9186C14.1355 11.804 13.986 11.9591 13.893 12.0434C13.6333 12.2909 13.1185 13.0203 12.9422 13.1844C12.766 13.3484 12.5032 13.2654 12.3938 13.2034C11.9914 13.0419 10.9003 12.5565 10.0305 11.7134C8.95489 10.6707 8.89176 10.312 8.68911 9.99266C8.52699 9.7372 8.64596 9.58046 8.70532 9.51196C8.93707 9.24456 9.25707 8.83171 9.40058 8.62655C9.54408 8.42139 9.43016 8.1099 9.3618 7.9159C9.0678 7.08153 8.81873 6.38308 8.61618 5.97625Z"
+        fill="#D5FFEB"
+        fillOpacity="0.5"
+      />
+    </svg>
+  );
+};
+
+export const ArrowIcon: React.FC<IconProps> = ({
+  className,
+  width = 25,
+  height = 25,
+}) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={width}
+      height={height}
+      viewBox="0 0 25 25"
+      fill="none"
+      className={className}
+    >
+      <path
+        d="M6.5 18.8906L18.5 6.89062"
+        stroke="#6DFF6D"
+        strokeOpacity="0.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8.75 6.89062H18.5V16.6406"
+        stroke="#6DFF6D"
+        strokeOpacity="0.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+
+export const AccordionPlusIcon: React.FC<IconProps> = ({ className }) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="18"
+      viewBox="0 0 24 18"
+      fill="none"
+      className={className}
+    >
+      <path
+        d="M3.75 9H20.25"
+        stroke="#71727A"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12 2.8125V15.1875"
+        stroke="#71727A"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+
+export const AccordionCloseIcon: React.FC<IconProps> = ({ className }) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+    >
+      <path
+        d="M18.75 5.25L5.25 18.75"
+        stroke="#1F3A3A"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M18.75 18.75L5.25 5.25"
+        stroke="#1F3A3A"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};

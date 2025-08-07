@@ -1,13 +1,26 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AuthService } from "@/services/auth-service";
 import { ApiError } from "@/services/api-client";
 import { SignInForm, SignInFormData } from "./signin-form";
+import toast from 'react-hot-toast';
 
 export function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Capture and store redirect parameter immediately
+  useEffect(() => {
+    const redirectParam = searchParams.get('redirect');
+    if (redirectParam) {
+      // Store in sessionStorage so it survives page reloads/state changes
+      sessionStorage.setItem('intended_redirect', redirectParam);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (data: SignInFormData) => {
     try {
@@ -19,21 +32,45 @@ export function SignIn() {
       // Check if signin was successful
       if (response.status === "success") {
         setSuccess(true);
-
-        // Redirect after successful signin
-        setTimeout(() => {
-          window.location.href = "/"; // or wherever users should go after signin
-        }, 1500);
+        toast.success('Welcome back! Redirecting...');
+        
+        // Get the stored redirect parameter
+        const storedRedirect = sessionStorage.getItem('intended_redirect');
+        
+        if (storedRedirect) {
+          // Clean up stored redirect
+          sessionStorage.removeItem('intended_redirect');
+          
+          // Small delay to ensure auth state is fully set
+          setTimeout(() => {
+            try {
+              const decodedPath = decodeURIComponent(storedRedirect);
+              router.push(decodedPath);
+            } catch (redirectError) {
+              // Fallback to homepage on error
+              console.error('Redirect error:', redirectError);
+              toast.error('Redirect failed, going to homepage instead.');
+              router.push('/');
+            }
+          }, 500);
+        } else {
+          // No redirect parameter, go to homepage
+          setTimeout(() => {
+            router.push('/');
+          }, 500);
+        }
       } else {
         setError("Sign in failed. Please try again.");
+        toast.error("Sign in failed. Please try again.");
       }
-    } catch (error) {
-      console.error("Sign in error:", error);
+    } catch (authError) {
+      console.error("Sign in error:", authError);
 
-      const apiError = error as ApiError;
-      setError(
-        apiError.message || "Invalid email or password. Please try again."
-      );
+      const apiError = authError as ApiError;
+      const errorMessage = apiError.message || "Invalid email or password. Please try again.";
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -47,8 +84,7 @@ export function SignIn() {
             Welcome Back!
           </h3>
           <p className="text-green-600">
-            You have been signed in successfully. Redirecting to your
-            homepage...
+            You have been signed in successfully. Redirecting...
           </p>
         </div>
       </div>

@@ -6,5 +6,4 @@ export { HeroContent } from "./hero-content";
 export { HeroSection } from "./hero-section";
 export { FeatureSection } from "./feature-section";
 export { TestimonialSection } from "./testimonial-section";
-export { PricingSection } from "./pricing-section";
 export { FaqSection } from "./faq-section";

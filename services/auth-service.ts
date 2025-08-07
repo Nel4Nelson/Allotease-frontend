@@ -13,6 +13,7 @@ import {
   LogoutResponse,
 } from "@/types/auth";
 import { useAuthStore } from "@/stores/auth-store";
+import { setAuthCookie, clearAuthCookie } from "@/lib/auth-cookies";
 
 // Auth API Service
 export class AuthService {
@@ -66,6 +67,9 @@ export class AuthService {
 
         // Set the token in apiClient as well
         apiClient.setAuthToken(response.token, true);
+
+        // NEW: Set cookie for server-side middleware access
+        setAuthCookie(response.token, true);
       }
 
       return response;
@@ -112,6 +116,9 @@ export class AuthService {
 
         // Set the token in apiClient as well
         apiClient.setAuthToken(response.token, rememberMe);
+
+        // NEW: Set cookie for server-side middleware access
+        setAuthCookie(response.token, rememberMe);
       }
 
       return response;
@@ -122,7 +129,7 @@ export class AuthService {
   }
 
   /**
-   * Partial upgrade to allocation admin
+   * Partial upgrade to allocator
    */
   static async partialUpgrade(
     data: PartialUpgradeRequest
@@ -134,12 +141,19 @@ export class AuthService {
       );
 
       // Store the new token and updated user data after successful upgrade
-      if (response.status === "success" && response.token && response.data?.user) {
+      if (
+        response.status === "success" &&
+        response.token &&
+        response.data?.user
+      ) {
         const authStore = useAuthStore.getState();
         authStore.setUserAndToken(response.data.user, response.token, true);
 
         // Set the token in apiClient as well
         apiClient.setAuthToken(response.token, true);
+
+        // NEW: Set cookie for server-side middleware access
+        setAuthCookie(response.token, true);
       }
 
       return response;
@@ -164,19 +178,25 @@ export class AuthService {
           await apiClient.post<LogoutResponse>(this.ENDPOINTS.LOGOUT);
         } catch (error) {
           // Continue with logout even if API call fails
-          console.warn("Logout API call failed, but continuing with local logout:", error);
+          console.warn(
+            "Logout API call failed, but continuing with local logout:",
+            error
+          );
         }
       }
 
       // Always clear local auth state
       authStore.clearAuth();
-      
+
       // Clear token from apiClient
       apiClient.clearAuthToken();
 
+      // NEW: Clear auth cookie
+      clearAuthCookie();
+
       // Redirect to login
-      if (typeof window !== 'undefined') {
-        window.location.href = '/signin';
+      if (typeof window !== "undefined") {
+        window.location.href = "/signin";
       }
     } catch (error) {
       console.error("Logout failed:", error);
@@ -184,9 +204,10 @@ export class AuthService {
       const authStore = useAuthStore.getState();
       authStore.clearAuth();
       apiClient.clearAuthToken();
-      
-      if (typeof window !== 'undefined') {
-        window.location.href = '/signin';
+      clearAuthCookie();
+
+      if (typeof window !== "undefined") {
+        window.location.href = "/signin";
       }
     }
   }
@@ -200,6 +221,9 @@ export class AuthService {
 
     // Clear token from apiClient as well
     apiClient.clearAuthToken();
+
+    // NEW: Clear auth cookie
+    clearAuthCookie();
   }
 
   /**
@@ -295,10 +319,14 @@ export class AuthService {
       // Set token in apiClient
       apiClient.setAuthToken(token, true);
 
+      // NEW: Also set cookie for server-side detection
+      setAuthCookie(token, true);
+
       // Check if token is still valid
       if (!authStore.checkTokenExpiry()) {
         console.warn("Stored token is expired, clearing auth");
         authStore.clearAuth();
+        clearAuthCookie();
       }
     }
   }

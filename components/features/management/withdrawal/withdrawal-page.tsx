@@ -33,9 +33,7 @@ export function WithdrawalPage({
   loading = false,
 }: WithdrawalPageProps) {
   const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
-  const [showBankDetailsModal, setShowBankDetailsModal] = useState(false);
   const [withdrawalAmount, setWithdrawalAmount] = useState("");
-  const [withdrawalMessage, setWithdrawalMessage] = useState("");
 
   // Use balance hook
   const {
@@ -50,23 +48,14 @@ export function WithdrawalPage({
   // Use balance or fallback to 0 for display
   const displayBalance = balanceError ? 0 : balance;
 
-  const formatBalanceAsNGN = (amount: number) => {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const handleWithdraw = () => {
     setShowWithdrawalModal(true);
-    setWithdrawalMessage(""); // Clear any previous messages
     setWithdrawalAmount(""); // Clear amount field
   };
 
   const handleWithdrawalSubmit = async () => {
     if (!withdrawalAmount || !isValidWithdrawAmount(withdrawalAmount)) {
-      setWithdrawalMessage("Please enter a valid withdrawal amount");
       return;
     }
 
@@ -74,42 +63,21 @@ export function WithdrawalPage({
       const result = await withdraw(withdrawalAmount);
 
       if (result.success) {
-        setWithdrawalMessage(result.message);
-        // Close modal after showing success message
+        // Close modal after successful withdrawal
         setTimeout(() => {
           setShowWithdrawalModal(false);
-          setWithdrawalMessage("");
           setWithdrawalAmount("");
         }, 2000);
-      } else {
-        setWithdrawalMessage(result.message);
       }
     } catch (err) {
-      setWithdrawalMessage("Withdrawal failed. Please try again.");
       console.error(err);
     }
   };
 
-  const handleBankDetailsSubmit = () => {
-    // TODO: Implement bank details update logic
-    console.log("Updating bank details...");
-    setShowBankDetailsModal(false);
-  };
 
-  const calculateWithdrawalFee = (amount: string) => {
-    const numAmount = parseFloat(amount);
-    if (isNaN(numAmount) || numAmount <= 0) return 0;
-
-    const feePercentage = 0.01; // 1%
-    const minimumFee = 1000; // ₦1,000
-    const calculatedFee = numAmount * feePercentage;
-
-    return Math.max(calculatedFee, minimumFee);
-  };
 
   const handleCloseWithdrawalModal = () => {
     setShowWithdrawalModal(false);
-    setWithdrawalMessage("");
     setWithdrawalAmount("");
   };
 

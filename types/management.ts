@@ -151,3 +151,16 @@ export interface EventReservationsResponse {
   events: ReservationItem[];
   pagination: PaginationMeta;
 }
+
+export interface SideBarItem {
+  title: string;
+  Icon: React.ComponentType<any>;
+  href: string;
+}
+
+export interface ReservationStatCard {
+  title: string;
+  value: string;
+  change?: string;
+  isPositive?: boolean;
+}
