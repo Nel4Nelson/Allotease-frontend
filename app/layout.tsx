@@ -2,17 +2,19 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ConditionalLayout } from "@/components/layout/conditional-layout";
 import { Space_Grotesk, Source_Sans_3 } from "next/font/google";
+import { QueryProvider } from "@/providers/query-provider";
+import { NetworkStatusProvider } from "@/hooks/use-network-status";
 
 const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-space-grotesk',
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-space-grotesk",
 });
 
 const sourceSans = Source_Sans_3({
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
-  variable: '--font-source-sans',
+  subsets: ["latin"],
+  weight: ["400", "600", "700"],
+  variable: "--font-source-sans",
 });
 
 export const metadata: Metadata = {
@@ -27,9 +29,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${sourceSans.variable}`}>
+    <html
+      lang="en"
+      className={`${spaceGrotesk.variable} ${sourceSans.variable}`}
+    >
       <body className="font-source-sans">
-        <ConditionalLayout>{children}</ConditionalLayout>
+        <QueryProvider>
+          <NetworkStatusProvider>
+            <ConditionalLayout>{children}</ConditionalLayout>
+          </NetworkStatusProvider>
+        </QueryProvider>
       </body>
     </html>
   );
