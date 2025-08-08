@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import { useState, useEffect } from "react";
@@ -13,6 +14,9 @@ import {
   Event,
   GetEventsParams,
 } from "@/services/events-service";
+import { StaysGridSkeleton } from "@/components/ui/loading-skeletons/stay-card-skeleton";
+import { NetworkError, EmptyState, OfflineState } from "@/components/ui/network-error";
+import { useIsOnline } from "@/hooks/use-network-status";
 
 interface EventsContentProps {
   className?: string;
@@ -20,20 +24,31 @@ interface EventsContentProps {
 
 export function EventsContent({ className = "" }: EventsContentProps) {
   const router = useRouter();
+  const isOnline = useIsOnline();
+  
   const [selectedLocation, setSelectedLocation] = useState("awka-anambra");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
   // API state
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Load events function
+  // Load events function with error handling
   const loadEvents = async (page: number = 1, append: boolean = false) => {
+    // Don't attempt to load if offline
+    if (!isOnline) {
+      setError("offline");
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
+      setError(null);
 
       const params: GetEventsParams = {
         page,
@@ -58,9 +73,21 @@ export function EventsContent({ className = "" }: EventsContentProps) {
         setCurrentPage(response.data.page);
         setHasNextPage(response.data.hasNextPage);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to load events:", error);
-      toast.error("Failed to load events. Please try again.");
+      
+      // Set appropriate error message
+      if (!isOnline) {
+        setError("offline");
+      } else if (error?.response?.status >= 500) {
+        setError("server");
+        toast.error("Server error. Please try again later.");
+      } else if (error?.response?.status >= 400) {
+        setError("request");
+        toast.error("Failed to load events. Please try again.");
+      } else {
+        setError("network");
+      }
     } finally {
       setLoading(false);
       setIsInitialLoad(false);
@@ -80,6 +107,13 @@ export function EventsContent({ className = "" }: EventsContentProps) {
     }
   }, [selectedCategory, selectedLocation, isInitialLoad]);
 
+  // Reload when connection status changes
+  useEffect(() => {
+    if (isOnline && error === "offline" && !isInitialLoad) {
+      loadEvents(currentPage, false);
+    }
+  }, [isOnline]);
+
   // Show more events
   const handleShowMore = () => {
     if (hasNextPage && !loading) {
@@ -93,14 +127,28 @@ export function EventsContent({ className = "" }: EventsContentProps) {
     loadEvents(1, false);
   };
 
-  // Handle event card click - Updated to navigate to the dynamic route
+  // Handle event card click
   const handleEventClick = (eventId: string) => {
     router.push(`/${eventId}?type=events`);
   };
 
+  // Retry handler
+  const handleRetry = () => {
+    setError(null);
+    loadEvents(currentPage, false);
+  };
+
+  // Clear filters handler
+  const handleClearFilters = () => {
+    setSelectedCategory("all");
+    setSelectedLocation("awka-anambra");
+    setCurrentPage(1);
+    loadEvents(1, false);
+  };
+
   // Show different buttons based on state
-  const showMoreButton = hasNextPage && !loading;
-  const showCollapseButton = currentPage > 1 && !loading;
+  const showMoreButton = hasNextPage && !loading && !error;
+  const showCollapseButton = currentPage > 1 && !loading && !error;
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -144,72 +192,118 @@ export function EventsContent({ className = "" }: EventsContentProps) {
         />
       </div>
 
-      {/* Phase 3: Event Cards */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "24px",
-        }}
-        className="w-full"
-      >
-        {events.map((event) => (
-          <EventCard
-            key={event._id}
-            title={event.title}
-            dateTime={EventService.formatEventDateTime(event.startTime)}
-            imageUrl={EventService.getEventCoverImage(event)}
-            badgeText={EventService.formatEventPrice(event.price)}
-            organizerName="Flend Worldwide"
-            followerCount="117.5K Followers"
-            onClick={() => handleEventClick(event._id)}
-          />
-        ))}
-      </div>
-
-      {/* Loading State */}
-      {loading && (
-        <div className="flex justify-center py-4">
-          <div className="text-gray-500">Loading events...</div>
-        </div>
+      {/* Loading State - Show skeleton on initial load */}
+      {loading && isInitialLoad && (
+        <StaysGridSkeleton count={6} />
       )}
 
-      {/* No Events State */}
-      {!loading && events.length === 0 && !isInitialLoad && (
-        <div className="flex flex-col items-center py-12 text-center">
-          <div className="text-gray-500 mb-2">No events found</div>
-          <div className="text-sm text-gray-400">
-            Try adjusting your filters
-          </div>
-        </div>
+      {/* Offline State */}
+      {!loading && !isOnline && events.length === 0 && (
+        <OfflineState />
       )}
 
-      {/* Phase 4: Pagination Controls */}
+      {/* Error State */}
+      {!loading && error && error !== "offline" && events.length === 0 && (
+        <NetworkError
+          message={
+            error === "server" 
+              ? "Server is temporarily unavailable"
+              : "Unable to load events"
+          }
+          onRetry={handleRetry}
+        />
+      )}
+
+      {/* Empty State */}
+      {!loading && !error && events.length === 0 && !isInitialLoad && (
+        <EmptyState
+          title="No events found"
+          message={
+            selectedCategory !== "all" 
+              ? "No events match your selected filters. Try adjusting your search criteria."
+              : "No events available in this location."
+          }
+          actionLabel={selectedCategory !== "all" ? "Clear Filters" : undefined}
+          onAction={selectedCategory !== "all" ? handleClearFilters : undefined}
+        />
+      )}
+
+      {/* Events Grid */}
       {events.length > 0 && (
-        <div className="flex justify-center gap-4 pt-4">
-          {showMoreButton && (
-            <Button
-              variant="signup-primary"
-              size="allotease-md"
-              onClick={handleShowMore}
-              disabled={loading}
-              loading={loading}
-            >
-              Show More
-            </Button>
+        <>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: "24px",
+            }}
+            className="w-full"
+          >
+            {events.map((event) => (
+              <EventCard
+                key={event._id}
+                title={event.title}
+                dateTime={EventService.formatEventDateTime(event.startTime)}
+                imageUrl={EventService.getEventCoverImage(event)}
+                badgeText={EventService.formatEventPrice(event.price)}
+                organizerName="Flend Worldwide"
+                followerCount="117.5K Followers"
+                onClick={() => handleEventClick(event._id)}
+              />
+            ))}
+          </div>
+
+          {/* Loading more indicator */}
+          {loading && !isInitialLoad && (
+            <div className="flex justify-center py-4">
+              <div className="flex items-center gap-2 text-gray-500">
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle 
+                    className="opacity-25" 
+                    cx="12" 
+                    cy="12" 
+                    r="10" 
+                    stroke="currentColor" 
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path 
+                    className="opacity-75" 
+                    fill="currentColor" 
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                <span>Loading more events...</span>
+              </div>
+            </div>
           )}
 
-          {showCollapseButton && (
-            <Button
-              variant="allotease-blur"
-              size="allotease-md"
-              onClick={handleCollapse}
-              disabled={loading}
-            >
-              Collapse
-            </Button>
-          )}
-        </div>
+          {/* Action Buttons */}
+          <div className="flex justify-center gap-4 pt-4">
+            {showMoreButton && (
+              <Button
+                variant="signup-primary"
+                size="allotease-md"
+                onClick={handleShowMore}
+                disabled={loading || !isOnline}
+                loading={loading}
+              >
+                Show More
+              </Button>
+            )}
+
+            {showCollapseButton && (
+              <Button
+                variant="allotease-blur"
+                size="allotease-md"
+                onClick={handleCollapse}
+                disabled={loading}
+              >
+                Collapse
+              </Button>
+            )}
+          </div>
+        </>
       )}
     </div>
   );
