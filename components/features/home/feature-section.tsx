@@ -345,7 +345,7 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
 
   // Normal render with data
   return (
-    <section className={`py-12 ${className}`}>
+    <section className={`${className}`}>
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-8">

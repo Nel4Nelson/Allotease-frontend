@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import Header from "@/components/layout/navbar";
 import { Footer } from "@/components/layout";
 import { AuthService } from "@/services/auth-service";
-import { Toaster } from 'react-hot-toast';
+import { CustomToast } from "@/components/ui/custom-toast";
 import { AuthRedirectHandler } from "../features/auth/auth-redirect-handler";
 import { SyncLoader } from "react-spinners";
 
@@ -46,24 +46,13 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     <>
       {/* GLOBAL: Auth redirect handler for ALL layouts */}
       <AuthRedirectHandler />
-      
-      {/* GLOBAL: Toast notifications for ALL layouts */}
-      <Toaster 
-        position="top-right"
-        toastOptions={{
-          duration: 4000,
-          style: {
-            background: '#363636',
-            color: '#fff',
-          },
-        }}
-      />
+
+      {/* GLOBAL: Custom glassmorphism toast notifications for ALL layouts */}
+      <CustomToast />
 
       {/* If it's an auth route, render minimal layout */}
       {isAuthRoute ? (
-        <div className="min-h-screen">
-          {children}
-        </div>
+        <div className="min-h-screen">{children}</div>
       ) : (
         /* Standard layout with header and footer */
         <div className="min-h-screen relative">
@@ -112,16 +101,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   if (!mounted) {
     return (
       <>
-        <Toaster 
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-          }}
-        />
+        <CustomToast />
         <div className="min-h-screen flex items-center justify-center">
           <SyncLoader
             color="#FF5B06"
