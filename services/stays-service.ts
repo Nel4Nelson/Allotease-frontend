@@ -96,28 +96,31 @@ interface FacilitiesSearchResponse {
   };
 }
 
-// Create stay response
+// Create stay response - Updated to match actual API response
 interface CreateStayResponse {
   status: string;
   message: string;
   data: {
-    stay: {
-      _id: string;
-      title: string;
-      description: string;
-      accommodationType: string;
-      location: {
-        address: string;
-        city: string;
-        state: string;
-        country: string;
-      };
-      geoLocation: {
-        coordinates: [number, number]; // [longitude, latitude]
-      };
-      facilities: string[];
-      // ... other stay fields
+    _id: string;
+    title: string;
+    description: string;
+    accommodationType: string;
+    location: {
+      address: string;
+      city: string;
+      state: string;
+      country: string;
     };
+    geoLocation: {
+      coordinates: [number, number]; // [longitude, latitude]
+      type: string;
+    };
+    facilities: string[];
+    images: string[];
+    ownerId: string;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
   };
 }
 
@@ -230,7 +233,7 @@ export class StaysService {
     // Convert from backend format to display format
     const typeMap: Record<string, string> = {
       "hotel & lodging": "Hotels & Lodging",
-      "apartments": "Apartments",
+      "appartments": "Apartments",
       "guesthouses": "Guest Houses", 
       "hostels": "Hostels",
       "resorts": "Resorts"
@@ -328,6 +331,93 @@ export class StaysService {
   }
 
   /**
+   * Generate coordinates from location data
+   */
+  private static generateCoordinatesFromLocation(location: StaysFormData['location']): [number, number] {
+    // Use coordinates if available
+    if (location.coordinates) {
+      return location.coordinates;
+    }
+
+    // Fallback coordinates for major Nigerian cities
+    const cityCoordinates: Record<string, [number, number]> = {
+      // Lagos
+      "lagos": [3.3792, 6.5244],
+      "ikeja": [3.3566, 6.6018],
+      "lekki": [3.4716, 6.4698],
+      
+      // Abuja
+      "abuja": [7.5399, 9.0579],
+      "garki": [7.4951, 9.0579],
+      
+      // Port Harcourt
+      "port harcourt": [7.0134, 4.8156],
+      
+      // Kano
+      "kano": [8.5264, 11.9925],
+      
+      // Ibadan
+      "ibadan": [3.9470, 7.3986],
+      
+      // Kaduna
+      "kaduna": [7.4421, 10.5264],
+      
+      // Benin City
+      "benin": [5.6037, 6.3350],
+      "benin city": [5.6037, 6.3350],
+      
+      // Enugu
+      "enugu": [7.5105, 6.2649],
+      
+      // Jos
+      "jos": [8.8932, 9.8965],
+      
+      // Warri
+      "warri": [5.7500, 5.5166],
+      
+      // Calabar
+      "calabar": [8.3275, 4.9517],
+    };
+
+    // Try to match city
+    const cityKey = location.city?.toLowerCase() || "";
+    if (cityCoordinates[cityKey]) {
+      return cityCoordinates[cityKey];
+    }
+
+    // Try to match by state (approximate center coordinates)
+    const stateCoordinates: Record<string, [number, number]> = {
+      "lagos": [3.3792, 6.5244],
+      "abuja": [7.5399, 9.0579],
+      "rivers": [7.0134, 4.8156],
+      "kano": [8.5264, 11.9925],
+      "oyo": [3.9470, 7.3986],
+      "kaduna": [7.4421, 10.5264],
+      "edo": [5.6037, 6.3350],
+      "enugu": [7.5105, 6.2649],
+      "plateau": [8.8932, 9.8965],
+      "delta": [5.7500, 5.5166],
+      "cross river": [8.3275, 4.9517],
+      "anambra": [6.9175, 6.2649],
+      "imo": [7.0255, 5.4966],
+      "abia": [7.5248, 5.4527],
+      "akwa ibom": [7.8249, 4.9059],
+      "bayelsa": [6.0699, 4.7719],
+      "benue": [8.7340, 7.7099],
+      "borno": [13.0827, 11.8846],
+      "taraba": [9.7799, 7.8637],
+    };
+
+    const stateKey = location.state?.toLowerCase() || "";
+    if (stateCoordinates[stateKey]) {
+      return stateCoordinates[stateKey];
+    }
+
+    // Default to Nigeria center coordinates
+    return [7.4951, 9.0579];
+  }
+
+  /**
    * Create a new stay
    */
   static async createStay(formData: StaysFormData): Promise<CreateStayResponse> {
@@ -348,6 +438,13 @@ export class StaysService {
         form.append("location[country]", formData.location.country);
       }
 
+      // Add geoLocation coordinates (CRITICAL FIX)
+      const coordinates = formData.geoLocation?.coordinates || 
+                         this.generateCoordinatesFromLocation(formData.location);
+      
+      form.append("geoLocation[coordinates][0]", coordinates[0].toString());
+      form.append("geoLocation[coordinates][1]", coordinates[1].toString());
+
       // Add facilities
       if (formData.facilities && formData.facilities.length > 0) {
         formData.facilities.forEach((facilityId, index) => {
@@ -361,6 +458,9 @@ export class StaysService {
           form.append(`images`, image);
         });
       }
+
+      // Log form data for debugging
+      console.log("Creating stay with coordinates:", coordinates);
 
       // Use uploadFile method for multipart/form-data
       const response = await apiClient.uploadFile<CreateStayResponse>(
@@ -472,6 +572,11 @@ export class StaysService {
     // Facilities validation
     if (!formData.facilities || formData.facilities.length === 0) {
       errors.push("At least one facility is required");
+    }
+
+    // Coordinates validation (will be auto-generated if missing)
+    if (!formData.geoLocation?.coordinates && !formData.location) {
+      errors.push("Location coordinates are required");
     }
 
     return errors;

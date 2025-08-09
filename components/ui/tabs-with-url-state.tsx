@@ -38,7 +38,16 @@ export function CustomTabsContent({
     : defaultTab;
 
   const handleTabChange = (value: string) => {
-    router.push(`${basePath}?${queryParam}=${value}`);
+    // Create new URLSearchParams to preserve existing parameters
+    const newSearchParams = new URLSearchParams(searchParams.toString());
+    
+    // Update only the specific parameter
+    newSearchParams.set(queryParam, value);
+    
+    // Build the new URL with all parameters
+    const newUrl = `${basePath}?${newSearchParams.toString()}`;
+    
+    router.push(newUrl);
   };
 
   // Render immediately with default tab to prevent layout shift

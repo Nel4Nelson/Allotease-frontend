@@ -1,242 +1,261 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { useDebouncedStaysFormStore } from "@/hooks/use-debounced-stay-store";
-import { StaysService } from "@/services/stays-service";
-import type { FacilityDetail } from "@/stores/stay-form-store";
+import { CheckIcon, PlusIcon } from "@/components/icons";
 
 interface StaysUnitsPreviewProps {
   className?: string;
 }
 
 export function StaysUnitsPreview({ className = "" }: StaysUnitsPreviewProps) {
-  const { 
-    units, 
-    getFacilityDetails, 
-    updateFacilitiesCache 
-  } = useDebouncedStaysFormStore();
-  
-  const [isLoading, setIsLoading] = useState(false);
-  const [unitsFacilitiesData, setUnitsFacilitiesData] = useState<Map<string, FacilityDetail[]>>(new Map());
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+  const [selectedUnits, setSelectedUnits] = useState<Set<string>>(new Set());
+
+  const { units, getFacilityDetails, getUnitFacilities } = useDebouncedStaysFormStore();
 
   // Handle image load errors
   const handleImageError = (facilityId: string) => {
-    setImageErrors(prev => new Set(prev).add(facilityId));
+    setImageErrors((prev) => new Set(prev).add(facilityId));
   };
 
-  // Format currency for display
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  // Format frequency for display
-  const getFrequencyLabel = (frequency: string) => {
-    const frequencyMap = {
-      daily: 'Day',
-      weekly: 'Week', 
-      monthly: 'Month',
-      yearly: 'Year'
-    };
-    return frequencyMap[frequency as keyof typeof frequencyMap] || frequency;
-  };
-
-  // Load facility details for all units
-  useEffect(() => {
-    const loadUnitsFacilities = async () => {
-      if (!units || units.length === 0) {
-        setUnitsFacilitiesData(new Map());
-        return;
+  // Handle unit selection (for preview purposes)
+  const handleUnitToggle = (unitId: string) => {
+    setSelectedUnits((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(unitId)) {
+        newSet.delete(unitId);
+      } else {
+        newSet.add(unitId);
       }
+      return newSet;
+    });
+  };
 
-      setIsLoading(true);
+  // Check if unit is selected
+  const isUnitSelected = (unitId: string) => {
+    return selectedUnits.has(unitId);
+  };
 
-      try {
-        const newUnitsFacilitiesData = new Map<string, FacilityDetail[]>();
+  // Format price
+  const formatPrice = (price: number, frequency: string) => {
+    const formatter = new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+    });
+    return `${formatter.format(price)} / ${frequency}`;
+  };
 
-        for (const unit of units) {
-          if (unit.facilities && unit.facilities.length > 0) {
-            // First, try to get from cache
-            const cachedFacilities: FacilityDetail[] = [];
-            const missingFacilityIds: string[] = [];
-
-            unit.facilities.forEach(id => {
-              const cached = getFacilityDetails(id);
-              if (cached) {
-                cachedFacilities.push(cached);
-              } else {
-                missingFacilityIds.push(id);
-              }
-            });
-
-            // Fetch missing facility details
-            let fetchedFacilities: FacilityDetail[] = [];
-            if (missingFacilityIds.length > 0) {
-              fetchedFacilities = await StaysService.getFacilitiesDetails(missingFacilityIds);
-              
-              // Update cache with fetched data
-              if (fetchedFacilities.length > 0) {
-                updateFacilitiesCache(fetchedFacilities);
-              }
-            }
-
-            // Combine cached and fetched data
-            const allFacilities = [...cachedFacilities, ...fetchedFacilities];
-            
-            // Sort facilities to match unit.facilities order
-            const sortedFacilities = unit.facilities
-              .map(id => allFacilities.find(facility => facility._id === id))
-              .filter((facility): facility is FacilityDetail => facility !== undefined);
-
-            newUnitsFacilitiesData.set(unit.id, sortedFacilities);
-          } else {
-            newUnitsFacilitiesData.set(unit.id, []);
-          }
-        }
-
-        setUnitsFacilitiesData(newUnitsFacilitiesData);
-
-      } catch (err) {
-        console.error("Failed to load units facilities:", err);
-        // Set empty data on error
-        setUnitsFacilitiesData(new Map());
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadUnitsFacilities();
-  }, [units, getFacilityDetails, updateFacilitiesCache]);
-
-  // Reset image errors when facilities data changes
-  useEffect(() => {
-    setImageErrors(new Set());
-  }, [unitsFacilitiesData]);
-
-  // Don't render section if no units
-  if (!units || units.length === 0) {
-    return (
-      <div className={`space-y-4 ${className}`}>
-        <div>
-          <h3 className="text-lg font-semibold text-[var(--color-dark-slate)] mb-4">
-            Availability
-          </h3>
-          <div className="bg-blue-50 border border-blue-200 rounded-[12px] p-4 text-center">
-            <p className="text-sm text-blue-700 font-medium">
-              No accommodation units added yet
-            </p>
-            <p className="text-xs text-blue-600 mt-1">
-              Add units in the form to see availability options
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Get facilities for a unit
+  const getUnitFacilitiesData = (unitId: string) => {
+    const unitFacilityIds = getUnitFacilities(unitId);
+    return unitFacilityIds
+      .map(facilityId => getFacilityDetails(facilityId))
+      .filter(Boolean);
+  };
 
   return (
-    <div className={`space-y-4 ${className}`}>
-      {/* Section Header */}
-      <div>
-        <h3 className="text-lg font-semibold text-[var(--color-dark-slate)] mb-1">
-          Availability
-        </h3>
-        {isLoading && (
-          <p className="text-sm text-gray-500">Loading accommodation details...</p>
-        )}
-      </div>
+    <div className={className}>
+      {/* Section Title */}
+      <h3 className="text-[var(--Title,#1F2024)] font-space-grotesk text-xl font-bold leading-[140%] tracking-[-0.4px] mb-4">
+        Availability
+      </h3>
 
-      {/* Date Picker Placeholder */}
-      <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-        <span>Available for booking</span>
+      {/* Placeholder Date Range Selector */}
+      <div className="mb-6">
+        <div
+          className="flex items-center w-[50%] gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50 cursor-not-allowed"
+          title="Date selection coming soon"
+        >
+          <svg
+            className="w-5 h-5 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+          <span className="text-gray-500 text-sm">
+            Fri 23 May - Saturday 24 May
+          </span>
+          <svg
+            className="w-4 h-4 text-gray-400 ml-auto"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </div>
       </div>
 
       {/* Units List */}
       <div className="space-y-4">
         {units.map((unit) => {
-          const unitFacilities = unitsFacilitiesData.get(unit.id) || [];
-          
+          const isSelected = isUnitSelected(unit.id);
+          const unitFacilities = getUnitFacilitiesData(unit.id);
+
           return (
             <div
               key={unit.id}
-              className="bg-green-50 border border-green-200 rounded-[16px] p-6 relative"
+              style={{
+                display: "flex",
+                padding: "16px",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "flex-start",
+                gap: "8px",
+                alignSelf: "stretch",
+                borderRadius: "12px",
+                border: isSelected
+                  ? "1px solid rgba(21, 186, 107, 0.20)"
+                  : "1px solid rgba(138, 174, 164, 0.20)",
+                background: isSelected
+                  ? "#E3F5EB"
+                  : "rgba(242, 244, 247, 0.50)",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+              onClick={() => handleUnitToggle(unit.id)}
             >
-              {/* Unit Header */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <h4 className="text-lg font-semibold text-[var(--color-dark-slate)] mb-1">
-                    {unit.title}
-                  </h4>
-                  <div className="text-sm font-medium text-gray-900 mb-2">
-                    {formatCurrency(unit.price)} / {getFrequencyLabel(unit.frequency)}
-                  </div>
-                </div>
-                
-                {/* Add Button */}
-                <button
-                  type="button"
-                  className="w-8 h-8 bg-green-600 hover:bg-green-700 text-white rounded-full flex items-center justify-center transition-colors"
-                  title="Select this accommodation"
+              {/* Header with Title and Selection Button */}
+              <div className="flex items-center justify-between w-full">
+                <h4
+                  style={{
+                    color: "#1F2024",
+                    fontFamily: "var(--font-source-sans), sans-serif",
+                    fontSize: "18px",
+                    fontStyle: "normal",
+                    fontWeight: 600,
+                    lineHeight: "142.745%",
+                    letterSpacing: "-0.36px",
+                    margin: 0,
+                  }}
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
+                  {unit.title} × {unit.quantity}
+                </h4>
+
+                {/* Selection Button */}
+                <button
+                  style={{
+                    borderRadius: "39.667px",
+                    border: isSelected
+                      ? "0.778px solid #15BA6B"
+                      : "0.778px solid rgba(138, 174, 164, 0.50)",
+                    background: isSelected
+                      ? "rgba(255, 255, 255, 0.70)"
+                      : "rgba(242, 244, 247, 0.50)",
+                    backdropFilter: isSelected
+                      ? "blur(16.33333396911621px)"
+                      : "none",
+                    display: "flex",
+                    width: "28px",
+                    height: "28px",
+                    padding: "4.667px",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    gap: "11.667px",
+                    cursor: "pointer",
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleUnitToggle(unit.id);
+                  }}
+                >
+                  {isSelected ? <CheckIcon /> : <PlusIcon />}
                 </button>
               </div>
 
-              {/* Unit Description */}
-              <p className="text-sm text-gray-700 mb-4 leading-relaxed">
+              {/* Price Badge */}
+              <div
+                style={{
+                  borderRadius: "4px",
+                  background: "rgba(138, 174, 164, 0.20)",
+                  display: "flex",
+                  padding: "2px 8px",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: "10px",
+                }}
+              >
+                <span
+                  style={{
+                    color: "#1F3A3A",
+                    fontFamily: "var(--font-source-sans), sans-serif",
+                    fontSize: "14px",
+                    fontStyle: "normal",
+                    fontWeight: 600,
+                    lineHeight: "142.745%",
+                    letterSpacing: "-0.28px",
+                  }}
+                >
+                  {formatPrice(unit.price, unit.frequency)}
+                </span>
+              </div>
+
+              {/* Description */}
+              <p
+                style={{
+                  color: "#71727A",
+                  fontFamily: "var(--font-source-sans), sans-serif",
+                  fontSize: "16px",
+                  fontStyle: "normal",
+                  fontWeight: 400,
+                  lineHeight: "142.745%",
+                  letterSpacing: "-0.32px",
+                  margin: 0,
+                }}
+              >
                 {unit.description}
               </p>
 
               {/* Unit Facilities */}
               {unitFacilities.length > 0 && (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-3 mt-2">
                   {unitFacilities.map((facility) => (
-                    <div
-                      key={facility._id}
-                      className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-3 py-1"
-                    >
-                      <div className="w-4 h-4 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 relative">
+                    <div key={facility._id} className="flex items-center gap-2">
+                      {/* Facility Icon */}
+                      <div className="w-4 h-4 flex-shrink-0 relative">
                         {facility.icon && !imageErrors.has(facility._id) ? (
                           <Image
                             src={facility.icon}
                             alt={facility.name}
                             fill
-                            className="object-cover"
+                            className="object-contain"
                             sizes="16px"
                             onError={() => handleImageError(facility._id)}
                           />
                         ) : (
-                          <svg className="w-full h-full text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H9m0 0H7m2 0v-9a2 2 0 012-2h2a2 2 0 012 2v9M9 7h6m-6 4h6m-6 4h2" />
+                          <svg
+                            className="w-4 h-4 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H9m0 0H7m2 0v-9a2 2 0 012-2h2a2 2 0 012 2v9M9 7h6m-6 4h6m-6 4h2"
+                            />
                           </svg>
                         )}
                       </div>
-                      <span className="text-xs font-medium text-gray-700">
+
+                      {/* Facility Name */}
+                      <span className="text-[var(--Body,#71727A)] font-source-sans-pro text-sm font-normal">
                         {facility.name}
                       </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Loading state for unit facilities */}
-              {isLoading && unit.facilities && unit.facilities.length > 0 && (
-                <div className="flex gap-2 mt-4">
-                  {Array.from({ length: Math.min(3, unit.facilities.length) }).map((_, idx) => (
-                    <div key={idx} className="animate-pulse">
-                      <div className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-1">
-                        <div className="w-4 h-4 bg-gray-300 rounded-full"></div>
-                        <div className="w-16 h-3 bg-gray-300 rounded"></div>
-                      </div>
                     </div>
                   ))}
                 </div>
@@ -246,10 +265,34 @@ export function StaysUnitsPreview({ className = "" }: StaysUnitsPreviewProps) {
         })}
       </div>
 
-      {/* Units Summary */}
-      <div className="text-xs text-gray-500 text-center pt-2">
-        {units.length} accommodation unit{units.length !== 1 ? 's' : ''} available
-      </div>
+      {/* No units available */}
+      {units.length === 0 && (
+        <div className="text-center py-8">
+          <div className="mb-4">
+            <svg className="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <h3 
+            className="text-lg font-semibold mb-2"
+            style={{
+              color: "var(--Title, #1F2024)",
+              fontFamily: "var(--font-source-sans), sans-serif",
+            }}
+          >
+            No units available
+          </h3>
+          <p 
+            className="text-sm"
+            style={{
+              color: "#7A7A7A",
+              fontFamily: "var(--font-source-sans), sans-serif",
+            }}
+          >
+            Add accommodation units to see them in the preview.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

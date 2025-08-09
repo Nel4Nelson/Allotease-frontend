@@ -18,6 +18,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { debounce } from "lodash";
 import { useDebouncedStaysFormStore } from "@/hooks/use-debounced-stay-store";
 import { FacilitiesSelector } from "@/components/ui/facilities-selector";
+import { UnitManager } from "@/components/ui/unit-manager";
+import { StaysFormData } from "@/types/stays-form-schema";
 
 const staysFormSchema = z.object({
   accommodationTitle: z
@@ -37,23 +39,16 @@ const staysFormSchema = z.object({
     city: z.string().min(1, { message: "City is required." }),
     state: z.string().min(1, { message: "State is required." }),
     country: z.string().min(1, { message: "Country is required." }),
+    coordinates: z.array(z.number()).length(2).optional(),
   }),
   accommodationType: z
     .string()
     .min(1, { message: "Accommodation type is required." }),
 });
 
-export interface StaysFormData {
-  accommodationTitle: string;
-  accommodationDescription: string;
-  images: File[];
-  location: LocationData;
-  accommodationType: string;
-}
-
 const accommodationTypes = [
-  { value: "hotel-lodging", label: "Hotel & Lodging" },
-  { value: "apartments", label: "Apartments" },
+  { value: "hotel & lodging", label: "Hotel & Lodging" },
+  { value: "appartments", label: "Apartments" },
   { value: "school-lodges", label: "School Lodges" },
 ];
 
@@ -79,7 +74,7 @@ function StaysFormContent({}: StaysFormProps) {
     watch,
     control,
     formState: { errors },
-  } = useForm<StaysFormData>({
+  } = useForm<Partial<StaysFormData>>({
     resolver: zodResolver(staysFormSchema),
     mode: "onChange",
     defaultValues: {
@@ -105,7 +100,20 @@ function StaysFormContent({}: StaysFormProps) {
 
   const handleLocationChange = (selectedLocation: LocationData | null) => {
     setValue("location", selectedLocation!, { shouldValidate: true });
-    updateFormDataImmediate({ location: selectedLocation || undefined });
+    
+    // Update both location and geoLocation in store
+    const updateData: Partial<StaysFormData> = {
+      location: selectedLocation || undefined,
+    };
+
+    // If coordinates are available, add geoLocation
+    if (selectedLocation?.coordinates) {
+      updateData.geoLocation = {
+        coordinates: selectedLocation.coordinates
+      };
+    }
+
+    updateFormDataImmediate(updateData);
   };
 
   const handleAccommodationTypeChange = (value: string) => {
@@ -263,6 +271,14 @@ function StaysFormContent({}: StaysFormProps) {
             Fill out general facilities available in your accommodation
           </h2>
           <FacilitiesSelector />
+        </div>
+
+        {/* Units Section */}
+        <div>
+          <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-4">
+            Available space
+          </h2>
+          <UnitManager />
         </div>
 
         {/* Action Buttons */}

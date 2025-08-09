@@ -44,17 +44,29 @@ export const staysFormSchema = z.object({
   units: z
     .array(unitSchema)
     .min(1, { message: "At least one accommodation unit is required." }),
+  // Add geoLocation field
+  geoLocation: z.object({
+    coordinates: z.array(z.number()).length(2, { message: "Coordinates must be [longitude, latitude]" })
+  }).optional(),
 });
 
-// Form data interface
+// Extended LocationData interface to include coordinates
+export interface ExtendedLocationData extends LocationData {
+  coordinates?: [number, number]; // [longitude, latitude]
+}
+
+// Form data interface with geoLocation
 export interface StaysFormData {
   accommodationTitle: string;
   accommodationDescription: string;
   images: File[];
-  location: LocationData;
+  location: ExtendedLocationData;
   accommodationType: string;
   facilities: string[];
   units: UnitData[];
+  geoLocation?: {
+    coordinates: [number, number]; // [longitude, latitude]
+  };
 }
 
 // Type inference from schema
