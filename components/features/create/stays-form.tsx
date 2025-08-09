@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { debounce } from "lodash";
 import { useDebouncedStaysFormStore } from "@/hooks/use-debounced-stay-store";
+import { FacilitiesSelector } from "@/components/ui/facilities-selector";
 
 const staysFormSchema = z.object({
   accommodationTitle: z
@@ -254,6 +255,14 @@ function StaysFormContent({}: StaysFormProps) {
               />
             )}
           />
+        </div>
+
+        {/* Facilities Section */}
+        <div>
+          <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-4">
+            Fill out general facilities available in your accommodation
+          </h2>
+          <FacilitiesSelector />
         </div>
 
         {/* Action Buttons */}
