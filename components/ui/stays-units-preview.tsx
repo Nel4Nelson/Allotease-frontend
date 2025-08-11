@@ -46,12 +46,12 @@ export function StaysUnitsPreview({ className = "" }: StaysUnitsPreviewProps) {
     return `${formatter.format(price)} / ${frequency}`;
   };
 
-  // Get facilities for a unit
+  // Get facilities for a unit - FIXED to properly handle undefined values
   const getUnitFacilitiesData = (unitId: string) => {
     const unitFacilityIds = getUnitFacilities(unitId);
     return unitFacilityIds
       .map(facilityId => getFacilityDetails(facilityId))
-      .filter(Boolean);
+      .filter((facility): facility is NonNullable<typeof facility> => facility !== undefined);
   };
 
   return (

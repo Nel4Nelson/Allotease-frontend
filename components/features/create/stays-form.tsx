@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 import React, { Suspense } from "react";
@@ -21,7 +22,9 @@ import { FacilitiesSelector } from "@/components/ui/facilities-selector";
 import { UnitManager } from "@/components/ui/unit-manager";
 import { StaysFormData } from "@/types/stays-form-schema";
 
-const staysFormSchema = z.object({
+// Create a partial schema for the current step of the form
+// This only includes the fields that are being validated in this component
+const partialStaysFormSchema = z.object({
   accommodationTitle: z
     .string()
     .min(1, { message: "Accommodation title is required." })
@@ -39,12 +42,16 @@ const staysFormSchema = z.object({
     city: z.string().min(1, { message: "City is required." }),
     state: z.string().min(1, { message: "State is required." }),
     country: z.string().min(1, { message: "Country is required." }),
-    coordinates: z.array(z.number()).length(2).optional(),
+    // Fix: Use tuple type for coordinates
+    coordinates: z.tuple([z.number(), z.number()]).optional(),
   }),
   accommodationType: z
     .string()
     .min(1, { message: "Accommodation type is required." }),
 });
+
+// Type for the partial form data
+type PartialStaysFormData = z.infer<typeof partialStaysFormSchema>;
 
 const accommodationTypes = [
   { value: "hotel & lodging", label: "Hotel & Lodging" },
@@ -68,20 +75,47 @@ function StaysFormContent({}: StaysFormProps) {
     updateFormDataDebounced,
   } = useDebouncedStaysFormStore();
 
+  // Helper function to ensure coordinates are properly typed
+  const getTypedLocation = (location: any): LocationData | undefined => {
+    if (!location) return undefined;
+
+    return {
+      address: location.address || "",
+      city: location.city || "",
+      state: location.state || "",
+      country: location.country || "",
+      // Ensure coordinates are a tuple or undefined
+      coordinates:
+        location.coordinates &&
+        Array.isArray(location.coordinates) &&
+        location.coordinates.length === 2
+          ? ([location.coordinates[0], location.coordinates[1]] as [
+              number,
+              number
+            ])
+          : undefined,
+    };
+  };
+
   const {
     register,
     setValue,
     watch,
     control,
     formState: { errors },
-  } = useForm<Partial<StaysFormData>>({
-    resolver: zodResolver(staysFormSchema),
+  } = useForm<PartialStaysFormData>({
+    resolver: zodResolver(partialStaysFormSchema),
     mode: "onChange",
     defaultValues: {
       accommodationTitle: storeData.accommodationTitle || "",
       accommodationDescription: storeData.accommodationDescription || "",
       images: storeData.images || [],
-      location: storeData.location || undefined,
+      location: getTypedLocation(storeData.location) || {
+        address: "",
+        city: "",
+        state: "",
+        country: "",
+      },
       accommodationType: storeData.accommodationType || "",
     },
   });
@@ -99,21 +133,23 @@ function StaysFormContent({}: StaysFormProps) {
   };
 
   const handleLocationChange = (selectedLocation: LocationData | null) => {
-    setValue("location", selectedLocation!, { shouldValidate: true });
-    
-    // Update both location and geoLocation in store
-    const updateData: Partial<StaysFormData> = {
-      location: selectedLocation || undefined,
-    };
+    if (selectedLocation) {
+      setValue("location", selectedLocation, { shouldValidate: true });
 
-    // If coordinates are available, add geoLocation
-    if (selectedLocation?.coordinates) {
-      updateData.geoLocation = {
-        coordinates: selectedLocation.coordinates
+      // Update both location and geoLocation in store
+      const updateData: Partial<StaysFormData> = {
+        location: selectedLocation,
       };
-    }
 
-    updateFormDataImmediate(updateData);
+      // If coordinates are available, add geoLocation
+      if (selectedLocation.coordinates) {
+        updateData.geoLocation = {
+          coordinates: selectedLocation.coordinates,
+        };
+      }
+
+      updateFormDataImmediate(updateData);
+    }
   };
 
   const handleAccommodationTypeChange = (value: string) => {

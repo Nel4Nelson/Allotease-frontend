@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { Header3, Header5 } from "@/components/ui/header";
 import { SideBarItem } from "@/types/index";
 import { Browsers, Wine, Armchair } from "phosphor-react";
 import Link from "next/link";
@@ -16,7 +15,7 @@ const SidebBar = ({
 }) => {
   const pathname = usePathname();
 
-  const items: (SideBarItem)[] = [
+  const items: SideBarItem[] = [
     { title: "Overview", Icon: Browsers, href: "/manage/overview" },
     { title: "Reservation", Icon: Wine, href: "/manage/reservation" },
     { title: "Withdrawal", Icon: Armchair, href: "/manage/withdrawal" },
@@ -24,7 +23,9 @@ const SidebBar = ({
 
   return (
     <div>
-      <Header3 title="Management" />
+      <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-2">
+        Management
+      </h2>
       {items.map((item, index) => {
         const isActive = pathname === item.href || activeTab === item.title;
         return (
@@ -37,7 +38,9 @@ const SidebBar = ({
             }`}
           >
             <item.Icon size={24} color="#71727A" />
-            <Header5 title={item.title} />
+            <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-2">
+              {item.title}
+            </h2>
           </Link>
         );
       })}

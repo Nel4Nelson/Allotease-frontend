@@ -7,7 +7,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Header2 } from "@/components/ui/header";
 import SearchHeader from "../../../../components/features/management/shared/search-header";
 
 type Reservation = {
@@ -129,8 +128,8 @@ export function StayReservationTable() {
 
   return (
     <div className="overflow-x-auto rounded-md bg-[#F2F4F7]/50 border">
-      <h2 className="p-3">
-        <Header2 title="Recent reservations" />
+      <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-2">
+        Recent reservations
       </h2>
 
       <div className="p-4">

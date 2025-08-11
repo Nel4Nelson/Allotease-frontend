@@ -1,5 +1,10 @@
-import { ReservationStatCard } from "@/types/index";
 import React from "react";
+
+interface ReservationStatCard {
+  title: string;
+  totalNo: number;
+  percentage: string;
+}
 
 const stats: ReservationStatCard[] = [
   {

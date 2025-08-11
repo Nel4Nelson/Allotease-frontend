@@ -23,7 +23,7 @@ const mockPendingStays: PendingStay[] = [
     location: "Awka, Anambra, Nigeria",
     price: 455520,
     frequency: "Day",
-    imageUrl: "/images/event-banner.svg",
+    imageUrl: "/images/stays/wintess-garden.jpg",
     expiresAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days from now
   },
   {
@@ -32,7 +32,7 @@ const mockPendingStays: PendingStay[] = [
     location: "Awka, Anambra, Nigeria",
     price: 125000,
     frequency: "Night",
-    imageUrl: "/images/event-banner.svg",
+    imageUrl: "/images/stays/royal-lodge.jpg",
     expiresAt: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day from now
   },
   {
@@ -41,7 +41,7 @@ const mockPendingStays: PendingStay[] = [
     location: "Awka, Anambra, Nigeria",
     price: 85000,
     frequency: "Night",
-    imageUrl: "/images/event-banner.svg",
+    imageUrl: "/images/stays/comfort-inn.jpg",
     expiresAt: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(), // 12 hours from now
   },
 ];
@@ -54,7 +54,6 @@ export function TicketStaysPending() {
 
   // Calculate pagination
   const totalStays = stays.length;
-  const totalPages = Math.ceil(totalStays / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentStays = stays.slice(0, endIndex); // Show all up to current page
@@ -69,7 +68,8 @@ export function TicketStaysPending() {
       // Remove from pending stays (move to active)
       setStays(prev => prev.filter(stay => stay._id !== id));
       toast.success("Stay confirmed successfully!");
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error("Failed to confirm stay:", error);
       toast.error("Failed to confirm stay. Please try again.");
     } finally {
       setLoading(false);
@@ -85,7 +85,8 @@ export function TicketStaysPending() {
       // Remove from pending stays
       setStays(prev => prev.filter(stay => stay._id !== id));
       toast.success("Refund request submitted successfully!");
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error("Failed to request refund:", error);
       toast.error("Failed to request refund. Please try again.");
     } finally {
       setLoading(false);
