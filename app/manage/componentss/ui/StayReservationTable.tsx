@@ -6,14 +6,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-<<<<<<< HEAD
 } from '@/components/ui/table';
-// import { Header2 } from "@/components/ui/header";
 import SearchHeader from '../../../../components/features/management/shared/search-header';
-=======
-} from "@/components/ui/table";
-import SearchHeader from "../../../../components/features/management/shared/search-header";
->>>>>>> development
 
 type Reservation = {
   id: string;
@@ -134,15 +128,9 @@ export function StayReservationTable() {
 
   return (
     <div className="overflow-x-auto rounded-md bg-[#F2F4F7]/50 border">
-<<<<<<< HEAD
-      {/* <h2 className="p-3">
-        <Header2 title="Recent reservations" />
-      </h2> */}
-=======
       <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-2">
         Recent reservations
       </h2>
->>>>>>> development
 
       <div className="p-4">
         <SearchHeader
