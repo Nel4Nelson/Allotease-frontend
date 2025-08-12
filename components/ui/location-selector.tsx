@@ -8,6 +8,7 @@ export interface LocationData {
   city: string;
   state: string;
   country: string;
+  coordinates?: [number, number]; // [longitude, latitude] - Added coordinates
 }
 
 export type EventType = "remote" | "venue";
@@ -186,6 +187,7 @@ export function LocationSelector({
               country:
                 context.find((c: any) => c.id.includes("country"))?.text ||
                 "Nigeria",
+              coordinates: [lng, lat], // Include coordinates from map click
             };
 
             onChange?.(location);
@@ -199,6 +201,24 @@ export function LocationSelector({
       // Set initial location if value exists
       if (value) {
         handleSearch(value.address, false);
+        
+        // If coordinates exist, center map and add marker
+        if (value.coordinates) {
+          mapInstance.current.flyTo({
+            center: value.coordinates,
+            zoom: 14,
+          });
+
+          if (markerRef.current) {
+            markerRef.current.remove();
+          }
+
+          markerRef.current = new mapboxgl.Marker({
+            color: "#FF5722",
+          })
+            .setLngLat(value.coordinates)
+            .addTo(mapInstance.current);
+        }
       }
     } catch (error) {
       console.error("Mapbox initialization error:", error);
@@ -233,6 +253,7 @@ export function LocationSelector({
       state: context.find((c: any) => c.id.includes("region"))?.text || "",
       country:
         context.find((c: any) => c.id.includes("country"))?.text || "Nigeria",
+      coordinates: feature.center, // Include coordinates from suggestion
     };
 
     onChange?.(location);
@@ -324,6 +345,13 @@ export function LocationSelector({
             </div>
           )}
         </div>
+
+        {/* Selected Location Info */}
+        {value && value.coordinates && (
+          <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+            📍 Coordinates: {value.coordinates[1].toFixed(4)}, {value.coordinates[0].toFixed(4)}
+          </div>
+        )}
 
         {/* Map Container */}
         <div className="relative">

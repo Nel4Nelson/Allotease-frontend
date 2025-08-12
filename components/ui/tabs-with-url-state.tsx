@@ -38,23 +38,20 @@ export function CustomTabsContent({
     : defaultTab;
 
   const handleTabChange = (value: string) => {
-    router.push(`${basePath}?${queryParam}=${value}`);
+    // Create new URLSearchParams to preserve existing parameters
+    const newSearchParams = new URLSearchParams(searchParams.toString());
+    
+    // Update only the specific parameter
+    newSearchParams.set(queryParam, value);
+    
+    // Build the new URL with all parameters
+    const newUrl = `${basePath}?${newSearchParams.toString()}`;
+    
+    router.push(newUrl);
   };
 
-  // Don't render until mounted to prevent hydration mismatch
-  if (!mounted) {
-    return (
-      <div className={className}>
-        <div className="h-12 bg-gray-100 rounded-lg animate-pulse mb-8"></div>
-        <div className="space-y-4">
-          <div className="h-6 bg-gray-100 rounded animate-pulse"></div>
-          <div className="h-4 bg-gray-100 rounded animate-pulse w-3/4"></div>
-          <div className="h-12 bg-gray-100 rounded animate-pulse"></div>
-        </div>
-      </div>
-    );
-  }
-
+  // Render immediately with default tab to prevent layout shift
+  // The actual tab content will handle its own loading states
   return (
     <div className={className}>
       <Tabs value={activeTab} onValueChange={handleTabChange}>
@@ -76,10 +73,9 @@ export function CustomTabsContent({
   );
 }
 
-
 export function TabsWithUrlState(props: TabsWithUrlStateProps) {
   return (
-    <Suspense fallback={<div>Loading tabs...</div>}>
+    <Suspense fallback={null}>
       <CustomTabsContent {...props} />
     </Suspense>
   );

@@ -89,10 +89,19 @@ const removeStoredToken = (): void => {
   sessionStorage.removeItem('auth_token');
 };
 
-// Redirect to login helper
+// Helper to get redirect URL from current page
+const getRedirectUrl = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('redirect');
+};
+
+// Redirect to login helper with preserved redirect param
 const redirectToLogin = (): void => {
   if (typeof window !== 'undefined') {
-    window.location.href = '/login';
+    const redirectUrl = getRedirectUrl();
+    const loginUrl = redirectUrl ? `/login?redirect=${encodeURIComponent(redirectUrl)}` : '/login';
+    window.location.href = loginUrl;
   }
 };
 
@@ -233,18 +242,40 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated 
       }), // Only persist user and auth status, not token
       onRehydrateStorage: () => (state) => {
-        // Check stored token on app initialization
-        if (state) {
-          const storedToken = getStoredToken();
-          if (storedToken && !isTokenExpired(storedToken)) {
-            state.setToken(storedToken);
-          } else if (storedToken) {
-            // Token exists but is expired
-            state.clearAuth();
-          }
-          // Set loading to false after rehydration is complete
-          state.setLoading(false);
-        }
+        return new Promise<void>((resolve) => {
+          // Delay the token check to allow components to mount and read URL params
+          setTimeout(() => {
+            if (state) {
+              const storedToken = getStoredToken();
+              if (storedToken && !isTokenExpired(storedToken)) {
+                // Check if we're on an auth page with redirect params
+                const isOnAuthPage = typeof window !== 'undefined' && 
+                  (window.location.pathname.includes('/signin') || 
+                   window.location.pathname.includes('/signup') || 
+                   window.location.pathname.includes('/login'));
+                
+                const hasRedirectParam = typeof window !== 'undefined' && 
+                  new URLSearchParams(window.location.search).has('redirect');
+                
+                if (isOnAuthPage && hasRedirectParam) {
+                  // If we're on auth page with redirect, let the auth components handle the flow
+                  console.log('🔄 On auth page with redirect, deferring to auth components');
+                  state.setLoading(false);
+                } else {
+                  // Normal token restoration
+                  state.setToken(storedToken);
+                }
+              } else if (storedToken) {
+                // Token exists but is expired
+                state.clearAuth();
+              } else {
+                // No token found
+                state.setLoading(false);
+              }
+            }
+            resolve();
+          }, 100); // Small delay to allow components to mount
+        });
       },
     }
   )

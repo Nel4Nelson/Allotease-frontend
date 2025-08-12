@@ -96,28 +96,31 @@ interface FacilitiesSearchResponse {
   };
 }
 
-// Create stay response
+// Create stay response - Updated to match actual API response
 interface CreateStayResponse {
   status: string;
   message: string;
   data: {
-    stay: {
-      _id: string;
-      title: string;
-      description: string;
-      accommodationType: string;
-      location: {
-        address: string;
-        city: string;
-        state: string;
-        country: string;
-      };
-      geoLocation: {
-        coordinates: [number, number]; // [longitude, latitude]
-      };
-      facilities: string[];
-      // ... other stay fields
+    _id: string;
+    title: string;
+    description: string;
+    accommodationType: string;
+    location: {
+      address: string;
+      city: string;
+      state: string;
+      country: string;
     };
+    geoLocation: {
+      coordinates: [number, number]; // [longitude, latitude]
+      type: string;
+    };
+    facilities: string[];
+    images: string[];
+    ownerId: string;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
   };
 }
 
@@ -141,7 +144,7 @@ export class StaysService {
       const response = await apiClient.get<GetStayByIdResponse>(
         `${this.ENDPOINTS.GET_STAY_BY_ID}${id}`
       );
-      
+
       return response;
     } catch (error) {
       console.error(`Failed to fetch stay with ID ${id}:`, error);
@@ -152,28 +155,34 @@ export class StaysService {
   /**
    * Get all stays with pagination and filters
    */
-  static async getAllStays(params: GetStaysParams = {}): Promise<GetStaysResponse> {
+  static async getAllStays(
+    params: GetStaysParams = {}
+  ): Promise<GetStaysResponse> {
     try {
       const queryParams = new URLSearchParams();
-      
+
       // Add default params
       queryParams.append("page", (params.page || 1).toString());
       queryParams.append("limit", (params.limit || 6).toString());
-      
+
       // Add optional params
-      if (params.accommodationType) queryParams.append("accommodationType", params.accommodationType);
+      if (params.accommodationType)
+        queryParams.append("accommodationType", params.accommodationType);
       if (params.allocator) queryParams.append("allocator", params.allocator);
-      
+
       // Add any additional params
-      Object.keys(params).forEach(key => {
-        if (!["page", "limit", "accommodationType", "allocator"].includes(key) && params[key]) {
+      Object.keys(params).forEach((key) => {
+        if (
+          !["page", "limit", "accommodationType", "allocator"].includes(key) &&
+          params[key]
+        ) {
           queryParams.append(key, params[key].toString());
         }
       });
 
       const url = `${this.ENDPOINTS.GET_STAYS}?${queryParams.toString()}`;
       const response = await apiClient.get<GetStaysResponse>(url);
-      
+
       return response;
     } catch (error) {
       console.error("Failed to fetch stays:", error);
@@ -184,7 +193,7 @@ export class StaysService {
   /**
    * Format stay location for display
    */
-  static formatStayLocation(location: Stay['location']): string {
+  static formatStayLocation(location: Stay["location"]): string {
     return `${location.city}, ${location.state}, ${location.country}`;
   }
 
@@ -213,12 +222,12 @@ export class StaysService {
   static getMockReviewCount(): string {
     const counts = [
       "1,469 reviews",
-      "2,134 reviews", 
+      "2,134 reviews",
       "987 reviews",
       "3,245 reviews",
       "1,876 reviews",
       "564 reviews",
-      "2,987 reviews"
+      "2,987 reviews",
     ];
     return counts[Math.floor(Math.random() * counts.length)];
   }
@@ -230,12 +239,12 @@ export class StaysService {
     // Convert from backend format to display format
     const typeMap: Record<string, string> = {
       "hotel & lodging": "Hotels & Lodging",
-      "apartments": "Apartments",
-      "guesthouses": "Guest Houses", 
-      "hostels": "Hostels",
-      "resorts": "Resorts"
+      appartments: "Apartments",
+      guesthouses: "Guest Houses",
+      hostels: "Hostels",
+      resorts: "Resorts",
     };
-    
+
     return typeMap[type.toLowerCase()] || type;
   }
 
@@ -243,26 +252,29 @@ export class StaysService {
    * Format unit price for display
    */
   static formatUnitPrice(unit: StayUnit): string {
-    const formatter = new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN'
+    const formatter = new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
     });
-    
+
     return `${formatter.format(unit.price)} per ${unit.frequency}`;
   }
 
   /**
    * Get availability status for unit
    */
-  static getUnitAvailability(unit: StayUnit): { available: number; status: 'available' | 'limited' | 'unavailable' } {
+  static getUnitAvailability(unit: StayUnit): {
+    available: number;
+    status: "available" | "limited" | "unavailable";
+  } {
     const available = unit.quantity - unit.totalBooked;
-    
+
     if (available <= 0) {
-      return { available: 0, status: 'unavailable' };
+      return { available: 0, status: "unavailable" };
     } else if (available <= 5) {
-      return { available, status: 'limited' };
+      return { available, status: "limited" };
     } else {
-      return { available, status: 'available' };
+      return { available, status: "available" };
     }
   }
 
@@ -276,7 +288,9 @@ export class StaysService {
       }
 
       const response = await apiClient.get<FacilitiesSearchResponse>(
-        `${this.ENDPOINTS.SEARCH_FACILITIES}?query=${encodeURIComponent(query.trim())}`
+        `${this.ENDPOINTS.SEARCH_FACILITIES}?query=${encodeURIComponent(
+          query.trim()
+        )}`
       );
 
       if (response.status === "success" && response.data?.items) {
@@ -293,7 +307,9 @@ export class StaysService {
   /**
    * Get facility details for multiple IDs (for preview)
    */
-  static async getFacilitiesDetails(facilityIds: string[]): Promise<FacilityDetail[]> {
+  static async getFacilitiesDetails(
+    facilityIds: string[]
+  ): Promise<FacilityDetail[]> {
     try {
       if (!facilityIds || facilityIds.length === 0) {
         return [];
@@ -314,13 +330,13 @@ export class StaysService {
       });
 
       const results = await Promise.allSettled(facilityPromises);
-      
-      return results
-        .filter((result): result is PromiseFulfilledResult<FacilityDetail> => 
-          result.status === 'fulfilled' && result.value !== null
-        )
-        .map(result => result.value);
 
+      return results
+        .filter(
+          (result): result is PromiseFulfilledResult<FacilityDetail> =>
+            result.status === "fulfilled" && result.value !== null
+        )
+        .map((result) => result.value);
     } catch (error) {
       console.error("Failed to fetch facility details:", error);
       return [];
@@ -328,9 +344,100 @@ export class StaysService {
   }
 
   /**
+   * Generate coordinates from location data
+   */
+  private static generateCoordinatesFromLocation(
+    location: StaysFormData["location"]
+  ): [number, number] {
+    // Use coordinates if available
+    if (location.coordinates) {
+      return location.coordinates;
+    }
+
+    // Fallback coordinates for major Nigerian cities
+    const cityCoordinates: Record<string, [number, number]> = {
+      // Lagos
+      lagos: [3.3792, 6.5244],
+      ikeja: [3.3566, 6.6018],
+      lekki: [3.4716, 6.4698],
+
+      // Abuja
+      abuja: [7.5399, 9.0579],
+      garki: [7.4951, 9.0579],
+
+      // Port Harcourt
+      "port harcourt": [7.0134, 4.8156],
+
+      // Kano
+      kano: [8.5264, 11.9925],
+
+      // Ibadan
+      ibadan: [3.947, 7.3986],
+
+      // Kaduna
+      kaduna: [7.4421, 10.5264],
+
+      // Benin City
+      benin: [5.6037, 6.335],
+      "benin city": [5.6037, 6.335],
+
+      // Enugu
+      enugu: [7.5105, 6.2649],
+
+      // Jos
+      jos: [8.8932, 9.8965],
+
+      // Warri
+      warri: [5.75, 5.5166],
+
+      // Calabar
+      calabar: [8.3275, 4.9517],
+    };
+
+    // Try to match city
+    const cityKey = location.city?.toLowerCase() || "";
+    if (cityCoordinates[cityKey]) {
+      return cityCoordinates[cityKey];
+    }
+
+    // Try to match by state (approximate center coordinates)
+    const stateCoordinates: Record<string, [number, number]> = {
+      lagos: [3.3792, 6.5244],
+      abuja: [7.5399, 9.0579],
+      rivers: [7.0134, 4.8156],
+      kano: [8.5264, 11.9925],
+      oyo: [3.947, 7.3986],
+      kaduna: [7.4421, 10.5264],
+      edo: [5.6037, 6.335],
+      enugu: [7.5105, 6.2649],
+      plateau: [8.8932, 9.8965],
+      delta: [5.75, 5.5166],
+      "cross river": [8.3275, 4.9517],
+      anambra: [6.9175, 6.2649],
+      imo: [7.0255, 5.4966],
+      abia: [7.5248, 5.4527],
+      "akwa ibom": [7.8249, 4.9059],
+      bayelsa: [6.0699, 4.7719],
+      benue: [8.734, 7.7099],
+      borno: [13.0827, 11.8846],
+      taraba: [9.7799, 7.8637],
+    };
+
+    const stateKey = location.state?.toLowerCase() || "";
+    if (stateCoordinates[stateKey]) {
+      return stateCoordinates[stateKey];
+    }
+
+    // Default to Nigeria center coordinates
+    return [7.4951, 9.0579];
+  }
+
+  /**
    * Create a new stay
    */
-  static async createStay(formData: StaysFormData): Promise<CreateStayResponse> {
+  static async createStay(
+    formData: StaysFormData
+  ): Promise<CreateStayResponse> {
     try {
       // Prepare form data for multipart/form-data
       const form = new FormData();
@@ -348,6 +455,14 @@ export class StaysService {
         form.append("location[country]", formData.location.country);
       }
 
+      // Add geoLocation coordinates (CRITICAL FIX)
+      const coordinates =
+        formData.geoLocation?.coordinates ||
+        this.generateCoordinatesFromLocation(formData.location);
+
+      form.append("geoLocation[coordinates][0]", coordinates[0].toString());
+      form.append("geoLocation[coordinates][1]", coordinates[1].toString());
+
       // Add facilities
       if (formData.facilities && formData.facilities.length > 0) {
         formData.facilities.forEach((facilityId, index) => {
@@ -361,6 +476,9 @@ export class StaysService {
           form.append(`images`, image);
         });
       }
+
+      // Log form data for debugging
+      console.log("Creating stay with coordinates:", coordinates);
 
       // Use uploadFile method for multipart/form-data
       const response = await apiClient.uploadFile<CreateStayResponse>(
@@ -401,15 +519,14 @@ export class StaysService {
 
       // Step 2: Future - Add units (placeholder for now)
       onProgress("Setting up accommodation...", 66);
-      
+
       // Simulate some processing time
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Step 3: Complete
       onProgress("Finalizing...", 100);
 
       return stayResponse;
-
     } catch (error) {
       console.error("Complete stay creation failed:", error);
       throw error;
@@ -429,20 +546,20 @@ export class StaysService {
       // Create the stay
       onProgress("Creating accommodation...", 50);
       const stayResponse = await this.createStay(formData);
-      stayId = stayResponse.data.stay._id;
+
+      stayId = stayResponse.data._id;
 
       // Future: Add units here
       onProgress("Finalizing accommodation...", 100);
-      
-      return stayResponse;
 
+      return stayResponse;
     } catch (error) {
       // Cleanup on failure
       if (stayId) {
         console.log("Cleaning up failed stay creation...");
         await this.deleteStay(stayId);
       }
-      
+
       throw error;
     }
   }
@@ -454,10 +571,14 @@ export class StaysService {
     const errors: string[] = [];
 
     // Basic validation
-    if (!formData.accommodationTitle) errors.push("Accommodation title is required");
-    if (!formData.accommodationDescription) errors.push("Accommodation description is required");
-    if (!formData.images || formData.images.length === 0) errors.push("At least one image is required");
-    if (!formData.accommodationType) errors.push("Accommodation type is required");
+    if (!formData.accommodationTitle)
+      errors.push("Accommodation title is required");
+    if (!formData.accommodationDescription)
+      errors.push("Accommodation description is required");
+    if (!formData.images || formData.images.length === 0)
+      errors.push("At least one image is required");
+    if (!formData.accommodationType)
+      errors.push("Accommodation type is required");
 
     // Location validation
     if (!formData.location) {
@@ -472,6 +593,11 @@ export class StaysService {
     // Facilities validation
     if (!formData.facilities || formData.facilities.length === 0) {
       errors.push("At least one facility is required");
+    }
+
+    // Coordinates validation (will be auto-generated if missing)
+    if (!formData.geoLocation?.coordinates && !formData.location) {
+      errors.push("Location coordinates are required");
     }
 
     return errors;

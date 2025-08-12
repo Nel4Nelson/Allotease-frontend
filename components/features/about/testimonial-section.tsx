@@ -1,16 +1,14 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
-
 import React, { useEffect, useState, useRef } from "react";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
 import { aboutPageData } from "@/data/about";
 
 const ChevronLeftIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    width="20"
-    height="20"
+    width="24"
+    height="24"
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
@@ -24,8 +22,8 @@ const ChevronLeftIcon = () => (
 const ChevronRightIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    width="20"
-    height="20"
+    width="24"
+    height="24"
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
@@ -36,56 +34,97 @@ const ChevronRightIcon = () => (
   </svg>
 );
 
-const RADIUS = 250;
+interface TestimonialItem {
+  id: number;
+  name: string;
+  role: string;
+  content: string;
+  avatarSrc: string;
+  copyIndex?: number;
+}
 
-const getXY = (
+// Create infinite scroll array
+const createInfiniteArray = (items: TestimonialItem[], copies: number = 3): TestimonialItem[] => {
+  const result: TestimonialItem[] = [];
+  for (let i = 0; i < copies; i++) {
+    result.push(...items.map(item => ({ ...item, copyIndex: i })));
+  }
+  return result;
+};
+
+// Horizontal positioning for infinite scroll
+const getInfinitePosition = (
   index: number,
-  total: number,
-  width: number,
+  activeIndex: number,
   isMobile: boolean
 ) => {
-  const gap = 20;
-  const itemWidth = 288;
-  const totalWidth = total * itemWidth + (total - 1) * gap;
-  const startX = -totalWidth / 2 + itemWidth / 2;
-
-  if (isMobile) {
-    const x = (index - Math.floor(total / 2)) * (itemWidth + gap);
-    return { x, y: 0 };
-  }
-
-  const x = startX + index * (itemWidth + gap);
-  const progress = index / (total - 1);
-  const angle = progress * Math.PI;
-  const y = -Math.sin(angle) * RADIUS;
-  return { x, y };
+  const cardWidth = isMobile ? 300 : 344;
+  const gap = isMobile ? 20 : 30;
+  const offset = index - activeIndex;
+  
+  return {
+    x: offset * (cardWidth + gap),
+    scale: offset === 0 ? 1.2 : Math.abs(offset) === 1 ? 0.95 : 0.85,
+    opacity: Math.abs(offset) <= 2 ? 1 : 0,
+    zIndex: offset === 0 ? 30 : 20 - Math.abs(offset) * 5,
+    bgOpacity: offset === 0 ? 'bg-[#fff3e7]' : 
+               Math.abs(offset) === 1 ? 'bg-[rgba(255,243,231,0.8)]' : 
+               'bg-[rgba(255,243,231,0.4)]'
+  };
 };
 
 export function TestimonialSection() {
   const { testimonials } = aboutPageData;
-  const [startIndex, setStartIndex] = useState(0);
-  const [containerWidth, setContainerWidth] = useState(600);
-  const [isMobile, setIsMobile] = useState(false);
-  const [itemsVisible, setItemsVisible] = useState(5);
+  const [activeIndex, setActiveIndex] = useState(testimonials.length); // Start at middle copy
   const [isHovered, setIsHovered] = useState(false);
-  // Fix 1: Properly type the ref for NodeJS.Timeout
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [viewportWidth, setViewportWidth] = useState(1440);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const moveClockwise = () => {
-    setStartIndex((prev) => (prev + 1) % testimonials.length);
+  const isMobile = viewportWidth < 768;
+  
+  // Create infinite array with 3 copies
+  const infiniteTestimonials = createInfiniteArray(testimonials, 3);
+  const originalLength = testimonials.length;
+  const middleStart = originalLength;
+  const middleEnd = originalLength * 2 - 1;
+
+  const moveNext = () => {
+    setActiveIndex((prev) => {
+      const next = prev + 1;
+      
+      // If we're at the end of the last copy, reset to middle copy
+      if (next >= infiniteTestimonials.length) {
+        setTimeout(() => {
+          setActiveIndex(middleStart);
+        }, 50);
+        return infiniteTestimonials.length - 1;
+      }
+      
+      return next;
+    });
   };
 
-  const moveAntiClockwise = () => {
-    setStartIndex(
-      (prev) => (prev - 1 + testimonials.length) % testimonials.length
-    );
+  const movePrev = () => {
+    setActiveIndex((prev) => {
+      const next = prev - 1;
+      
+      // If we're at the beginning of the first copy, reset to middle copy
+      if (next < 0) {
+        setTimeout(() => {
+          setActiveIndex(middleEnd);
+        }, 50);
+        return 0;
+      }
+      
+      return next;
+    });
   };
 
   const startAutoRotation = () => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
-    intervalRef.current = setInterval(moveAntiClockwise, 4000);
+    intervalRef.current = setInterval(moveNext, 4000);
   };
 
   const stopAutoRotation = () => {
@@ -97,25 +136,7 @@ export function TestimonialSection() {
 
   useEffect(() => {
     const handleResize = () => {
-      const width = window.innerWidth;
-
-      if (width < 640) {
-        setContainerWidth(300);
-        setIsMobile(true);
-        setItemsVisible(1);
-      } else if (width < 768) {
-        setContainerWidth(400);
-        setIsMobile(false);
-        setItemsVisible(3);
-      } else if (width < 1024) {
-        setContainerWidth(500);
-        setIsMobile(false);
-        setItemsVisible(5);
-      } else {
-        setContainerWidth(700);
-        setIsMobile(false);
-        setItemsVisible(5);
-      }
+      setViewportWidth(window.innerWidth);
     };
 
     handleResize();
@@ -133,71 +154,67 @@ export function TestimonialSection() {
     return () => stopAutoRotation();
   }, [isHovered]);
 
-  const visibleItems = [];
-  for (let i = 0; i < itemsVisible; i++) {
-    const index = (startIndex + i) % testimonials.length;
-    visibleItems.push({ ...testimonials[index], id: index });
-  }
-
-  const getCardWidth = () => {
-    if (isMobile) {
-      return 200;
-    } else if (containerWidth < 768) {
-      return 240;
-    } else {
-      return 288;
-    }
-  };
-
-  // Fix 2: Add proper type annotation for the parameter
-  const handleCardHover = (isHovering: boolean) => {
-    setIsHovered(isHovering);
+  // Get current testimonial for dot indicator
+  const getCurrentDotIndex = () => {
+    return activeIndex % originalLength;
   };
 
   return (
-    <section className="py-16 bg-white">
-      <div className="max-w-6xl mx-auto">
-        <div className="relative w-full mx-auto">
-          <div className="relative h-[800px] w-full overflow-hidden rounded-xl bg-white">
-            <div className="absolute w-full h-full flex justify-center items-center">
-              {visibleItems.map((testimonial, i) => {
-                const { x, y } = getXY(
-                  i,
-                  itemsVisible,
-                  containerWidth,
-                  isMobile
-                );
-
+    <section className="relative py-8 overflow-hidden">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-20">
+        
+        {/* Testimonial Cards Container */}
+        <div className="relative h-[500px] mb-8 md:mb-12 lg:mb-16">
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="relative w-full h-full">
+              {infiniteTestimonials.map((testimonial, index) => {
+                const position = getInfinitePosition(index, activeIndex, isMobile);
+                
                 return (
                   <div
-                    key={testimonial.id}
-                    className="absolute shadow-lg rounded-xl px-6 py-4 text-center bg-[#FFF3E7] transition-all duration-1000 ease-in-out cursor-pointer"
+                    key={`${testimonial.id}-${testimonial.copyIndex || 0}`}
+                    className={`absolute left-1/2 top-1/2 w-[280px] sm:w-[320px] md:w-[344px] 
+                      ${position.bgOpacity} backdrop-blur-[21px] 
+                      shadow-[0px_4px_10px_0px_rgba(0,0,0,0.04)] 
+                      rounded-[20px] p-5 sm:p-6 md:p-8
+                      transition-all duration-700 ease-out 
+                      hover:scale-110 hover:!z-50 cursor-pointer`}
                     style={{
-                      width: `${getCardWidth()}px`,
-                      transform: `translate(${x}px, ${y}px) scale(${
-                        i === Math.floor(itemsVisible / 2) ? 1.2 : 0.9
-                      })`,
-                      opacity: 1,
+                      transform: `
+                        translate(-50%, -50%)
+                        translateX(${position.x}px) 
+                        scale(${position.scale})
+                      `,
+                      opacity: position.opacity,
+                      zIndex: position.zIndex,
+                      visibility: Math.abs(index - activeIndex) > 2 ? 'hidden' : 'visible'
                     }}
-                    onMouseEnter={() => handleCardHover(true)}
-                    onMouseLeave={() => handleCardHover(false)}
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                    onClick={() => setActiveIndex(index)}
                   >
-                    <div className="flex flex-col items-center">
-                      <div className="relative w-14 h-14 mb-3 overflow-hidden rounded-full bg-gray-200">
+                    <div className="flex flex-col items-center text-center">
+                      {/* Avatar */}
+                      <div className="relative w-10 h-10 md:w-12 md:h-12 mb-3 md:mb-4 rounded-full overflow-hidden bg-gray-200">
                         <Image
                           src={testimonial.avatarSrc}
-                          alt={`Avatar of ${testimonial.name}`}
+                          alt={`${testimonial.name} avatar`}
                           fill
-                          sizes="56px"
+                          sizes="48px"
                           className="object-cover"
                         />
                       </div>
 
-                      <h3 className="text-[#1F3A3A] text-sm font-bold text-center mb-2">
-                        {testimonial.name} <br /> {testimonial.role}
+                      {/* Name */}
+                      <h3 className="font-space-grotesk font-bold text-[18px] sm:text-[20px] md:text-[24px] 
+                        text-[#1f3a3a] tracking-[-0.48px] leading-[1.1] mb-2">
+                        {testimonial.name}
                       </h3>
 
-                      <p className="text-center text-[#71727A] text-[10px] leading-relaxed">
+                      {/* Content */}
+                      <p className="font-source-sans-pro text-[13px] sm:text-[14px] md:text-[16px] 
+                        text-[#71727a] tracking-[-0.32px] leading-[1.4] 
+                        max-w-[240px] sm:max-w-[280px] mx-auto">
                         {testimonial.content}
                       </p>
                     </div>
@@ -206,35 +223,55 @@ export function TestimonialSection() {
               })}
             </div>
           </div>
+        </div>
 
-          {/* Using negative margin to pull text closer to carousel */}
-          <div className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-0 -mt-96 relative z-10">
-            <h2 className="font-bold text-3xl sm:text-4xl md:text-5xl text-center text-[#1F3A3A] mb-6 leading-snug">
-              Hear from other <br className="hidden sm:block" />
-              <span className="text-[#B5651D]">Organizers & Attendees</span>
-            </h2>
+        {/* Title and Navigation */}
+        <div className="flex flex-col items-center">
+          {/* Title */}
+          <h2 className="font-space-grotesk font-bold text-[32px] sm:text-[36px] md:text-[42px] lg:text-[48px] 
+            leading-[1.1] text-center tracking-[-0.96px] mb-6 md:mb-8">
+            <span className="text-[#1f3a3a]">Hear from other </span>
+            <br className="sm:hidden" />
+            <span className="text-[#b5651d]">Hosts & Guests</span>
+          </h2>
 
-            {/* Navigation Buttons */}
-            <div className="flex justify-center gap-6 sm:gap-8">
-              <Button
-                onClick={moveAntiClockwise}
-                variant="outline"
-                size="icon"
-                className="bg-[#B5651D] text-white hover:bg-[#9A5518] border-[#B5651D] p-3 sm:p-4 rounded-full shadow-md hover:scale-105 transition-all duration-200"
-                aria-label="Move anti-clockwise"
-              >
-                <ChevronLeftIcon />
-              </Button>
-              <Button
-                onClick={moveClockwise}
-                variant="outline"
-                size="icon"
-                className="bg-[#B5651D] text-white hover:bg-[#9A5518] border-[#B5651D] p-3 sm:p-4 rounded-full shadow-md hover:scale-105 transition-all duration-200"
-                aria-label="Move clockwise"
-              >
-                <ChevronRightIcon />
-              </Button>
-            </div>
+          {/* Navigation Buttons */}
+          <div className="flex gap-4 sm:gap-6 mb-6">
+            <button
+              onClick={movePrev}
+              className="bg-[#b5651d] p-2.5 sm:p-3 rounded-full text-white
+                shadow-[0px_20px_41.3px_0px_rgba(0,0,0,0.18),0px_4px_4px_0px_inset_rgba(255,255,255,0.25)]
+                hover:scale-110 active:scale-95 transition-transform duration-200"
+              aria-label="Previous testimonials"
+            >
+              <ChevronLeftIcon />
+            </button>
+            
+            <button
+              onClick={moveNext}
+              className="bg-[#b5651d] p-2.5 sm:p-3 rounded-full text-white
+                shadow-[0px_20px_41.3px_0px_rgba(0,0,0,0.18),0px_4px_4px_0px_inset_rgba(255,255,255,0.25)]
+                hover:scale-110 active:scale-95 transition-transform duration-200"
+              aria-label="Next testimonials"
+            >
+              <ChevronRightIcon />
+            </button>
+          </div>
+
+          {/* Dot indicators */}
+          <div className="flex justify-center gap-2">
+            {testimonials.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setActiveIndex(middleStart + index)}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  index === getCurrentDotIndex() 
+                    ? 'bg-[#b5651d] w-8' 
+                    : 'bg-gray-300 hover:bg-gray-400'
+                }`}
+                aria-label={`Go to testimonial ${index + 1}`}
+              />
+            ))}
           </div>
         </div>
       </div>

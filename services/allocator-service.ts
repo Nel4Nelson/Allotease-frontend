@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { apiClient } from "./api-client";
+import { useAuthStore } from "@/stores/auth-store";
 
 // Allocator interface from API response
 export interface Allocator {
@@ -25,7 +26,7 @@ interface FollowedUser {
 }
 
 // API response interface for getting allocators
-interface GetAllocatorsResponse {
+export interface GetAllocatorsResponse {
   status: string;
   message: string;
   data: {
@@ -68,9 +69,24 @@ export class AllocatorService {
   } as const;
 
   /**
+   * Check if user is authenticated
+   */
+  static isAuthenticated(): boolean {
+    const { isAuthenticated } = useAuthStore.getState();
+    return isAuthenticated;
+  }
+
+  /**
    * Get all users that the current user is following
+   * Only call this if user is authenticated
    */
   static async getFollowedUsers(): Promise<string[]> {
+    // Check authentication before making the request
+    if (!this.isAuthenticated()) {
+      console.log("User not authenticated, skipping followed users fetch");
+      return [];
+    }
+
     try {
       const response = await apiClient.get<GetFollowedUsersResponse>(
         this.ENDPOINTS.GET_FOLLOWED_USERS
@@ -82,14 +98,21 @@ export class AllocatorService {
       }
 
       return [];
-    } catch (error) {
+    } catch (error: any) {
+      // Handle 401 specifically without logging as error
+      if (error?.response?.status === 401) {
+        console.log("User session expired, clearing auth");
+        useAuthStore.getState().clearAuth();
+        return [];
+      }
+      
       console.error("Failed to fetch followed users:", error);
       return [];
     }
   }
 
   /**
-   * Get all allocators with pagination and follow status
+   * Get all allocators with pagination and follow status (if authenticated)
    */
   static async getAllocators(
     params: GetAllocatorsParams = {}
@@ -110,23 +133,40 @@ export class AllocatorService {
 
       const url = `${this.ENDPOINTS.GET_ALLOCATORS}?${queryParams.toString()}`;
 
-      // Fetch allocators and followed users concurrently
-      const [allocatorsResponse, followedUserIds] = await Promise.all([
-        apiClient.get<GetAllocatorsResponse>(url),
-        this.getFollowedUsers(),
-      ]);
+      // If user is authenticated, fetch both allocators and followed users
+      if (this.isAuthenticated()) {
+        const [allocatorsResponse, followedUserIds] = await Promise.all([
+          apiClient.get<GetAllocatorsResponse>(url),
+          this.getFollowedUsers(),
+        ]);
 
-      // Mark allocators as followed if they're in the followed list
-      if (allocatorsResponse.status === "success") {
-        allocatorsResponse.data.items = allocatorsResponse.data.items.map(
-          (allocator) => ({
-            ...allocator,
-            isFollowing: followedUserIds.includes(allocator._id),
-          })
-        );
+        // Mark allocators as followed if they're in the followed list
+        if (allocatorsResponse.status === "success") {
+          allocatorsResponse.data.items = allocatorsResponse.data.items.map(
+            (allocator) => ({
+              ...allocator,
+              isFollowing: followedUserIds.includes(allocator._id),
+            })
+          );
+        }
+
+        return allocatorsResponse;
+      } else {
+        // User not authenticated, just fetch allocators without follow status
+        const allocatorsResponse = await apiClient.get<GetAllocatorsResponse>(url);
+        
+        if (allocatorsResponse.status === "success") {
+          // Ensure all allocators have isFollowing: false for unauthenticated users
+          allocatorsResponse.data.items = allocatorsResponse.data.items.map(
+            (allocator) => ({
+              ...allocator,
+              isFollowing: false,
+            })
+          );
+        }
+
+        return allocatorsResponse;
       }
-
-      return allocatorsResponse;
     } catch (error) {
       console.error("Failed to fetch allocators:", error);
       throw error;
@@ -135,10 +175,19 @@ export class AllocatorService {
 
   /**
    * Get allocators with updated follow status (for refresh without full reload)
+   * Only for authenticated users
    */
   static async updateAllocatorsFollowStatus(
     allocators: Allocator[]
   ): Promise<Allocator[]> {
+    if (!this.isAuthenticated()) {
+      // Return allocators with isFollowing: false for unauthenticated users
+      return allocators.map((allocator) => ({
+        ...allocator,
+        isFollowing: false,
+      }));
+    }
+
     try {
       const followedUserIds = await this.getFollowedUsers();
 
@@ -153,9 +202,13 @@ export class AllocatorService {
   }
 
   /**
-   * Follow or unfollow a user
+   * Follow a user
    */
   static async followUser(userToFollow: string): Promise<FollowResponse> {
+    if (!this.isAuthenticated()) {
+      throw new Error("User must be authenticated to follow");
+    }
+
     try {
       const response = await apiClient.post<FollowResponse>(
         `${this.ENDPOINTS.FOLLOW_USER}${userToFollow}`,
@@ -164,8 +217,39 @@ export class AllocatorService {
 
       return response;
     } catch (error) {
-      console.error("Failed to follow/unfollow user:", error);
+      console.error("Failed to follow user:", error);
       throw error;
+    }
+  }
+
+  /**
+   * Unfollow a user
+   */
+  static async unfollowUser(userToUnfollow: string): Promise<FollowResponse> {
+    if (!this.isAuthenticated()) {
+      throw new Error("User must be authenticated to unfollow");
+    }
+
+    try {
+      const response = await apiClient.delete<FollowResponse>(
+        `${this.ENDPOINTS.FOLLOW_USER}${userToUnfollow}`
+      );
+
+      return response;
+    } catch (error) {
+      console.error("Failed to unfollow user:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Toggle follow status for a user
+   */
+  static async toggleFollowUser(userId: string, currentlyFollowing: boolean): Promise<FollowResponse> {
+    if (currentlyFollowing) {
+      return this.unfollowUser(userId);
+    } else {
+      return this.followUser(userId);
     }
   }
 

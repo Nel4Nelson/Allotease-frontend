@@ -1,4 +1,4 @@
-/* eslint-disable react/no-unescaped-entities */
+"use client";
 import React, { useState } from "react";
 import Image from "next/image";
 
@@ -22,15 +22,21 @@ export function AllocationAdminCard({
   className = "",
 }: AllocationAdminCardProps) {
   const [showTooltip, setShowTooltip] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleFollowClick = () => {
-    if (onFollowClick && !isFollowing) {
-      onFollowClick(id);
+  const handleFollowClick = async () => {
+    if (onFollowClick && !isLoading) {
+      setIsLoading(true);
+      try {
+        await onFollowClick(id);
+      } finally {
+        setTimeout(() => setIsLoading(false), 300);
+      }
     }
   };
 
   const handleMouseEnter = () => {
-    if (isFollowing) {
+    if (isFollowing && !isLoading) {
       setShowTooltip(true);
     }
   };
@@ -38,6 +44,16 @@ export function AllocationAdminCard({
   const handleMouseLeave = () => {
     setShowTooltip(false);
   };
+
+  // Determine button text
+  const getButtonText = () => {
+    if (isLoading) return "...";
+    if (isFollowing) return "Unfollow";
+    return "Follow";
+  };
+
+  // Determine if button should be disabled
+  const isButtonDisabled = isLoading;
 
   return (
     <div
@@ -101,34 +117,44 @@ export function AllocationAdminCard({
         {followerCount}
       </p>
 
-      {/* Follow Button with Tooltip */}
+      {/* Follow/Unfollow Button with Tooltip */}
       <div className="relative">
         <button
           onClick={handleFollowClick}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          disabled={isFollowing}
+          disabled={isButtonDisabled}
           className={`transition-all ${
-            isFollowing
+            isButtonDisabled
               ? "cursor-not-allowed opacity-60"
+              : isFollowing
+              ? "hover:bg-red-50 cursor-pointer"
               : "hover:bg-orange-50 cursor-pointer"
           }`}
           style={{
             borderRadius: "51px",
             border: `1px solid ${
-              isFollowing ? "#B0B0B0" : "var(--Orange-Red, #FF5B00)"
+              isButtonDisabled
+                ? "#B0B0B0"
+                : isFollowing
+                ? "var(--Orange-Red, #FF5B00)"
+                : "var(--Orange-Red, #FF5B00)"
             }`,
             display: "flex",
             padding: "6px 12px",
             justifyContent: "center",
             alignItems: "center",
             gap: "15px",
-            background: isFollowing ? "#F5F5F5" : "transparent",
+            background: isButtonDisabled 
+              ? "#F5F5F5" 
+              : "transparent",
           }}
         >
           <span
             style={{
-              color: isFollowing ? "#B0B0B0" : "var(--Orange-Red, #FF5B00)",
+              color: isButtonDisabled
+                ? "#B0B0B0"
+                : "var(--Orange-Red, #FF5B00)",
               fontFamily: "var(--font-source-sans), sans-serif",
               fontSize: "18px",
               fontStyle: "normal",
@@ -136,12 +162,12 @@ export function AllocationAdminCard({
               lineHeight: "normal",
             }}
           >
-            {isFollowing ? "Following" : "Follow"}
+            {getButtonText()}
           </span>
         </button>
 
         {/* Tooltip */}
-        {showTooltip && isFollowing && (
+        {showTooltip && isFollowing && !isLoading && (
           <div
             className="absolute z-10 px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-sm"
             style={{
@@ -154,7 +180,7 @@ export function AllocationAdminCard({
               fontWeight: 500,
             }}
           >
-            You're already following {name}
+            Click to unfollow {name}
             {/* Tooltip Arrow */}
             <div
               className="absolute top-full left-1/2 transform -translate-x-1/2"

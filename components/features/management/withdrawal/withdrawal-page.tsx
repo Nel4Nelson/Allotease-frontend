@@ -33,7 +33,11 @@ export function WithdrawalPage({
   loading = false,
 }: WithdrawalPageProps) {
   const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
+<<<<<<< HEAD
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
+=======
+  const [withdrawalAmount, setWithdrawalAmount] = useState("");
+>>>>>>> development
 
   // Use balance hook
   const {
@@ -48,9 +52,16 @@ export function WithdrawalPage({
   // Use balance or fallback to 0 for display
   const displayBalance = balanceError ? 0 : balance;
 
+<<<<<<< HEAD
   const handleWithdraw = () => {
     setShowWithdrawalModal(true);
     setWithdrawalAmount(''); // Clear amount field
+=======
+
+  const handleWithdraw = () => {
+    setShowWithdrawalModal(true);
+    setWithdrawalAmount(""); // Clear amount field
+>>>>>>> development
   };
 
   const handleWithdrawalSubmit = async () => {
@@ -62,10 +73,17 @@ export function WithdrawalPage({
       const result = await withdraw(withdrawalAmount);
 
       if (result.success) {
+<<<<<<< HEAD
         // Close modal after showing success message
         setTimeout(() => {
           setShowWithdrawalModal(false);
           setWithdrawalAmount('');
+=======
+        // Close modal after successful withdrawal
+        setTimeout(() => {
+          setShowWithdrawalModal(false);
+          setWithdrawalAmount("");
+>>>>>>> development
         }, 2000);
       }
     } catch (err) {
@@ -73,9 +91,17 @@ export function WithdrawalPage({
     }
   };
 
+<<<<<<< HEAD
   const handleCloseWithdrawalModal = () => {
     setShowWithdrawalModal(false);
     setWithdrawalAmount('');
+=======
+
+
+  const handleCloseWithdrawalModal = () => {
+    setShowWithdrawalModal(false);
+    setWithdrawalAmount("");
+>>>>>>> development
   };
 
   return (

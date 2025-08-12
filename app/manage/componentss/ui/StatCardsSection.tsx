@@ -1,4 +1,14 @@
+<<<<<<< HEAD
 import React from 'react';
+
+interface ReservationStatCard {
+  title: string;
+  totalNo: number;
+  percentage: string;
+}
+=======
+import React from "react";
+>>>>>>> development
 
 interface ReservationStatCard {
   title: string;
