@@ -85,7 +85,7 @@ export function FeatureSection({
 
         {/* Responsive Banner */}
         {bannerSrc && (
-          <div className="overflow-hidden mb-8 sm:my-10 bg-transparent">
+          <div className="overflow-hidden mb-8 my-4 sm:my-10 bg-transparent">
             <Image
               src={bannerSrc}
               alt={bannerAlt || "Feature banner"}

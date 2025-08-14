@@ -1,5 +1,3 @@
-// lib/auth-utils.ts - Production version
-
 import { NextRequest } from "next/server";
 
 export interface TokenPayload {
@@ -63,23 +61,76 @@ export function getTokenFromRequest(request: NextRequest): string | null {
   return null;
 }
 
-// Helper function to check if user is authenticated
+// Check if the request is from a mobile device
+export function isMobileDevice(request: NextRequest): boolean {
+  const userAgent = request.headers.get('user-agent') || '';
+  const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+  return mobileRegex.test(userAgent);
+}
+
+// Enhanced mobile-aware auth check
 export function isAuthenticated(request: NextRequest): {
   isAuth: boolean;
   user: TokenPayload | null;
+  isMobile: boolean;
+  shouldBypassMiddleware: boolean;
 } {
   const token = getTokenFromRequest(request);
+  const isMobile = isMobileDevice(request);
 
   if (!token) {
-    return { isAuth: false, user: null };
+    return { 
+      isAuth: false, 
+      user: null, 
+      isMobile,
+      shouldBypassMiddleware: false 
+    };
   }
 
   if (isTokenExpired(token)) {
-    return { isAuth: false, user: null };
+    // On mobile, only suggest bypass if we have auth indicators AND it's a protected route
+    const hasAuthIndicators = !!(
+      request.cookies.get('auth_token') || 
+      request.headers.get('authorization')
+    );
+    
+    // Only bypass for routes that actually need auth protection
+    const needsAuthProtection = request.nextUrl.pathname.includes('/allocation-admin/') ||
+                               request.nextUrl.pathname.includes('/dashboard/') ||
+                               request.nextUrl.pathname.includes('/profile/') ||
+                               request.nextUrl.pathname.includes('/settings/');
+    
+    return { 
+      isAuth: false, 
+      user: null, 
+      isMobile,
+      shouldBypassMiddleware: isMobile && hasAuthIndicators && needsAuthProtection
+    };
   }
 
   const user = decodeToken(token);
-  return { isAuth: !!user, user };
+  
+  // Additional mobile check - if we can't decode but have token, bypass only for protected routes
+  if (!user && isMobile && token) {
+    const needsAuthProtection = request.nextUrl.pathname.includes('/allocation-admin/') ||
+                               request.nextUrl.pathname.includes('/dashboard/') ||
+                               request.nextUrl.pathname.includes('/profile/') ||
+                               request.nextUrl.pathname.includes('/settings/');
+    
+    return {
+      isAuth: false,
+      user: null,
+      isMobile,
+      shouldBypassMiddleware: needsAuthProtection
+    };
+  }
+  
+  return { 
+    isAuth: !!user, 
+    user, 
+    isMobile,
+    shouldBypassMiddleware: false 
+  };
 }
 
 // Helper function to check if user has allocator role

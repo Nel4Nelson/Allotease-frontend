@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import Header from "@/components/layout/navbar";
 import { Footer } from "@/components/layout";
 import { AuthService } from "@/services/auth-service";
+import { useAuthStore } from "@/stores/auth-store";
 import { CustomToast } from "@/components/ui/custom-toast";
 import { AuthRedirectHandler } from "../features/auth/auth-redirect-handler";
 import { SyncLoader } from "react-spinners";
@@ -15,12 +16,38 @@ interface ConditionalLayoutProps {
 export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  const { setMobileDevice, isMobileDevice } = useAuthStore();
 
-  // Initialize auth state on app startup
+  // Enhanced initialization with mobile detection
   useEffect(() => {
-    setMounted(true);
+    // Detect mobile device
+    const detectMobile = () => {
+      if (typeof window !== 'undefined') {
+        const userAgent = navigator.userAgent;
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+        return isMobile;
+      }
+      return false;
+    };
+
+    const isMobile = detectMobile();
+    setMobileDevice(isMobile);
+    
+    console.log(`[Layout] Initializing on ${isMobile ? 'mobile' : 'desktop'} device`);
+    
+    // Initialize auth state
     AuthService.initializeAuth();
-  }, []);
+    
+    // Mark as mounted
+    setMounted(true);
+
+    // Mobile-specific initialization delay
+    if (isMobile) {
+      setTimeout(() => {
+        AuthService.synchronizeMobileAuth();
+      }, 300);
+    }
+  }, [setMobileDevice]);
 
   // Check if we're in an auth route
   const isAuthRoute =
@@ -41,10 +68,31 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   // Check if we're in a tickets route that needs full width
   const isTicketsRoute = pathname.startsWith("/tickets");
 
+  // Enhanced loading screen with mobile consideration
+  const loadingScreen = (
+    <>
+      <CustomToast />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="text-center space-y-4">
+          <SyncLoader
+            color="#FF5B06"
+            loading={true}
+            size={isMobileDevice ? 10 : 12}
+            margin={3}
+            speedMultiplier={0.8}
+          />
+          <p className="text-gray-600 text-sm">
+            {isMobileDevice ? 'Loading your mobile experience...' : 'Loading...'}
+          </p>
+        </div>
+      </div>
+    </>
+  );
+
   // Use a consistent layout structure to avoid hydration mismatches
   const layoutContent = (
     <>
-      {/* GLOBAL: Auth redirect handler for ALL layouts */}
+      {/* GLOBAL: Auth redirect handler for ALL layouts - but only for specific scenarios */}
       <AuthRedirectHandler />
 
       {/* GLOBAL: Custom glassmorphism toast notifications for ALL layouts */}
@@ -52,7 +100,9 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
 
       {/* If it's an auth route, render minimal layout */}
       {isAuthRoute ? (
-        <div className="min-h-screen">{children}</div>
+        <div className="min-h-screen">
+          {children}
+        </div>
       ) : (
         /* Standard layout with header and footer */
         <div className="min-h-screen relative">
@@ -99,20 +149,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
 
   // Prevent hydration issues by only rendering after mount
   if (!mounted) {
-    return (
-      <>
-        <CustomToast />
-        <div className="min-h-screen flex items-center justify-center">
-          <SyncLoader
-            color="#FF5B06"
-            loading={true}
-            size={12}
-            margin={3}
-            speedMultiplier={0.8}
-          />
-        </div>
-      </>
-    );
+    return loadingScreen;
   }
 
   return layoutContent;

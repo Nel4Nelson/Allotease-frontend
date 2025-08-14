@@ -160,11 +160,11 @@ export function TestimonialSection() {
   };
 
   return (
-    <section className="relative py-8 overflow-hidden">
+    <section className="relative py-4 sm:py-8 overflow-hidden">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-20">
         
         {/* Testimonial Cards Container */}
-        <div className="relative h-[500px] mb-8 md:mb-12 lg:mb-16">
+        <div className="relative h-[350px] mb-4 md:mb-12 lg:mb-16">
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative w-full h-full">
               {infiniteTestimonials.map((testimonial, index) => {

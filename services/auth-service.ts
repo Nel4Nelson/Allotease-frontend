@@ -13,9 +13,9 @@ import {
   LogoutResponse,
 } from "@/types/auth";
 import { useAuthStore } from "@/stores/auth-store";
-import { setAuthCookie, clearAuthCookie } from "@/lib/auth-cookies";
+import { setAuthCookie, clearAuthCookie, getAuthCookie } from "@/lib/auth-cookies";
 
-// Auth API Service
+// Auth API Service - Enhanced for mobile
 export class AuthService {
   private static readonly ENDPOINTS = {
     // Signup endpoints
@@ -32,6 +32,30 @@ export class AuthService {
     PARTIAL_UPGRADE: "/users/partial-upgrade",
     LOGOUT: "/auth/logout",
   } as const;
+
+  /**
+   * Detect if current device is mobile
+   */
+  private static isMobileDevice(): boolean {
+    if (typeof window === 'undefined') return false;
+    const userAgent = navigator.userAgent;
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+  }
+
+  /**
+   * Enhanced mobile cookie verification
+   */
+  private static verifyMobileCookie(token: string): void {
+    if (!this.isMobileDevice()) return;
+    
+    setTimeout(() => {
+      const cookieCheck = getAuthCookie();
+      if (!cookieCheck || cookieCheck !== token) {
+        console.warn('[Auth Service] Mobile cookie verification failed, retrying...');
+        setAuthCookie(token, true);
+      }
+    }, 100);
+  }
 
   /**
    * User signup (Attendee)
@@ -51,7 +75,7 @@ export class AuthService {
   }
 
   /**
-   * Verify OTP after signup
+   * Verify OTP after signup - Enhanced for mobile
    */
   static async verifyOtp(data: VerifyOtpRequest): Promise<OtpResponse> {
     try {
@@ -63,13 +87,20 @@ export class AuthService {
       // Store auth token and user data after successful OTP verification
       if (response.status === "success" && response.token && response.user) {
         const authStore = useAuthStore.getState();
+        const isMobile = this.isMobileDevice();
+        
+        console.log(`[Auth Service] OTP success on ${isMobile ? 'mobile' : 'desktop'}`);
+        
         authStore.setUserAndToken(response.user, response.token, true);
 
         // Set the token in apiClient as well
         apiClient.setAuthToken(response.token, true);
 
-        // NEW: Set cookie for server-side middleware access
+        // Set cookie for server-side middleware access
         setAuthCookie(response.token, true);
+
+        // Mobile verification
+        this.verifyMobileCookie(response.token);
       }
 
       return response;
@@ -97,7 +128,7 @@ export class AuthService {
   }
 
   /**
-   * User login (Attendee)
+   * User login (Attendee) - Enhanced for mobile
    */
   static async userLogin(
     data: SigninRequest,
@@ -112,13 +143,20 @@ export class AuthService {
       // Store auth token and user data after successful login
       if (response.status === "success" && response.token && response.user) {
         const authStore = useAuthStore.getState();
+        const isMobile = this.isMobileDevice();
+        
+        console.log(`[Auth Service] Login success on ${isMobile ? 'mobile' : 'desktop'}`);
+        
         authStore.setUserAndToken(response.user, response.token, rememberMe);
 
         // Set the token in apiClient as well
         apiClient.setAuthToken(response.token, rememberMe);
 
-        // NEW: Set cookie for server-side middleware access
+        // Set cookie for server-side middleware access
         setAuthCookie(response.token, rememberMe);
+
+        // Mobile verification
+        this.verifyMobileCookie(response.token);
       }
 
       return response;
@@ -129,7 +167,7 @@ export class AuthService {
   }
 
   /**
-   * Partial upgrade to allocator
+   * Partial upgrade to allocator - Enhanced for mobile
    */
   static async partialUpgrade(
     data: PartialUpgradeRequest
@@ -147,13 +185,20 @@ export class AuthService {
         response.data?.user
       ) {
         const authStore = useAuthStore.getState();
+        const isMobile = this.isMobileDevice();
+        
+        console.log(`[Auth Service] Upgrade success on ${isMobile ? 'mobile' : 'desktop'}`);
+        
         authStore.setUserAndToken(response.data.user, response.token, true);
 
         // Set the token in apiClient as well
         apiClient.setAuthToken(response.token, true);
 
-        // NEW: Set cookie for server-side middleware access
+        // Set cookie for server-side middleware access
         setAuthCookie(response.token, true);
+
+        // Mobile verification
+        this.verifyMobileCookie(response.token);
       }
 
       return response;
@@ -164,13 +209,16 @@ export class AuthService {
   }
 
   /**
-   * Logout user - calls backend endpoint
+   * Logout user - calls backend endpoint - Enhanced for mobile
    */
   static async logout(): Promise<void> {
     try {
       // Get current token before clearing
       const authStore = useAuthStore.getState();
       const token = authStore.token;
+      const isMobile = this.isMobileDevice();
+
+      console.log(`[Auth Service] Logout on ${isMobile ? 'mobile' : 'desktop'}`);
 
       // Call logout endpoint if user is authenticated
       if (token) {
@@ -191,12 +239,19 @@ export class AuthService {
       // Clear token from apiClient
       apiClient.clearAuthToken();
 
-      // NEW: Clear auth cookie
+      // Clear auth cookie
       clearAuthCookie();
 
-      // Redirect to login
+      // Enhanced mobile redirect handling
       if (typeof window !== "undefined") {
-        window.location.href = "/signin";
+        if (isMobile) {
+          // On mobile, add a small delay to ensure cleanup is complete
+          setTimeout(() => {
+            window.location.href = "/signin";
+          }, 100);
+        } else {
+          window.location.href = "/signin";
+        }
       }
     } catch (error) {
       console.error("Logout failed:", error);
@@ -213,25 +268,43 @@ export class AuthService {
   }
 
   /**
-   * Logout user locally without API call (for token expiry, etc.)
+   * Logout user locally without API call (for token expiry, etc.) - Enhanced for mobile
    */
   static logoutLocal(): void {
     const authStore = useAuthStore.getState();
+    const isMobile = this.isMobileDevice();
+    
+    console.log(`[Auth Service] Local logout on ${isMobile ? 'mobile' : 'desktop'}`);
+    
     authStore.logout();
 
     // Clear token from apiClient as well
     apiClient.clearAuthToken();
 
-    // NEW: Clear auth cookie
+    // Clear auth cookie
     clearAuthCookie();
   }
 
   /**
-   * Check if user is authenticated
+   * Check if user is authenticated - Enhanced for mobile
    */
   static isAuthenticated(): boolean {
     const authStore = useAuthStore.getState();
-    return authStore.isAuthenticated && authStore.checkTokenExpiry();
+    const isAuth = authStore.isAuthenticated && authStore.checkTokenExpiry();
+    
+    // Additional mobile check - verify cookie exists
+    if (this.isMobileDevice() && isAuth) {
+      const cookieToken = getAuthCookie();
+      if (!cookieToken) {
+        console.warn('[Auth Service] Mobile: Auth state exists but no cookie found');
+        // Try to restore from current token
+        if (authStore.token) {
+          setAuthCookie(authStore.token, true);
+        }
+      }
+    }
+    
+    return isAuth;
   }
 
   /**
@@ -283,43 +356,62 @@ export class AuthService {
   }
 
   /**
-   * Store user email for OTP verification
+   * Store user email for OTP verification - Enhanced for mobile
    */
   static setVerificationEmail(email: string): void {
     if (typeof window !== "undefined") {
       sessionStorage.setItem("verification_email", email);
+      
+      // Additional mobile storage
+      if (this.isMobileDevice()) {
+        // Also store in localStorage as backup for mobile
+        localStorage.setItem("verification_email_backup", email);
+      }
     }
   }
 
   /**
-   * Get stored verification email
+   * Get stored verification email - Enhanced for mobile
    */
   static getVerificationEmail(): string | null {
     if (typeof window === "undefined") return null;
-    return sessionStorage.getItem("verification_email");
+    
+    const email = sessionStorage.getItem("verification_email");
+    
+    // Mobile fallback
+    if (!email && this.isMobileDevice()) {
+      return localStorage.getItem("verification_email_backup");
+    }
+    
+    return email;
   }
 
   /**
-   * Clear verification email
+   * Clear verification email - Enhanced for mobile
    */
   static clearVerificationEmail(): void {
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("verification_email");
+      // Also clear mobile backup
+      localStorage.removeItem("verification_email_backup");
     }
   }
 
   /**
-   * Initialize auth state from stored token (call this on app startup)
+   * Initialize auth state from stored token - Enhanced for mobile
    */
   static initializeAuth(): void {
     const authStore = useAuthStore.getState();
     const token = authStore.token;
+    const isMobile = this.isMobileDevice();
+
+    console.log(`[Auth Service] Initializing auth on ${isMobile ? 'mobile' : 'desktop'}`);
 
     if (token) {
       // Set token in apiClient
       apiClient.setAuthToken(token, true);
 
-      // NEW: Also set cookie for server-side detection
+      // Set cookie for server-side detection
       setAuthCookie(token, true);
 
       // Check if token is still valid
@@ -328,6 +420,34 @@ export class AuthService {
         authStore.clearAuth();
         clearAuthCookie();
       }
+    } else if (isMobile) {
+      // On mobile, try to initialize from cookie if store is empty
+      setTimeout(() => {
+        this.synchronizeMobileAuth();
+      }, 100);
+    }
+  }
+
+  /**
+   * Mobile-specific method to force cookie synchronization
+   */
+  static synchronizeMobileAuth(): void {
+    if (!this.isMobileDevice()) return;
+    
+    console.log('[Auth Service] Synchronizing mobile auth state');
+    
+    const authStore = useAuthStore.getState();
+    const storeToken = authStore.token;
+    const cookieToken = getAuthCookie();
+    
+    if (storeToken && !cookieToken) {
+      // Store has token but cookie doesn't - set cookie
+      setAuthCookie(storeToken, true);
+      console.log('[Auth Service] Mobile: Set missing cookie from store');
+    } else if (!storeToken && cookieToken) {
+      // Cookie has token but store doesn't - update store
+      authStore.setToken(cookieToken, true);
+      console.log('[Auth Service] Mobile: Updated store from cookie');
     }
   }
 }

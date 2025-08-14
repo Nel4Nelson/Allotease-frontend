@@ -10,7 +10,7 @@ export function HeroContent() {
     <div className="relative z-10 flex-1 flex items-center justify-center py-4 sm:py-6 md:py-8">
       <div className="container mx-auto px-4 sm:px-6 text-start">
         {/* Logo and Subtitle Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-0 sm:h-6 mb-6 sm:mb-8 md:mb-10">
+        <div className="flex flex-row items-center gap-3 sm:gap-0 sm:h-6 mb-6 sm:mb-8 md:mb-10">
           <Image
             src="/images/brand-logo/about-header-subtle-logo.svg"
             alt="Allotease Logo"
@@ -23,7 +23,7 @@ export function HeroContent() {
             className="hidden sm:block h-full w-px bg-[var(--input-border)] mx-3 md:mx-4"
             aria-hidden="true"
           />
-          <p className="text-base sm:text-lg md:text-xl xl:text-2xl font-source-sans-pro font-semibold text-[var(--hero-subtitle-color)] leading-tight">
+          <p className="text-base  sm:text-lg md:text-xl xl:text-2xl font-source-sans-pro font-semibold text-[var(--hero-subtitle-color)] leading-tight">
             Nigerian's Favorite Booking solution
           </p>
         </div>
@@ -44,7 +44,7 @@ export function HeroContent() {
               rightIcon={
                 <ArrowUpRightIcon size={20} className="flex-shrink-0" />
               }
-              className="w-full sm:w-auto min-w-[200px] h-12 sm:h-auto"
+              className="sm:h-auto"
               aria-label="Sign up for a new account"
             >
               <span className="font-bold">Sign Up Today</span>
