@@ -16,7 +16,7 @@ function AccordionItem({
   return (
     <AccordionPrimitive.Item
       data-slot="accordion-item"
-      className={cn("border-b last:border-b-0", className)}
+      className={cn("border-b", className)}
       {...props}
     />
   );
@@ -32,7 +32,7 @@ function AccordionTrigger({
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(
-          "focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-start text-left text-sm font-medium transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 group",
+          "focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-center text-left text-sm font-medium transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 group",
           className
         )}
         {...props}
@@ -41,9 +41,9 @@ function AccordionTrigger({
         {/* Plus Icon - Shows when closed */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="18"
-          height="18"
-          viewBox="0 0 24 18"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
           fill="none"
           className="pointer-events-none absolute top-1 right-0 transition-opacity duration-200 group-data-[state=open]:opacity-0"
         >
@@ -63,8 +63,8 @@ function AccordionTrigger({
         {/* Close Icon - Shows when open */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="18"
-          height="18"
+          width="24"
+          height="24"
           viewBox="0 0 24 24"
           fill="none"
           className="pointer-events-none absolute top-0 right-0 transition-opacity duration-200 opacity-0 group-data-[state=open]:opacity-100"

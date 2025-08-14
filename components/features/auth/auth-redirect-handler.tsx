@@ -2,11 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth-store';
-import toast from 'react-hot-toast';
 
-/**
- * Production AuthRedirectHandler with error handled with toast notifications
- */
+
 export function AuthRedirectHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -20,7 +17,7 @@ export function AuthRedirectHandler() {
     setIsHydrated(true);
   }, []);
 
-  // Main redirect logic
+  // Handle authenticated users trying to access auth pages
   useEffect(() => {
     // Wait for hydration AND auth loading to complete
     if (!isHydrated || isLoading) {
@@ -32,81 +29,78 @@ export function AuthRedirectHandler() {
       return;
     }
 
-    if (isAuthenticated) {
-      const currentPath = pathname;
-      const redirectPath = searchParams.get('redirect');
-      const isAuthPage = currentPath.includes('/signin') || 
-                        currentPath.includes('/signup');
-                    
+    const currentPath = pathname;
+    const redirectPath = searchParams.get('redirect');
+    
+    // Only handle auth pages when user is authenticated
+    const isAuthPage = currentPath.includes('/signin') || 
+                      currentPath.includes('/signup');
 
-      // Scenario 1: User is on auth page and has a redirect destination
-      if (isAuthPage && redirectPath) {
-        hasRedirected.current = true;
-        
-        try {
-          const decodedPath = decodeURIComponent(redirectPath);
-          router.push(decodedPath);
-          
-          // Clean up URL after redirect
-          setTimeout(() => {
-            try {
-              const currentUrl = new URL(window.location.href);
-              currentUrl.searchParams.delete('redirect');
-              window.history.replaceState({}, '', currentUrl.toString());
-            } catch (cleanupError) {
-              // Silently handle cleanup errors - no toast needed for this
-              console.warn('URL cleanup failed:', cleanupError);
-            }
-          }, 500);
-        } catch (redirectError) {
-          hasRedirected.current = false; // Reset on failure
-          toast.error('Redirect failed. Please try navigating manually.');
-          console.error('Redirect error:', redirectError);
-        }
-        return;
-      }
-
-      // Scenario 2: User is on auth page but no specific redirect (go to homepage)
-      if (isAuthPage && !redirectPath) {
-        hasRedirected.current = true;
-        
-        try {
-          router.push('/');
-        } catch (homepageError) {
-          hasRedirected.current = false;
-          toast.error('Navigation failed. Please refresh the page.');
-          console.error('Homepage redirect error:', homepageError);
-        }
-        return;
-      }
-
-      // Scenario 3: User is authenticated and not on auth page with redirect param
-      if (!isAuthPage && redirectPath) {
-        hasRedirected.current = true;
-        
-        try {
-          const decodedPath = decodeURIComponent(redirectPath);
-          router.push(decodedPath);
-          
-          setTimeout(() => {
-            try {
-              const currentUrl = new URL(window.location.href);
-              currentUrl.searchParams.delete('redirect');
-              window.history.replaceState({}, '', currentUrl.toString());
-            } catch (cleanupError) {
-              // Silently handle cleanup errors
-              console.warn('URL cleanup failed:', cleanupError);
-            }
-          }, 500);
-        } catch (redirectError) {
-          hasRedirected.current = false;
-          toast.error('Redirect failed. Please try navigating manually.');
-          console.error('Intended destination redirect error:', redirectError);
-        }
-        return;
-      }
+    // Development logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[Auth Redirect] Checking:`, {
+        isAuthenticated,
+        currentPath,
+        redirectPath,
+        isAuthPage,
+        userRole: user?.role
+      });
     }
-  }, [isAuthenticated, isLoading, isHydrated, router, searchParams, pathname, user]);
+
+    // SCENARIO 1: Authenticated user on auth page with redirect param
+    if (isAuthenticated && isAuthPage && redirectPath) {
+      hasRedirected.current = true;
+      
+      try {
+        const decodedPath = decodeURIComponent(redirectPath);
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[Auth Redirect] Redirecting to: ${decodedPath}`);
+        }
+        
+        // Small delay to ensure signin component has finished processing
+        setTimeout(() => {
+          router.replace(decodedPath);
+        }, 100);
+        
+      } catch (redirectError) {
+        hasRedirected.current = false;
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Auth redirect error:', redirectError);
+        }
+      }
+      return;
+    }
+
+    // SCENARIO 2: Authenticated user on auth page without redirect (go home)
+    if (isAuthenticated && isAuthPage && !redirectPath) {
+      hasRedirected.current = true;
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[Auth Redirect] Going to homepage');
+      }
+      
+      setTimeout(() => {
+        router.replace('/');
+      }, 100);
+      return;
+    }
+
+    // For all other cases - no action needed
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Auth Redirect] No action needed');
+    }
+    
+  }, [
+    isAuthenticated, 
+    isLoading, 
+    isHydrated, 
+    router, 
+    searchParams, 
+    pathname, 
+    user
+  ]);
 
   // Reset redirect flag when user logs out
   useEffect(() => {

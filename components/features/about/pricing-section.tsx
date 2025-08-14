@@ -27,18 +27,18 @@ const PricingSection = () => {
   ];
 
   return (
-    <div className="flex flex-col items-center gap-12 py-16">
+    <div className="flex flex-col items-center gap-8 md:gap-12 py-16 px-4">
       {/* Main Heading */}
-      <h1 className="text-center font-space-grotesk text-5xl font-bold leading-[110%] tracking-[-0.96px]">
+      <h1 className="text-center font-space-grotesk text-3xl sm:text-4xl md:text-5xl font-bold leading-[110%] tracking-[-0.96px] px-4">
         <span className="text-[#1F3A3A]">Free for </span>
         <span className="text-[#08C75B]">Everyone!</span>
       </h1>
 
       {/* Cards Container */}
-      <div className="flex gap-8 items-stretch">
+      <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-stretch w-full max-w-[720px]">
         {/* Organizers Card */}
         <div 
-          className="flex w-[344px] flex-col items-center gap-8 rounded-[20px] p-4 backdrop-blur-[21px]"
+          className="flex w-full md:w-[344px] flex-col items-center gap-6 md:gap-8 rounded-[20px] p-4 backdrop-blur-[21px]"
           style={{
             background: 'rgba(22, 244, 118, 0.08)',
             boxShadow: '2px 2px 6px 0 rgba(0, 0, 0, 0.04)'
@@ -46,7 +46,7 @@ const PricingSection = () => {
         >
           {/* Inner Card */}
           <div 
-            className="flex w-full flex-col items-start gap-6 rounded-xl p-4 backdrop-blur-[21px]"
+            className="flex w-full flex-col items-start gap-4 md:gap-6 rounded-xl p-4 backdrop-blur-[21px]"
             style={{
               background: 'rgba(22, 244, 118, 0.50)',
               boxShadow: '0 4px 10px 0 rgba(0, 0, 0, 0.04)'
@@ -69,18 +69,18 @@ const PricingSection = () => {
               <span className="font-space-grotesk text-sm font-bold leading-[110%] tracking-[-0.284px] line-through text-[#1F3A3A]">
                 $48/Month
               </span>
-              <span className="font-space-grotesk text-2xl font-bold leading-[110%] tracking-[-0.48px] text-[#1F3A3A]">
+              <span className="font-space-grotesk text-xl md:text-2xl font-bold leading-[110%] tracking-[-0.48px] text-[#1F3A3A]">
                 100% FREE
               </span>
             </div>
           </div>
 
           {/* Features List */}
-          <div className="flex w-full flex-col gap-4 flex-grow">
+          <div className="flex w-full flex-col gap-3 md:gap-4 flex-grow">
             {organizerFeatures.map((feature, index) => (
-              <div key={index} className="flex items-center gap-4">
+              <div key={index} className="flex items-center gap-3 md:gap-4">
                 <CheckIcon />
-                <span className="font-source-sans-pro text-base font-normal leading-[142.745%] tracking-[-0.32px] text-[#71727A]">
+                <span className="font-source-sans-pro text-sm md:text-base font-normal leading-[142.745%] tracking-[-0.32px] text-[#71727A]">
                   {feature}
                 </span>
               </div>
@@ -90,7 +90,7 @@ const PricingSection = () => {
 
         {/* Attendees Card */}
         <div 
-          className="flex w-[344px] flex-col items-center gap-8 rounded-[20px] p-4 backdrop-blur-[21px]"
+          className="flex w-full md:w-[344px] flex-col items-center gap-6 md:gap-8 rounded-[20px] p-4 backdrop-blur-[21px]"
           style={{
             background: 'rgba(22, 244, 118, 0.08)',
             boxShadow: '2px 2px 6px 0 rgba(0, 0, 0, 0.04)'
@@ -98,7 +98,7 @@ const PricingSection = () => {
         >
           {/* Inner Card */}
           <div 
-            className="flex w-full flex-col items-start gap-6 rounded-xl p-4 backdrop-blur-[21px]"
+            className="flex w-full flex-col items-start gap-4 md:gap-6 rounded-xl p-4 backdrop-blur-[21px]"
             style={{
               background: 'rgba(255, 255, 255, 0.60)',
               boxShadow: '0 4px 10px 0 rgba(0, 0, 0, 0.04)'
@@ -121,18 +121,18 @@ const PricingSection = () => {
               <span className="font-space-grotesk text-sm font-bold leading-[110%] tracking-[-0.284px] line-through text-[#1F3A3A]">
                 $8/Month
               </span>
-              <span className="font-space-grotesk text-2xl font-bold leading-[110%] tracking-[-0.48px] text-[#1F3A3A]">
+              <span className="font-space-grotesk text-xl md:text-2xl font-bold leading-[110%] tracking-[-0.48px] text-[#1F3A3A]">
                 100% FREE
               </span>
             </div>
           </div>
 
           {/* Features List */}
-          <div className="flex w-full flex-col gap-4 flex-grow">
+          <div className="flex w-full flex-col gap-3 md:gap-4 flex-grow">
             {attendeeFeatures.map((feature, index) => (
-              <div key={index} className="flex items-center gap-4">
+              <div key={index} className="flex items-center gap-3 md:gap-4">
                 <CheckIcon />
-                <span className="font-source-sans-pro text-base font-normal leading-[142.745%] tracking-[-0.32px] text-[#71727A]">
+                <span className="font-source-sans-pro text-sm md:text-base font-normal leading-[142.745%] tracking-[-0.32px] text-[#71727A]">
                   {feature}
                 </span>
               </div>
@@ -142,7 +142,7 @@ const PricingSection = () => {
       </div>
 
       {/* CTA Button */}
-      <div className="mt-4 sm:mt-5 md:mt-6">
+      <div className="mt-4 sm:mt-5 md:mt-6 w-full max-w-[280px]">
         <Link href="/signup">
           <Button
             variant="allotease-primary"
@@ -150,7 +150,7 @@ const PricingSection = () => {
             rightIcon={
               <ArrowUpRightIcon size={20} className="flex-shrink-0" />
             }
-            className="w-full sm:w-auto min-w-[200px] h-12 sm:h-auto"
+            className="w-full min-w-[200px] h-12 sm:h-auto"
             aria-label="Sign up for a new account"
           >
             <span className="font-bold">Sign Up Today</span>

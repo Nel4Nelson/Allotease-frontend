@@ -8,7 +8,7 @@ export const PUBLIC_ROUTES = [
   "/email-verification",
 ];
 
-export const VALID_TYPES = ["events", "stays", "car-parks", "car-park"];
+export const VALID_TYPES = ["events", "stays", "car-parks"];
 
 export const PUBLIC_DYNAMIC_PATTERNS = [
   /^\/$/, // Home page (allows query params)
@@ -23,7 +23,7 @@ export function isPublicRoute(
   pathname: string,
   searchParams?: URLSearchParams
 ): boolean {
-  // Check exact public routes
+  // Check exact public routes first
   if (PUBLIC_ROUTES.includes(pathname)) {
     return true;
   }
@@ -47,6 +47,21 @@ export function isPublicRoute(
     return true;
   }
 
+  // Additional public patterns for static content and common pages
+  const additionalPublicPatterns = [
+    /^\/event\/[^\/]+$/, // Event detail pages
+    /^\/venue\/[^\/]+$/, // Venue detail pages
+    /^\/privacy/, // Privacy policy
+    /^\/terms/, // Terms of service
+    /^\/contact/, // Contact page
+    /^\/help/, // Help pages
+    /^\/faq/, // FAQ pages
+  ];
+
+  if (additionalPublicPatterns.some((pattern) => pattern.test(pathname))) {
+    return true;
+  }
+
   return false;
 }
 
@@ -60,5 +75,86 @@ export function isProtectedRoute(
   pathname: string,
   searchParams?: URLSearchParams
 ): boolean {
-  return !isPublicRoute(pathname, searchParams);
+  // Public routes are NOT protected
+  if (isPublicRoute(pathname, searchParams)) {
+    return false;
+  }
+
+  // Admin routes are protected but handled separately
+  if (isAdminRoute(pathname)) {
+    return false; // Let isAdminRoute handle this
+  }
+
+  // Define explicitly protected route patterns
+  const protectedPatterns = [
+    /^\/dashboard/, // Dashboard routes
+    /^\/profile/, // Profile routes
+    /^\/settings/, // Settings routes
+    /^\/reservations/, // Reservation routes
+    /^\/bookings/, // Booking routes
+    /^\/account/, // Account routes
+  ];
+
+  // Check if route matches protected patterns
+  const isExplicitlyProtected = protectedPatterns.some(pattern => 
+    pattern.test(pathname)
+  );
+
+  // For mobile compatibility: be more conservative about what's protected
+  // Only routes that explicitly need authentication should be protected
+  return isExplicitlyProtected;
+}
+
+// Mobile-specific configuration
+export const MOBILE_CONFIG = {
+  // Routes that might need mobile bypass
+  BYPASS_CANDIDATES: [
+    '/allocation-admin/',
+    '/dashboard/',
+    '/profile/',
+    '/settings/',
+  ],
+  
+  // Default delays for mobile (in milliseconds)
+  DELAYS: {
+    AUTH_CHECK: 200,
+    REDIRECT: 300,
+    COOKIE_SYNC: 100,
+    STORE_SYNC: 150,
+  },
+} as const;
+
+// Check if a route might need mobile bypass
+export function isMobileBypassCandidate(pathname: string): boolean {
+  // Only admin and explicitly protected routes should be bypass candidates
+  return MOBILE_CONFIG.BYPASS_CANDIDATES.some(prefix => 
+    pathname.startsWith(prefix)
+  ) || isAdminRoute(pathname);
+}
+
+// Get mobile delay for specific operations
+export function getMobileDelay(delayType: keyof typeof MOBILE_CONFIG.DELAYS): number {
+  return MOBILE_CONFIG.DELAYS[delayType];
+}
+
+// Enhanced public route check for middleware
+export function isDefinitelyPublicRoute(pathname: string, searchParams?: URLSearchParams): boolean {
+  // First check standard public routes
+  if (isPublicRoute(pathname, searchParams)) {
+    return true;
+  }
+
+  // Additional patterns that should NEVER require auth
+  const alwaysPublicPatterns = [
+    /^\/$/,              // Home page
+    /^\/about/,          // About pages
+    /^\/contact/,        // Contact pages
+    /^\/help/,           // Help pages
+    /^\/privacy/,        // Privacy pages
+    /^\/terms/,          // Terms pages
+    /^\/faq/,            // FAQ pages
+    /^\/[^\/]+$/ 
+  ];
+
+  return alwaysPublicPatterns.some(pattern => pattern.test(pathname));
 }
