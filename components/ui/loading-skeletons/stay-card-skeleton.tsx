@@ -10,7 +10,6 @@ export function StayCardSkeleton({ className = "" }: StayCardSkeletonProps) {
       className={`flex flex-col animate-pulse ${className}`}
       style={{
         display: "flex",
-        minWidth: "300px",
         flexDirection: "column",
         alignItems: "flex-start",
         gap: "8px",
@@ -125,7 +124,7 @@ export function StayCardSkeleton({ className = "" }: StayCardSkeletonProps) {
   );
 }
 
-// Grid skeleton for multiple cards
+// Grid skeleton for multiple cards - Now Responsive
 interface StaysGridSkeletonProps {
   count?: number;
   className?: string;
@@ -133,14 +132,7 @@ interface StaysGridSkeletonProps {
 
 export function StaysGridSkeleton({ count = 6, className = "" }: StaysGridSkeletonProps) {
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
-        gap: "24px",
-      }}
-      className={`w-full ${className}`}
-    >
+    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full ${className}`}>
       {Array(count)
         .fill(0)
         .map((_, index) => (

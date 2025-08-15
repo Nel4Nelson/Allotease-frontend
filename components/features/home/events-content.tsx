@@ -1,22 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
 import { ContentHeader } from "@/components/ui/content-header";
 import { SectionTitle } from "@/components/ui/section-title";
 import { VariantSelect } from "@/components/ui/variant-select";
 import { EventCard } from "@/components/ui/event-card";
 import { Button } from "@/components/ui/button";
-import {
-  EventService,
-  Event,
-  GetEventsParams,
-} from "@/services/events-service";
+import { EventService, Event } from "@/services/events-service";
 import { StaysGridSkeleton } from "@/components/ui/loading-skeletons/stay-card-skeleton";
 import { NetworkError, EmptyState, OfflineState } from "@/components/ui/network-error";
 import { useIsOnline } from "@/hooks/use-network-status";
+import { useEvents, useLoadMoreEvents, useInvalidateEvents, eventsKeys } from "@/hooks/use-events";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface EventsContentProps {
   className?: string;
@@ -25,106 +21,94 @@ interface EventsContentProps {
 export function EventsContent({ className = "" }: EventsContentProps) {
   const router = useRouter();
   const isOnline = useIsOnline();
+  const queryClient = useQueryClient();
+  const { removeQueries } = useInvalidateEvents();
   
   const [selectedLocation, setSelectedLocation] = useState("awka-anambra");
   const [selectedCategory, setSelectedCategory] = useState("all");
-
-  // API state
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [hasNextPage, setHasNextPage] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [allEvents, setAllEvents] = useState<Event[]>([]);
 
-  // Load events function with error handling
-  const loadEvents = async (page: number = 1, append: boolean = false) => {
-    // Don't attempt to load if offline
-    if (!isOnline) {
-      setError("offline");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      const params: GetEventsParams = {
-        page,
-        limit: 6,
-        ...(selectedCategory &&
-          selectedCategory !== "all" && { query: selectedCategory }),
-      };
-
-      const response = await EventService.getAllEvents(params);
-
-      if (response.status === "success") {
-        const newEvents = response.data.items;
-
-        if (append) {
-          // Append new events to existing ones
-          setEvents((prev) => [...prev, ...newEvents]);
-        } else {
-          // Replace events (for filters or initial load)
-          setEvents(newEvents);
-        }
-
-        setCurrentPage(response.data.page);
-        setHasNextPage(response.data.hasNextPage);
-      }
-    } catch (error: any) {
-      console.error("Failed to load events:", error);
-      
-      // Set appropriate error message
-      if (!isOnline) {
-        setError("offline");
-      } else if (error?.response?.status >= 500) {
-        setError("server");
-        toast.error("Server error. Please try again later.");
-      } else if (error?.response?.status >= 400) {
-        setError("request");
-        toast.error("Failed to load events. Please try again.");
-      } else {
-        setError("network");
-      }
-    } finally {
-      setLoading(false);
-      setIsInitialLoad(false);
-    }
+  // Build query params
+  const queryParams = {
+    page: currentPage,
+    limit: 6,
+    ...(selectedCategory && selectedCategory !== "all" && { query: selectedCategory }),
   };
 
-  // Initial load
-  useEffect(() => {
-    loadEvents(1, false);
-  }, []);
+  // Use TanStack Query for fetching events
+  const { data, isLoading, isError, refetch } = useEvents(queryParams);
+  
+  // Use load more mutation for pagination
+  const loadMoreMutation = useLoadMoreEvents();
 
-  // Reload when filters change
+  // Update local state when data changes
   useEffect(() => {
-    if (!isInitialLoad) {
-      setCurrentPage(1);
-      loadEvents(1, false);
+    if (data?.data?.items) {
+      setAllEvents(data.data.items);
     }
-  }, [selectedCategory, selectedLocation, isInitialLoad]);
+  }, [data]);
 
-  // Reload when connection status changes
+  // Handle filter changes - this will trigger loading skeleton
+  const handleFilterChange = () => {
+    // Reset pagination when filters change
+    setCurrentPage(1);
+    setAllEvents([]); // Clear current data to show loading
+    
+    // Remove old cached data for smooth transition
+    removeQueries();
+  };
+
+  // Refetch when coming back online
   useEffect(() => {
-    if (isOnline && error === "offline" && !isInitialLoad) {
-      loadEvents(currentPage, false);
+    if (isOnline && isError) {
+      refetch();
     }
-  }, [isOnline]);
+  }, [isOnline, isError, refetch]);
 
-  // Show more events
-  const handleShowMore = () => {
-    if (hasNextPage && !loading) {
-      loadEvents(currentPage + 1, true);
+  // Handle category change
+  const handleCategoryChange = (newCategory: string) => {
+    setSelectedCategory(newCategory);
+    handleFilterChange();
+  };
+
+  // Handle location change  
+  const handleLocationChange = (newLocation: string) => {
+    setSelectedLocation(newLocation);
+    handleFilterChange();
+  };
+
+  // Show more events using load more mutation
+  const handleShowMore = async () => {
+    if (data?.data?.hasNextPage && !loadMoreMutation.isPending && isOnline) {
+      const nextPage = currentPage + 1;
+      const nextPageParams = {
+        ...queryParams,
+        page: nextPage,
+      };
+
+      try {
+        await loadMoreMutation.mutateAsync(nextPageParams);
+        setCurrentPage(nextPage);
+      } catch (error) {
+        console.error("Failed to load more events:", error);
+      }
     }
   };
 
   // Collapse back to first 6
   const handleCollapse = () => {
     setCurrentPage(1);
-    loadEvents(1, false);
+    
+    // Remove multi-page cache and keep only first page
+    removeQueries((query: any) => {
+      const params = query.queryKey[2] as any;
+      return params?.page > 1;
+    });
+    
+    // Refetch first page
+    const firstPageParams = { ...queryParams, page: 1 };
+    queryClient.invalidateQueries({ queryKey: eventsKeys.list(firstPageParams) });
   };
 
   // Handle event card click
@@ -134,88 +118,409 @@ export function EventsContent({ className = "" }: EventsContentProps) {
 
   // Retry handler
   const handleRetry = () => {
-    setError(null);
-    loadEvents(currentPage, false);
+    refetch();
   };
 
   // Clear filters handler
   const handleClearFilters = () => {
     setSelectedCategory("all");
     setSelectedLocation("awka-anambra");
-    setCurrentPage(1);
-    loadEvents(1, false);
+    handleFilterChange();
   };
 
+  // Loading state - show skeleton on initial load OR when filters change
+  const isLoadingData = isLoading || (allEvents.length === 0 && !isError);
+  
   // Show different buttons based on state
-  const showMoreButton = hasNextPage && !loading && !error;
-  const showCollapseButton = currentPage > 1 && !loading && !error;
+  const showMoreButton = data?.data?.hasNextPage && !isLoading && !isError && !loadMoreMutation.isPending;
+  const showCollapseButton = currentPage > 1 && !isLoading && !isError && !loadMoreMutation.isPending;
 
-  return (
-    <div className={`space-y-6 ${className}`}>
-      <div>
-        <ContentHeader
-          title={<SectionTitle>Available events in your location</SectionTitle>}
-          action={
+  // Render loading skeleton for initial load OR filter changes
+  if (isLoadingData && isOnline) {
+    return (
+      <div className={`space-y-6 ${className}`}>
+        <div>
+          {/* Desktop: Category in header, Location below */}
+          <div className="hidden md:block">
+            <ContentHeader
+              title={<SectionTitle>Available events in your location</SectionTitle>}
+              action={
+                <VariantSelect
+                  variant="glass"
+                  placeholder="Category"
+                  value={selectedCategory}
+                  onValueChange={handleCategoryChange}
+                  options={[
+                    { value: "all", label: "All Categories" },
+                    { value: "workshop", label: "Workshop" },
+                    { value: "conference", label: "Conference" },
+                    { value: "seminar", label: "Seminar" },
+                    { value: "networking", label: "Networking" },
+                    { value: "Bitcoin", label: "Bitcoin" },
+                    { value: "Pool", label: "Pool Party" },
+                    { value: "Ethereum", label: "Ethereum" },
+                  ]}
+                />
+              }
+            />
+
             <VariantSelect
-              variant="glass"
-              placeholder="Category"
-              value={selectedCategory}
-              onValueChange={setSelectedCategory}
+              variant="ghost"
+              icon="/icons/location.svg"
+              iconAlt="Location"
+              value={selectedLocation}
+              onValueChange={handleLocationChange}
               options={[
-                { value: "all", label: "All Categories" },
-                { value: "workshop", label: "Workshop" },
-                { value: "conference", label: "Conference" },
-                { value: "seminar", label: "Seminar" },
-                { value: "networking", label: "Networking" },
-                { value: "Bitcoin", label: "Bitcoin" },
-                { value: "Pool", label: "Pool Party" },
-                { value: "Ethereum", label: "Ethereum" },
+                { value: "awka-anambra", label: "Awka, Anambra" },
+                { value: "lagos-lagos", label: "Lagos, Lagos" },
+                { value: "abuja-fct", label: "Abuja, FCT" },
+                { value: "port-harcourt-rivers", label: "Port Harcourt, Rivers" },
+                { value: "kano-kano", label: "Kano, Kano" },
+                { value: "ibadan-oyo", label: "Ibadan, Oyo" },
               ]}
             />
-          }
-        />
+          </div>
 
-        <VariantSelect
-          variant="ghost"
-          icon="/icons/location.svg"
-          iconAlt="Location"
-          value={selectedLocation}
-          onValueChange={setSelectedLocation}
-          options={[
-            { value: "awka-anambra", label: "Awka, Anambra" },
-            { value: "lagos-lagos", label: "Lagos, Lagos" },
-            { value: "abuja-fct", label: "Abuja, FCT" },
-            { value: "port-harcourt-rivers", label: "Port Harcourt, Rivers" },
-            { value: "kano-kano", label: "Kano, Kano" },
-            { value: "ibadan-oyo", label: "Ibadan, Oyo" },
-          ]}
-        />
-      </div>
+          {/* Mobile: Title and both selects in same row */}
+          <div className="block md:hidden">
+            <div className="mb-4">
+              <SectionTitle>Available events in your location</SectionTitle>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <VariantSelect
+                  variant="ghost"
+                  icon="/icons/location.svg"
+                  iconAlt="Location"
+                  value={selectedLocation}
+                  onValueChange={handleLocationChange}
+                  options={[
+                    { value: "awka-anambra", label: "Awka, Anambra" },
+                    { value: "lagos-lagos", label: "Lagos, Lagos" },
+                    { value: "abuja-fct", label: "Abuja, FCT" },
+                    { value: "port-harcourt-rivers", label: "Port Harcourt, Rivers" },
+                    { value: "kano-kano", label: "Kano, Kano" },
+                    { value: "ibadan-oyo", label: "Ibadan, Oyo" },
+                  ]}
+                />
+              </div>
+              
+              <div className="flex-1">
+                <VariantSelect
+                  variant="glass"
+                  placeholder="Category"
+                  value={selectedCategory}
+                  onValueChange={handleCategoryChange}
+                  options={[
+                    { value: "all", label: "All Categories" },
+                    { value: "workshop", label: "Workshop" },
+                    { value: "conference", label: "Conference" },
+                    { value: "seminar", label: "Seminar" },
+                    { value: "networking", label: "Networking" },
+                    { value: "Bitcoin", label: "Bitcoin" },
+                    { value: "Pool", label: "Pool Party" },
+                    { value: "Ethereum", label: "Ethereum" },
+                  ]}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/* Loading State - Show skeleton on initial load */}
-      {loading && isInitialLoad && (
+        {/* Loading skeleton - shown during filter changes */}
         <StaysGridSkeleton count={6} />
-      )}
+      </div>
+    );
+  }
 
-      {/* Offline State */}
-      {!loading && !isOnline && events.length === 0 && (
+  // Handle offline state
+  if (!isOnline && allEvents.length === 0) {
+    return (
+      <div className={`space-y-6 ${className}`}>
+        <div>
+          {/* Filters remain interactive even offline */}
+          <div className="hidden md:block">
+            <ContentHeader
+              title={<SectionTitle>Available events in your location</SectionTitle>}
+              action={
+                <VariantSelect
+                  variant="glass"
+                  placeholder="Category"
+                  value={selectedCategory}
+                  onValueChange={handleCategoryChange}
+                  options={[
+                    { value: "all", label: "All Categories" },
+                    { value: "workshop", label: "Workshop" },
+                    { value: "conference", label: "Conference" },
+                    { value: "seminar", label: "Seminar" },
+                    { value: "networking", label: "Networking" },
+                    { value: "Bitcoin", label: "Bitcoin" },
+                    { value: "Pool", label: "Pool Party" },
+                    { value: "Ethereum", label: "Ethereum" },
+                  ]}
+                />
+              }
+            />
+
+            <VariantSelect
+              variant="ghost"
+              icon="/icons/location.svg"
+              iconAlt="Location"
+              value={selectedLocation}
+              onValueChange={handleLocationChange}
+              options={[
+                { value: "awka-anambra", label: "Awka, Anambra" },
+                { value: "lagos-lagos", label: "Lagos, Lagos" },
+                { value: "abuja-fct", label: "Abuja, FCT" },
+                { value: "port-harcourt-rivers", label: "Port Harcourt, Rivers" },
+                { value: "kano-kano", label: "Kano, Kano" },
+                { value: "ibadan-oyo", label: "Ibadan, Oyo" },
+              ]}
+            />
+          </div>
+
+          <div className="block md:hidden">
+            <div className="mb-4">
+              <SectionTitle>Available events in your location</SectionTitle>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <VariantSelect
+                  variant="ghost"
+                  icon="/icons/location.svg"
+                  iconAlt="Location"
+                  value={selectedLocation}
+                  onValueChange={handleLocationChange}
+                  options={[
+                    { value: "awka-anambra", label: "Awka, Anambra" },
+                    { value: "lagos-lagos", label: "Lagos, Lagos" },
+                    { value: "abuja-fct", label: "Abuja, FCT" },
+                    { value: "port-harcourt-rivers", label: "Port Harcourt, Rivers" },
+                    { value: "kano-kano", label: "Kano, Kano" },
+                    { value: "ibadan-oyo", label: "Ibadan, Oyo" },
+                  ]}
+                />
+              </div>
+              
+              <div className="flex-1">
+                <VariantSelect
+                  variant="glass"
+                  placeholder="Category"
+                  value={selectedCategory}
+                  onValueChange={handleCategoryChange}
+                  options={[
+                    { value: "all", label: "All Categories" },
+                    { value: "workshop", label: "Workshop" },
+                    { value: "conference", label: "Conference" },
+                    { value: "seminar", label: "Seminar" },
+                    { value: "networking", label: "Networking" },
+                    { value: "Bitcoin", label: "Bitcoin" },
+                    { value: "Pool", label: "Pool Party" },
+                    { value: "Ethereum", label: "Ethereum" },
+                  ]}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
         <OfflineState />
-      )}
+      </div>
+    );
+  }
 
-      {/* Error State */}
-      {!loading && error && error !== "offline" && events.length === 0 && (
+  // Handle error state
+  if (isError && !isLoading && allEvents.length === 0) {
+    return (
+      <div className={`space-y-6 ${className}`}>
+        <div>
+          <div className="hidden md:block">
+            <ContentHeader
+              title={<SectionTitle>Available events in your location</SectionTitle>}
+              action={
+                <VariantSelect
+                  variant="glass"
+                  placeholder="Category"
+                  value={selectedCategory}
+                  onValueChange={handleCategoryChange}
+                  options={[
+                    { value: "all", label: "All Categories" },
+                    { value: "workshop", label: "Workshop" },
+                    { value: "conference", label: "Conference" },
+                    { value: "seminar", label: "Seminar" },
+                    { value: "networking", label: "Networking" },
+                    { value: "Bitcoin", label: "Bitcoin" },
+                    { value: "Pool", label: "Pool Party" },
+                    { value: "Ethereum", label: "Ethereum" },
+                  ]}
+                />
+              }
+            />
+
+            <VariantSelect
+              variant="ghost"
+              icon="/icons/location.svg"
+              iconAlt="Location"
+              value={selectedLocation}
+              onValueChange={handleLocationChange}
+              options={[
+                { value: "awka-anambra", label: "Awka, Anambra" },
+                { value: "lagos-lagos", label: "Lagos, Lagos" },
+                { value: "abuja-fct", label: "Abuja, FCT" },
+                { value: "port-harcourt-rivers", label: "Port Harcourt, Rivers" },
+                { value: "kano-kano", label: "Kano, Kano" },
+                { value: "ibadan-oyo", label: "Ibadan, Oyo" },
+              ]}
+            />
+          </div>
+
+          <div className="block md:hidden">
+            <div className="mb-4">
+              <SectionTitle>Available events in your location</SectionTitle>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <VariantSelect
+                  variant="ghost"
+                  icon="/icons/location.svg"
+                  iconAlt="Location"
+                  value={selectedLocation}
+                  onValueChange={handleLocationChange}
+                  options={[
+                    { value: "awka-anambra", label: "Awka, Anambra" },
+                    { value: "lagos-lagos", label: "Lagos, Lagos" },
+                    { value: "abuja-fct", label: "Abuja, FCT" },
+                    { value: "port-harcourt-rivers", label: "Port Harcourt, Rivers" },
+                    { value: "kano-kano", label: "Kano, Kano" },
+                    { value: "ibadan-oyo", label: "Ibadan, Oyo" },
+                  ]}
+                />
+              </div>
+              
+              <div className="flex-1">
+                <VariantSelect
+                  variant="glass"
+                  placeholder="Category"
+                  value={selectedCategory}
+                  onValueChange={handleCategoryChange}
+                  options={[
+                    { value: "all", label: "All Categories" },
+                    { value: "workshop", label: "Workshop" },
+                    { value: "conference", label: "Conference" },
+                    { value: "seminar", label: "Seminar" },
+                    { value: "networking", label: "Networking" },
+                    { value: "Bitcoin", label: "Bitcoin" },
+                    { value: "Pool", label: "Pool Party" },
+                    { value: "Ethereum", label: "Ethereum" },
+                  ]}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
         <NetworkError
-          message={
-            error === "server" 
-              ? "Server is temporarily unavailable"
-              : "Unable to load events"
-          }
+          message="Unable to load events"
           onRetry={handleRetry}
         />
-      )}
+      </div>
+    );
+  }
 
-      {/* Empty State */}
-      {!loading && !error && events.length === 0 && !isInitialLoad && (
+  // Handle empty state
+  if (!isLoading && !isError && allEvents.length === 0) {
+    return (
+      <div className={`space-y-6 ${className}`}>
+        <div>
+          <div className="hidden md:block">
+            <ContentHeader
+              title={<SectionTitle>Available events in your location</SectionTitle>}
+              action={
+                <VariantSelect
+                  variant="glass"
+                  placeholder="Category"
+                  value={selectedCategory}
+                  onValueChange={handleCategoryChange}
+                  options={[
+                    { value: "all", label: "All Categories" },
+                    { value: "workshop", label: "Workshop" },
+                    { value: "conference", label: "Conference" },
+                    { value: "seminar", label: "Seminar" },
+                    { value: "networking", label: "Networking" },
+                    { value: "Bitcoin", label: "Bitcoin" },
+                    { value: "Pool", label: "Pool Party" },
+                    { value: "Ethereum", label: "Ethereum" },
+                  ]}
+                />
+              }
+            />
+
+            <VariantSelect
+              variant="ghost"
+              icon="/icons/location.svg"
+              iconAlt="Location"
+              value={selectedLocation}
+              onValueChange={handleLocationChange}
+              options={[
+                { value: "awka-anambra", label: "Awka, Anambra" },
+                { value: "lagos-lagos", label: "Lagos, Lagos" },
+                { value: "abuja-fct", label: "Abuja, FCT" },
+                { value: "port-harcourt-rivers", label: "Port Harcourt, Rivers" },
+                { value: "kano-kano", label: "Kano, Kano" },
+                { value: "ibadan-oyo", label: "Ibadan, Oyo" },
+              ]}
+            />
+          </div>
+
+          <div className="block md:hidden">
+            <div className="mb-4">
+              <SectionTitle>Available events in your location</SectionTitle>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <VariantSelect
+                  variant="ghost"
+                  icon="/icons/location.svg"
+                  iconAlt="Location"
+                  value={selectedLocation}
+                  onValueChange={handleLocationChange}
+                  options={[
+                    { value: "awka-anambra", label: "Awka, Anambra" },
+                    { value: "lagos-lagos", label: "Lagos, Lagos" },
+                    { value: "abuja-fct", label: "Abuja, FCT" },
+                    { value: "port-harcourt-rivers", label: "Port Harcourt, Rivers" },
+                    { value: "kano-kano", label: "Kano, Kano" },
+                    { value: "ibadan-oyo", label: "Ibadan, Oyo" },
+                  ]}
+                />
+              </div>
+              
+              <div className="flex-1">
+                <VariantSelect
+                  variant="glass"
+                  placeholder="Category"
+                  value={selectedCategory}
+                  onValueChange={handleCategoryChange}
+                  options={[
+                    { value: "all", label: "All Categories" },
+                    { value: "workshop", label: "Workshop" },
+                    { value: "conference", label: "Conference" },
+                    { value: "seminar", label: "Seminar" },
+                    { value: "networking", label: "Networking" },
+                    { value: "Bitcoin", label: "Bitcoin" },
+                    { value: "Pool", label: "Pool Party" },
+                    { value: "Ethereum", label: "Ethereum" },
+                  ]}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
         <EmptyState
           title="No events found"
           message={
@@ -226,85 +531,150 @@ export function EventsContent({ className = "" }: EventsContentProps) {
           actionLabel={selectedCategory !== "all" ? "Clear Filters" : undefined}
           onAction={selectedCategory !== "all" ? handleClearFilters : undefined}
         />
-      )}
+      </div>
+    );
+  }
 
-      {/* Events Grid */}
-      {events.length > 0 && (
-        <>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: "24px",
-            }}
-            className="w-full"
-          >
-            {events.map((event) => (
-              <EventCard
-                key={event._id}
-                title={event.title}
-                dateTime={EventService.formatEventDateTime(event.startTime)}
-                imageUrl={EventService.getEventCoverImage(event)}
-                badgeText={EventService.formatEventPrice(event.price)}
-                organizerName="Flend Worldwide"
-                followerCount="117.5K Followers"
-                onClick={() => handleEventClick(event._id)}
+  // Normal render with data
+  return (
+    <div className={`space-y-6 ${className}`}>
+      <div>
+        {/* Desktop: Category in header, Location below */}
+        <div className="hidden md:block">
+          <ContentHeader
+            title={<SectionTitle>Available events in your location</SectionTitle>}
+            action={
+              <VariantSelect
+                variant="glass"
+                placeholder="Category"
+                value={selectedCategory}
+                onValueChange={handleCategoryChange}
+                options={[
+                  { value: "all", label: "All Categories" },
+                  { value: "workshop", label: "Workshop" },
+                  { value: "conference", label: "Conference" },
+                  { value: "seminar", label: "Seminar" },
+                  { value: "networking", label: "Networking" },
+                  { value: "Bitcoin", label: "Bitcoin" },
+                  { value: "Pool", label: "Pool Party" },
+                  { value: "Ethereum", label: "Ethereum" },
+                ]}
               />
-            ))}
-          </div>
+            }
+          />
 
-          {/* Loading more indicator */}
-          {loading && !isInitialLoad && (
-            <div className="flex justify-center py-4">
-              <div className="flex items-center gap-2 text-gray-500">
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle 
-                    className="opacity-25" 
-                    cx="12" 
-                    cy="12" 
-                    r="10" 
-                    stroke="currentColor" 
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                  <path 
-                    className="opacity-75" 
-                    fill="currentColor" 
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                <span>Loading more events...</span>
-              </div>
+          <VariantSelect
+            variant="ghost"
+            icon="/icons/location.svg"
+            iconAlt="Location"
+            value={selectedLocation}
+            onValueChange={handleLocationChange}
+            options={[
+              { value: "awka-anambra", label: "Awka, Anambra" },
+              { value: "lagos-lagos", label: "Lagos, Lagos" },
+              { value: "abuja-fct", label: "Abuja, FCT" },
+              { value: "port-harcourt-rivers", label: "Port Harcourt, Rivers" },
+              { value: "kano-kano", label: "Kano, Kano" },
+              { value: "ibadan-oyo", label: "Ibadan, Oyo" },
+            ]}
+          />
+        </div>
+
+        {/* Mobile: Title and both selects in same row */}
+        <div className="block md:hidden">
+          <div className="mb-4">
+            <SectionTitle>Available events in your location</SectionTitle>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <VariantSelect
+                variant="ghost"
+                icon="/icons/location.svg"
+                iconAlt="Location"
+                value={selectedLocation}
+                onValueChange={handleLocationChange}
+                options={[
+                  { value: "awka-anambra", label: "Awka, Anambra" },
+                  { value: "lagos-lagos", label: "Lagos, Lagos" },
+                  { value: "abuja-fct", label: "Abuja, FCT" },
+                  { value: "port-harcourt-rivers", label: "Port Harcourt, Rivers" },
+                  { value: "kano-kano", label: "Kano, Kano" },
+                  { value: "ibadan-oyo", label: "Ibadan, Oyo" },
+                ]}
+              />
             </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex justify-center gap-4 pt-4">
-            {showMoreButton && (
-              <Button
-                variant="signup-primary"
-                size="allotease-md"
-                onClick={handleShowMore}
-                disabled={loading || !isOnline}
-                loading={loading}
-              >
-                Show More
-              </Button>
-            )}
-
-            {showCollapseButton && (
-              <Button
-                variant="allotease-blur"
-                size="allotease-md"
-                onClick={handleCollapse}
-                disabled={loading}
-              >
-                Collapse
-              </Button>
-            )}
+            
+            <div className="flex-1">
+              <VariantSelect
+                variant="glass"
+                placeholder="Category"
+                value={selectedCategory}
+                onValueChange={handleCategoryChange}
+                options={[
+                  { value: "all", label: "All Categories" },
+                  { value: "workshop", label: "Workshop" },
+                  { value: "conference", label: "Conference" },
+                  { value: "seminar", label: "Seminar" },
+                  { value: "networking", label: "Networking" },
+                  { value: "Bitcoin", label: "Bitcoin" },
+                  { value: "Pool", label: "Pool Party" },
+                  { value: "Ethereum", label: "Ethereum" },
+                ]}
+              />
+            </div>
           </div>
-        </>
+        </div>
+      </div>
+
+      {/* Events Grid - Responsive */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+        {allEvents.map((event) => (
+          <EventCard
+            key={event._id}
+            title={event.title}
+            dateTime={EventService.formatEventDateTime(event.startTime)}
+            imageUrl={EventService.getEventCoverImage(event)}
+            badgeText={EventService.formatEventPrice(event.price)}
+            organizerName={event.organizationName}
+            followerCount={EventService.formatFollowerCount(event.totalFollowers)}
+            onClick={() => handleEventClick(event._id)}
+          />
+        ))}
+      </div>
+
+      {/* Loading more skeleton - show skeleton cards when loading more */}
+      {loadMoreMutation.isPending && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+          <StaysGridSkeleton count={6} />
+        </div>
       )}
+
+      {/* Action Buttons */}
+      <div className="flex justify-center gap-4 pt-4">
+        {showMoreButton && (
+          <Button
+            variant="signup-primary"
+            size="allotease-md"
+            onClick={handleShowMore}
+            disabled={!isOnline || loadMoreMutation.isPending}
+            loading={loadMoreMutation.isPending}
+          >
+            Show More
+          </Button>
+        )}
+
+        {showCollapseButton && (
+          <Button
+            variant="allotease-blur"
+            size="allotease-md"
+            onClick={handleCollapse}
+            disabled={isLoading || loadMoreMutation.isPending}
+          >
+            Collapse
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

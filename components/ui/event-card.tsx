@@ -29,8 +29,6 @@ export function EventCard({
       className={`flex flex-col cursor-pointer transition-transform hover:scale-[1.02] ${className}`}
       style={{
         display: "flex",
-        height: "auto",
-        minWidth: "300px",
         flexDirection: "column",
         alignItems: "flex-start",
         gap: "8px",

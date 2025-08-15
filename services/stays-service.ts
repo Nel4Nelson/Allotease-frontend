@@ -8,7 +8,7 @@ export interface Stay {
   _id: string;
   title: string;
   description: string;
-  accomodationType: string; // Note: API uses "accomodationType" (typo in backend)
+  accommodationType: string;
   location: {
     address: string;
     city: string;
@@ -22,9 +22,15 @@ export interface Stay {
   facilities: string[];
   images: string[];
   ownerId: string;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
+  organizationName: string;
+  organizationBio: string;
+  organizationCategory: string;
+  averageRating: number;
+  totalReviews: number;
+  totalComments: number;
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
 }
 
 // Stay Unit interface
@@ -58,7 +64,7 @@ export interface GetStayByIdResponse {
 }
 
 // API response interface for getting stays
-interface GetStaysResponse {
+export interface GetStaysResponse {
   status: string;
   message: string;
   data: {
@@ -96,7 +102,7 @@ interface FacilitiesSearchResponse {
   };
 }
 
-// Create stay response - Updated to match actual API response
+// Create stay response
 interface CreateStayResponse {
   status: string;
   message: string;
@@ -208,28 +214,18 @@ export class StaysService {
   }
 
   /**
-   * Get mock rating for stay (until backend supports reviews)
+   * Format review count for display
    */
-  static getMockRating(): number {
-    // Generate consistent mock ratings between 4.0 and 5.0
-    const ratings = [4.0, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 5.0];
-    return ratings[Math.floor(Math.random() * ratings.length)];
-  }
-
-  /**
-   * Get mock review count for stay (until backend supports reviews)
-   */
-  static getMockReviewCount(): string {
-    const counts = [
-      "1,469 reviews",
-      "2,134 reviews",
-      "987 reviews",
-      "3,245 reviews",
-      "1,876 reviews",
-      "564 reviews",
-      "2,987 reviews",
-    ];
-    return counts[Math.floor(Math.random() * counts.length)];
+  static formatReviewCount(count: number): string {
+    if (count === 0) {
+      return "No reviews yet";
+    } else if (count === 1) {
+      return "1 review";
+    } else if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}k reviews`;
+    } else {
+      return `${count} reviews`;
+    }
   }
 
   /**
@@ -400,7 +396,7 @@ export class StaysService {
       return cityCoordinates[cityKey];
     }
 
-    // Try to match by state (approximate center coordinates)
+    // Placeholders: state (approximate center coordinates)
     const stateCoordinates: Record<string, [number, number]> = {
       lagos: [3.3792, 6.5244],
       abuja: [7.5399, 9.0579],
@@ -455,7 +451,7 @@ export class StaysService {
         form.append("location[country]", formData.location.country);
       }
 
-      // Add geoLocation coordinates (CRITICAL FIX)
+      // Add geoLocation coordinates
       const coordinates =
         formData.geoLocation?.coordinates ||
         this.generateCoordinatesFromLocation(formData.location);

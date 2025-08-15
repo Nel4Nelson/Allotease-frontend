@@ -12,12 +12,16 @@ export function StayLocation({ location, className = "" }: StayLocationProps) {
       style={{
         color: "var(--Body, #71727A)",
         fontFamily: "var(--font-source-sans), sans-serif",
-        fontSize: "16px",
+        fontSize: "14px",
         fontStyle: "normal",
         fontWeight: 400,
         lineHeight: "142.745%",
-        letterSpacing: "-0.32px",
+        letterSpacing: "-0.28px",
         margin: 0,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        width: "100%",
       }}
     >
       {location}

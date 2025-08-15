@@ -29,7 +29,11 @@ export function AuthModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/20" onClick={onClose} />
+      <div 
+        className="absolute inset-0 bg-black/20" 
+        onClick={onClose}
+        style={{ zIndex: 1 }}
+      />
 
       {/* Modal */}
       <div
@@ -46,28 +50,47 @@ export function AuthModal({
           justifyContent: "center",
           alignItems: "center",
           gap: "40px",
+          zIndex: 2,
         }}
       >
         {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 hover:bg-black/5 rounded-full transition-colors"
-          style={{ zIndex: 10 }}
+        <div
+          className="absolute top-4 right-4"
+          style={{ zIndex: 50 }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onClose();
+          }}
         >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+          <button
+            type="button"
+            className="p-3 hover:bg-black/5 rounded-full transition-colors"
+            style={{ 
+              minWidth: "44px", 
+              minHeight: "44px",
+              WebkitTapHighlightColor: "transparent",
+              touchAction: "manipulation",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer"
+            }}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
 
         {/* Background Gradient Container */}
         <div
