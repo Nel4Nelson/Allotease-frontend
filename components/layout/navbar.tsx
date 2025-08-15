@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -16,6 +15,44 @@ import {
 } from "@/components/icons";
 import { useAuthStore } from "@/stores/auth-store";
 import { AuthService } from "@/services/auth-service";
+import { Button } from "../ui/button";
+
+// Animated Create Text Component
+interface AnimatedCreateTextProps {
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+const AnimatedCreateText: React.FC<AnimatedCreateTextProps> = ({
+  className,
+  style,
+}) => {
+  const [currentText, setCurrentText] = useState("event");
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    if (isHovered) return; // Don't animate when hovered
+
+    const interval = setInterval(() => {
+      setCurrentText((prev) => (prev === "event" ? "stay" : "event"));
+    }, 2000); // Change every 2 seconds
+
+    return () => clearInterval(interval);
+  }, [isHovered]);
+
+  return (
+    <span
+      className={className}
+      style={style}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <span style={{ display: "inline-block", minWidth: "125px" }}>
+        Create a{currentText === "event" ? "n" : ""} {currentText}
+      </span>
+    </span>
+  );
+};
 
 export default function Header() {
   // Get auth data directly from store
@@ -39,11 +76,14 @@ export default function Header() {
 
   // Handle create event button click
   const handleCreateEvent = () => {
-    if (userRole === "allocator") {
+    if (!isAuthenticated) {
+      // Unauthenticated users redirect to create event page
+      window.location.href = "/allocation-admin/create";
+    } else if (userRole === "allocator") {
       // Allocators can create events - redirect to create event page
       window.location.href = "/allocation-admin/create";
     } else {
-      // Regular users need to upgrade first
+      // Regular authenticated users need to upgrade first
       window.location.href = "/upgrade";
     }
   };
@@ -68,7 +108,7 @@ export default function Header() {
 
       <div className="max-w-[965px] mx-auto px-4 sm:px-6 lg:px-8 h-16">
         <div className="flex items-center h-full">
-          {/* Left Section: Logo + Search */}
+          {/* Left Section: Logo + Search (Desktop only) */}
           <div className="flex items-center flex-1 mr-8">
             {/* Logo */}
             <Link href="/" className="cursor-pointer">
@@ -82,8 +122,8 @@ export default function Header() {
               />
             </Link>
 
-            {/* Search Bar */}
-            <div className="flex items-center gap-3 h-10 max-w-[300px] px-3 flex-1 rounded-full border border-gray-300/20 bg-gray-100/50">
+            {/* Search Bar - Hidden on mobile */}
+            <div className="hidden md:flex items-center gap-3 h-10 max-w-[300px] px-3 flex-1 rounded-full border border-gray-300/20 bg-gray-100/50">
               <SearchIcon />
               <input
                 type="text"
@@ -96,39 +136,65 @@ export default function Header() {
 
           {/* Right Section: Action Buttons + User Profile */}
           <div className="flex items-center gap-8">
-            {/* Create an event */}
-            <button
-              className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
-              onClick={handleCreateEvent}
-            >
-              <PencilIcon />
-              <span
-                className="font-source-sans text-base font-semibold"
-                style={{ color: "#1F3A3A" }}
+            {/* Desktop Action Buttons - Hidden on mobile */}
+            <div className="hidden md:flex items-center gap-8">
+              {/* Create an event */}
+              <button
+                className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
+                onClick={handleCreateEvent}
               >
-                Create an event
-              </span>
-            </button>
+                <PencilIcon />
+                <AnimatedCreateText
+                  className="font-source-sans text-base font-semibold"
+                  style={{ color: "#1F3A3A" }}
+                />
+              </button>
 
-            {/* Ticket */}
-            <Link 
-              href="/tickets" 
-              className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
-            >
-              <TicketIcon />
-              <span
-                className="font-source-sans text-base font-semibold"
-                style={{ color: "#1F3A3A" }}
+              {/* Ticket */}
+              <Link
+                href="/tickets"
+                className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
               >
-                Ticket
-              </span>
-            </Link>
+                <TicketIcon />
+                <span
+                  className="font-source-sans text-base font-semibold"
+                  style={{ color: "#1F3A3A" }}
+                >
+                  Ticket
+                </span>
+              </Link>
+            </div>
 
-            {/* User Profile Dropdown - Only show if authenticated */}
+            {/* Mobile Action Icons - Only show on mobile */}
+            <div className="flex md:hidden items-center gap-4">
+              {/* Pencil Icon - Mobile */}
+              <button
+                className="p-2 hover:opacity-70 transition-opacity cursor-pointer"
+                onClick={handleCreateEvent}
+              >
+                <PencilIcon />
+              </button>
+
+              {/* Ticket Icon - Mobile */}
+              <Link
+                href="/tickets"
+                className="p-2 hover:opacity-70 transition-opacity cursor-pointer"
+              >
+                <TicketIcon />
+              </Link>
+            </div>
+
+            {/* User Profile Dropdown - Show if authenticated */}
             {isAuthenticated && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-3 hover:bg-gray-50 rounded-lg px-2 py-1 transition-colors cursor-pointer">
+                  <button
+                    className="flex items-center gap-3 hover:bg-gray-50 rounded-lg px-2 py-1 transition-colors cursor-pointer md:border-l md:border-l-gray-300/20 md:pl-4"
+                    style={{
+                      borderTopLeftRadius: "0px",
+                      borderBottomLeftRadius: "0px",
+                    }}
+                  >
                     {/* Avatar */}
                     <div className="w-8 h-8 rounded-full overflow-hidden">
                       <Image
@@ -139,8 +205,9 @@ export default function Header() {
                         className="w-full h-full object-cover"
                       />
                     </div>
+                    {/* Email - Hidden on mobile */}
                     <span
-                      className="font-source-sans text-base"
+                      className="hidden md:block font-source-sans text-base"
                       style={{
                         color: "#1F2024",
                         fontFamily: "var(--font-source-sans), sans-serif",
@@ -151,7 +218,7 @@ export default function Header() {
                     >
                       {userEmail}
                     </span>
-                    <ChevronDownIcon />
+                    <ChevronDownIcon className="hidden md:block" />
                   </button>
                 </DropdownMenuTrigger>
 
@@ -221,6 +288,17 @@ export default function Header() {
                       )}
                     </div>
 
+                    {/* Mobile Search Bar - Only show on mobile */}
+                    <div className="flex md:hidden items-center gap-3 h-10 w-full px-3 rounded-full border border-gray-300/20 bg-gray-100/50">
+                      <SearchIcon />
+                      <input
+                        type="text"
+                        placeholder="Search by address"
+                        className="flex-1 bg-transparent border-none outline-none text-gray-600 font-source-sans text-base placeholder:text-gray-500"
+                        style={{ color: "#71727A" }}
+                      />
+                    </div>
+
                     {/* Menu Items Container */}
                     <div
                       className="flex flex-col items-start self-stretch"
@@ -229,16 +307,65 @@ export default function Header() {
                         background: "rgba(242, 244, 247, 0.50)",
                       }}
                     >
-                      {/* Ticket - First item with conditional top rounded corners */}
+                      {/* Mobile Action Items - Only show on mobile */}
+                      <div className="flex md:hidden flex-col w-full">
+                        {/* Create new event - Mobile */}
+                        <div
+                          className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
+                          style={{
+                            padding: "16px 20px",
+                            borderBottom: "1px solid rgba(138, 174, 164, 0.20)",
+                            borderRadius: "16px 16px 0 0",
+                          }}
+                          onClick={handleCreateEvent}
+                        >
+                          <PencilIcon />
+                          <AnimatedCreateText
+                            style={{
+                              color: "#1F2024",
+                              fontFamily: "var(--font-source-sans), sans-serif",
+                              fontSize: "16px",
+                              fontWeight: 600,
+                              lineHeight: "normal",
+                            }}
+                          />
+                        </div>
+
+                        {/* Ticket - Mobile */}
+                        <Link
+                          href="/tickets"
+                          className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
+                          style={{
+                            padding: "16px 20px",
+                            borderBottom: "1px solid rgba(138, 174, 164, 0.20)",
+                          }}
+                        >
+                          <TicketIcon />
+                          <span
+                            style={{
+                              color: "#1F2024",
+                              fontFamily: "var(--font-source-sans), sans-serif",
+                              fontSize: "16px",
+                              fontWeight: 600,
+                              lineHeight: "normal",
+                            }}
+                          >
+                            Ticket
+                          </span>
+                        </Link>
+                      </div>
+
+                      {/* Regular Menu Items */}
+                      {/* Ticket - Desktop only */}
                       <Link
                         href="/tickets"
-                        className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
+                        className="hidden md:flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
                         style={{
                           padding: "16px 20px",
                           borderBottom: isAllocationAdmin
                             ? "1px solid rgba(138, 174, 164, 0.20)"
                             : "1px solid rgba(138, 174, 164, 0.20)",
-                          borderRadius: "16px 16px 0 0", // Top-left and top-right rounded
+                          borderRadius: "16px 16px 0 0",
                         }}
                       >
                         <Image
@@ -290,9 +417,9 @@ export default function Header() {
                         </Link>
                       )}
 
-                      {/* Create new event */}
+                      {/* Create new event - Desktop only */}
                       <div
-                        className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
+                        className="hidden md:flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
                         style={{
                           padding: "16px 20px",
                           borderBottom: "1px solid rgba(138, 174, 164, 0.20)",
@@ -305,7 +432,7 @@ export default function Header() {
                           width={16}
                           height={16}
                         />
-                        <span
+                        <AnimatedCreateText
                           style={{
                             color: "#1F2024",
                             fontFamily: "var(--font-source-sans), sans-serif",
@@ -313,9 +440,7 @@ export default function Header() {
                             fontWeight: 600,
                             lineHeight: "normal",
                           }}
-                        >
-                          Create new event
-                        </span>
+                        />
                       </div>
 
                       {/* About Allotease - Last item with bottom rounded corners */}
@@ -324,7 +449,7 @@ export default function Header() {
                         className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
                         style={{
                           padding: "16px 20px",
-                          borderRadius: "0 0 16px 16px", // Bottom-left and bottom-right rounded
+                          borderRadius: "0 0 16px 16px",
                         }}
                       >
                         <Image
@@ -383,18 +508,26 @@ export default function Header() {
             {/* Show login/signup buttons if not authenticated and not loading */}
             {!isAuthenticated && !isLoading && (
               <div className="flex items-center gap-4">
-                <Link
-                  href="/signin"
-                  className="font-source-sans text-base font-semibold text-[#1F3A3A] hover:opacity-70 transition-opacity cursor-pointer"
-                >
-                  Sign In
+                <Link href="/signin">
+                  <Button
+                    variant="signup-primary"
+                    size="allotease-sm"
+                    aria-label="Sign in to your account"
+                    
+                  >
+                    Sign In
+                  </Button>
                 </Link>
-                <Link
-                  href="/signup"
-                  className="font-source-sans text-base font-semibold bg-[#1F3A3A] text-white px-4 py-2 rounded-lg hover:opacity-80 transition-opacity cursor-pointer"
-                >
-                  Sign Up
-                </Link>
+                {/* <Link href="/signup">
+                  <Button
+                    variant="allotease-blur"
+                    size="allotease-sm"
+                    aria-label="Sign in to your account"
+                    className="font-bold border"
+                  >
+                    Sign Up
+                  </Button>
+                </Link> */}
               </div>
             )}
 

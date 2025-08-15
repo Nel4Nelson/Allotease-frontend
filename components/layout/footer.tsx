@@ -1,117 +1,138 @@
-"use client";
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import React, { ReactNode } from "react";
-import { InstagramLogo, TwitterLogo, WhatsappLogo } from "phosphor-react";
+import {
+  ArrowIcon,
+  InstagramIcon,
+  TwitterIcon,
+  WhatsAppIcon,
+} from "@/components/icons";
 
-interface SocialIcon {
-  name: string;
-  icon: ReactNode;
-  href: string;
+interface FooterProps {
+  logoSrc?: string;
+  instagramUrl?: string;
+  twitterUrl?: string;
+  whatsappUrl?: string;
 }
 
-const socialIcons: SocialIcon[] = [
-  {
-    name: "Instagram",
-    icon: (
-      <>
-        <InstagramLogo size={12} className="block md:hidden" />
-        <InstagramLogo size={24} className="hidden md:block" />
-      </>
-    ),
-    href: "https://instagram.com",
-  },
-  {
-    name: "Twitter",
-    icon: (
-      <>
-        <TwitterLogo size={12} className="block md:hidden" />
-        <TwitterLogo size={24} className="hidden md:block" />
-      </>
-    ),
-    href: "https://twitter.com",
-  },
-  {
-    name: "WhatsApp",
-    icon: (
-      <>
-        <WhatsappLogo size={12} className="block md:hidden" />
-        <WhatsappLogo size={24} className="hidden md:block" />
-      </>
-    ),
-    href: "https://whatsapp.com",
-  },
-];
-
-export function Footer() {
+export const Footer: React.FC<FooterProps> = ({
+  logoSrc = "/icons/footer-logo.svg",
+  instagramUrl = "https://instagram.com",
+  twitterUrl = "https://twitter.com",
+  whatsappUrl = "https://whatsapp.com",
+}) => {
   return (
-    <footer className="mx-4 my-4 py-8 p-2 md:p-8 bg-[#2F4F4F] text-white rounded-2xl">
-      {/* Logo Section */}
-      <div className="mb-6">
-        <Link href="/" className="flex items-center">
+    <div className="p-3 md:p-5">
+      <footer className="w-full rounded-[12px] md:rounded-[20px] bg-[#2F4F4F] flex flex-col px-4 sm:px-8 md:px-16 lg:px-24 xl:px-[200px] py-6 md:py-8 lg:py-[48px] gap-6 md:gap-8 lg:gap-[32px]">
+        {/* Mobile Layout: Logo and Social Icons in same row */}
+        <div className="flex md:hidden justify-between items-center w-full">
+          {/* Logo */}
           <Image
-            src="/images/logo2.svg"
-            alt="Allotease Logo"
-            height={32}
-            width={108}
+            src={logoSrc}
+            alt="Allotease"
+            width={100}
+            height={33}
+            className="object-contain w-[100px] h-[33px]"
           />
-        </Link>
-      </div>
 
-      <hr className="border-[#D5FFEB40] mb-4" />
-
-      <div className="flex items-center justify-between">
-        {/* Call to Action */}
-        <div className="flex items-center gap-1">
-          <p className="text-xs md:text-[20px] font-semibold bg-gradient-to-r from-[#D5FFEB] to-[#6DFF6D] text-transparent bg-clip-text">
-            Host your event with Allotease
-          </p>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-[#6DFF6D] block md:hidden"
-          >
-            <path d="M7 17l9.2-9.2M17 17V7H7" />
-          </svg>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-[#6DFF6D] hidden md:block"
-          >
-            <path d="M7 17l9.2-9.2M17 17V7H7" />
-          </svg>
-        </div>
-
-        {/* Social Links */}
-        <div className="flex space-x-1 md:space-x-4">
-          {socialIcons.map((social) => (
+          {/* Social Icons */}
+          <div className="flex items-center gap-3">
             <Link
-              key={social.name}
-              href={social.href}
+              href={instagramUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-[#6DFF6D] transition-colors"
-              aria-label={`Visit our ${social.name} page`}
+              className="hover:opacity-80 transition-opacity duration-300"
             >
-              {social.icon}
+              <InstagramIcon />
             </Link>
-          ))}
+            <Link
+              href={twitterUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:opacity-80 transition-opacity duration-300"
+            >
+              <TwitterIcon />
+            </Link>
+            <Link
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:opacity-80 transition-opacity duration-300"
+            >
+              <WhatsAppIcon />
+            </Link>
+          </div>
         </div>
-      </div>
-    </footer>
+
+        {/* Desktop Layout: Original design */}
+        {/* Logo */}
+        <Image
+          src={logoSrc}
+          alt="Allotease"
+          width={120}
+          height={40}
+          className="hidden md:block object-contain w-[120px] h-[40px]"
+        />
+
+        <div className="hidden md:flex md:flex-row md:justify-between w-full pt-4 md:pb-4 border-t border-solid border-[rgba(138,174,164,0.2)] gap-6 md:gap-0 items-center">
+          {/* Host Event Text with Arrow - Desktop */}
+          <Link
+            href="/allocation-admin/create"
+            className="flex items-center gap-2 md:gap-[8px] group transition-all duration-300 ease-in-out hover:scale-105"
+          >
+            <span className="font-source-sans-pro text-base sm:text-lg md:text-[20px] font-semibold leading-normal bg-gradient-to-r from-[rgba(213,255,235,0.5)] to-[rgba(109,255,109,0.5)] bg-clip-text text-transparent group-hover:from-[rgba(213,255,235,0.8)] group-hover:to-[rgba(109,255,109,0.8)] transition-all duration-300">
+              Host your event with Allotease
+            </span>
+
+            {/* Arrow Icon */}
+            <div className="transition-transform duration-300 group-hover:translate-x-1 flex-shrink-0">
+              <ArrowIcon />
+            </div>
+          </Link>
+          {/* Social Icons */}
+          <div className="flex items-center gap-3 md:gap-[16px]">
+            <Link
+              href={instagramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:opacity-80 transition-opacity duration-300"
+            >
+              <InstagramIcon />
+            </Link>
+            <Link
+              href={twitterUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:opacity-80 transition-opacity duration-300"
+            >
+              <TwitterIcon />
+            </Link>
+            <Link
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:opacity-80 transition-opacity duration-300"
+            >
+              <WhatsAppIcon />
+            </Link>
+          </div>
+        </div>
+
+        {/* Host Event Text with Arrow - Mobile Only (Centered) */}
+        <Link
+          href="/allocation-admin/create"
+          className="flex md:hidden justify-center items-center gap-2 group transition-all duration-300 ease-in-out hover:scale-105"
+        >
+          <span className="font-source-sans-pro text-base sm:text-lg font-semibold leading-normal bg-gradient-to-r from-[rgba(213,255,235,0.5)] to-[rgba(109,255,109,0.5)] bg-clip-text text-transparent group-hover:from-[rgba(213,255,235,0.8)] group-hover:to-[rgba(109,255,109,0.8)] transition-all duration-300 text-center">
+            Host your event with Allotease
+          </span>
+
+          {/* Arrow Icon */}
+          <div className="transition-transform duration-300 group-hover:translate-x-1 flex-shrink-0">
+            <ArrowIcon />
+          </div>
+        </Link>
+      </footer>
+    </div>
   );
-}
+};

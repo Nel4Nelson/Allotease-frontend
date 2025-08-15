@@ -21,8 +21,8 @@ export interface Event {
   };
   // Add geoLocation property if your API returns it
   geoLocation?: {
-    latitude: number;
-    longitude: number;
+    type: string;
+    coordinates: number[];
   };
   tags?: string[];
   agenda?: Array<{
@@ -33,7 +33,14 @@ export interface Event {
     endTime: string;
   }>;
   ownerId?: string;
-  createdAt: string;
+  organizationName: string;
+  organizationBio: string;
+  organizationCategory: string;
+  averageRating: number;
+  totalReviews: number;
+  totalComments: number;
+  totalFollowers: number;
+  createdAt?: string;
   updatedAt?: string;
 }
 
@@ -146,7 +153,18 @@ export class EventService {
   static formatEventDateTime(startTime: string): string {
     try {
       const date = new Date(startTime);
+      
+      // Get day with ordinal suffix (1st, 2nd, 3rd, 4th, etc.)
+      const day = date.getDate();
+      const dayWithSuffix = this.getDayWithOrdinalSuffix(day);
+      
+      // Get month name
+      const month = date.toLocaleDateString("en-US", { month: "long" });
+      
+      // Get day name
       const dayName = date.toLocaleDateString("en-US", { weekday: "long" });
+      
+      // Get time
       const time = date.toLocaleTimeString("en-US", {
         hour: "numeric",
         minute: "2-digit",
@@ -158,10 +176,23 @@ export class EventService {
         .toLocaleTimeString("en-US", { timeZoneName: "short" })
         .split(" ")[2];
 
-      return `${dayName} • ${time} ${timeZone}`;
+      return `${dayWithSuffix} ${month}, ${dayName} • ${time} ${timeZone}`;
     } catch (error) {
       console.error("Error formatting date:", error);
       return "Date TBD";
+    }
+  }
+
+  /**
+   * Helper method to add ordinal suffix to day
+   */
+  private static getDayWithOrdinalSuffix(day: number): string {
+    if (day > 3 && day < 21) return `${day}th`;
+    switch (day % 10) {
+      case 1: return `${day}st`;
+      case 2: return `${day}nd`;
+      case 3: return `${day}rd`;
+      default: return `${day}th`;
     }
   }
 
@@ -170,6 +201,19 @@ export class EventService {
    */
   static formatEventPrice(price: number): string {
     return price === 0 ? "Free" : `₦${price.toLocaleString()}`;
+  }
+
+  /**
+   * Format follower count for display
+   */
+  static formatFollowerCount(count: number): string {
+    if (count >= 1000000) {
+      return `${(count / 1000000).toFixed(1)}M Followers`;
+    } else if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}K Followers`;
+    } else {
+      return `${count} Followers`;
+    }
   }
 
   /**
@@ -258,14 +302,9 @@ export class EventService {
 
     // Add tags - try multiple approaches
     if (formData.categories && formData.categories.length > 0) {
-      // Approach 1: Try as array indices (most common for FormData)
       formData.categories.forEach((tag, index) => {
         form.append(`tags[${index}]`, tag);
       });
-
-      // Approach 2: Also try as JSON string (some backends prefer this)
-      // Uncomment if approach 1 doesn't work:
-      // form.append("tags", JSON.stringify(formData.categories));
     }
 
     // Add location for physical events - send as individual fields
