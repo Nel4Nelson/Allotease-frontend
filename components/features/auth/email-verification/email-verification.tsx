@@ -7,6 +7,7 @@ import { OtpInput } from "./otp-input";
 import { AuthService } from "@/services/auth-service";
 import { ApiError } from "@/types/auth";
 import { AuthLayout } from "../shared";
+import toast from 'react-hot-toast';
 
 export function EmailVerification() {
   const router = useRouter();
@@ -49,7 +50,9 @@ export function EmailVerification() {
 
   const handleVerifyClick = async () => {
     if (!email || !otp || otp.length !== 6) {
-      setError("Please enter a valid 6-digit code.");
+      const errorMessage = "Please enter a valid 6-digit code.";
+      setError(errorMessage);
+      toast.error(errorMessage);
       return;
     }
 
@@ -64,6 +67,7 @@ export function EmailVerification() {
 
       if (response.status === "success") {
         setSuccess(true);
+        toast.success('Email verified successfully! Redirecting...');
 
         // Clear verification email from session
         AuthService.clearVerificationEmail();
@@ -73,13 +77,18 @@ export function EmailVerification() {
           router.push("/");
         }, 2000);
       } else {
-        setError("Verification failed. Please try again.");
+        const errorMessage = "Verification failed. Please try again.";
+        setError(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (error) {
       console.error("OTP verification error:", error);
 
       const apiError = error as ApiError;
-      setError(apiError.message || "Invalid OTP. Please try again.");
+      const errorMessage = apiError.message || "Invalid OTP. Please try again.";
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
 
       // Reset the OTP input on error by changing the key
       setResetKey((prev) => prev + 1);
@@ -104,12 +113,16 @@ export function EmailVerification() {
         setResetKey((prev) => prev + 1);
         setOtp(""); // Clear stored OTP
         setError(null);
+        toast.success('Verification code sent! Check your email.');
       }
     } catch (error) {
       console.error("Resend OTP error:", error);
 
       const apiError = error as ApiError;
-      setError(apiError.message || "Failed to resend OTP. Please try again.");
+      const errorMessage = apiError.message || "Failed to resend OTP. Please try again.";
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsResending(false);
     }
