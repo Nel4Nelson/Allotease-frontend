@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { AuthService } from "@/services/auth-service";
 import { ApiError } from "@/services/api-client";
 import { UpgradeForm, UpgradeFormData } from "./upgrade-form";
+import toast from 'react-hot-toast';
 
 export function Upgrade() {
   const [isLoading, setIsLoading] = useState(false);
@@ -43,6 +44,7 @@ export function Upgrade() {
       // Check if upgrade was successful
       if (response.status === "success") {
         setSuccess(true);
+        toast.success('Account upgraded successfully! Redirecting to dashboard...');
 
         // Redirect based on selected resource type
         const redirectUrl = getRedirectUrl(data.resourceType);
@@ -50,16 +52,18 @@ export function Upgrade() {
           window.location.href = redirectUrl;
         }, 1500);
       } else {
-        setError("Account upgrade failed. Please try again.");
+        const errorMessage = "Account upgrade failed. Please try again.";
+        setError(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (error) {
       console.error("Upgrade error:", error);
 
       const apiError = error as ApiError;
-      setError(
-        apiError.message ||
-          "An error occurred during upgrade. Please try again."
-      );
+      const errorMessage = apiError.message || "An error occurred during upgrade. Please try again.";
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

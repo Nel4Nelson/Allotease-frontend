@@ -5,6 +5,7 @@ import { UserForm } from ".";
 import { AuthService } from "@/services/auth-service";
 import { UserFormData } from "@/types/auth";
 import { ApiError } from "@/services/api-client";
+import toast from 'react-hot-toast';
 
 export function UserSignup() {
   const router = useRouter();
@@ -31,16 +32,23 @@ export function UserSignup() {
         // Store email for OTP verification
         AuthService.setVerificationEmail(data.email);
 
+        toast.success('Account created! Please check your email for verification.');
+
         // Navigate to email verification page
         router.push("/email-verification");
       } else {
-        setError("Signup failed. Please try again.");
+        const errorMessage = "Signup failed. Please try again.";
+        setError(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (error) {
       console.error("User signup error:", error);
 
       const apiError = error as ApiError;
-      setError(apiError.message || "Something went wrong. Please try again.");
+      const errorMessage = apiError.message || "Something went wrong. Please try again.";
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
