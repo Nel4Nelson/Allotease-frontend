@@ -1,10 +1,11 @@
 import React, { useState, useRef } from "react";
 import { FormInput } from "@/components/ui/form-input";
+import { Button } from "@/components/ui/button";
 import { CategoryTagIcon } from "../icons";
 
 interface CategorySelectorProps {
-  value?: string[]; // Changed from string to string[]
-  onChange?: (categories: string[]) => void; // Changed to return array
+  value?: string[];
+  onChange?: (categories: string[]) => void;
   error?: string;
   required?: boolean;
 }
@@ -40,36 +41,44 @@ export function CategorySelector({
     setInputValue(e.target.value);
   };
 
+  const addCategoryFromInput = () => {
+    if (!inputValue.trim()) return;
+
+    // Create a new category ID from the input value
+    const newCategoryId = inputValue.toLowerCase().replace(/\s+/g, "-");
+
+    // Check if category already exists
+    const existingCategory = categories.find(
+      (cat) =>
+        cat.id === newCategoryId ||
+        cat.label.toLowerCase() === inputValue.toLowerCase()
+    );
+
+    if (!existingCategory) {
+      // Add new category to the list
+      const newCategory = { id: newCategoryId, label: inputValue.trim() };
+      setCategories((prev) => [...prev, newCategory]);
+    }
+
+    // Select the category (existing or new)
+    const categoryToSelect = existingCategory || {
+      id: newCategoryId,
+      label: inputValue.trim(),
+    };
+    handleCategorySelect(categoryToSelect.id);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && inputValue.trim()) {
       e.preventDefault();
-
-      // Create a new category ID from the input value
-      const newCategoryId = inputValue.toLowerCase().replace(/\s+/g, "-");
-
-      // Check if category already exists
-      const existingCategory = categories.find(
-        (cat) =>
-          cat.id === newCategoryId ||
-          cat.label.toLowerCase() === inputValue.toLowerCase()
-      );
-
-      if (!existingCategory) {
-        // Add new category to the list
-        const newCategory = { id: newCategoryId, label: inputValue.trim() };
-        setCategories((prev) => [...prev, newCategory]);
-      }
-
-      // Select the category (existing or new)
-      const categoryToSelect = existingCategory || {
-        id: newCategoryId,
-        label: inputValue.trim(),
-      };
-      handleCategorySelect(categoryToSelect.id);
+      addCategoryFromInput();
     }
   };
 
- 
+  // Check if can add category
+  const canAddCategory = () => {
+    return inputValue.trim().length > 0;
+  };
 
   // Get category label by ID
   const getCategoryLabel = (categoryId: string) => {
@@ -91,6 +100,23 @@ export function CategorySelector({
         required={required}
         showLabel={false}
       />
+
+      {/* Mobile Add Category Button - Only visible on mobile */}
+      <div className="block sm:hidden">
+        <Button
+          type="button"
+          variant="allotease-blur"
+          size="allotease-sm"
+          onClick={addCategoryFromInput}
+          disabled={!canAddCategory()}
+          className={`text-[var(--feature-accent-orange)] ${
+            !canAddCategory() ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+          title={!canAddCategory() ? 'Enter a category name first' : 'Add category'}
+        >
+          Add Category
+        </Button>
+      </div>
 
       {/* Selected Categories */}
       {value.length > 0 && (

@@ -13,13 +13,13 @@ export interface Event {
   startTime: string;
   endTime?: string;
   coverImage?: string;
+  link?: string;
   location?: {
     country: string;
     city?: string;
     state?: string;
     address?: string;
   };
-  // Add geoLocation property if your API returns it
   geoLocation?: {
     type: string;
     coordinates: number[];
@@ -91,7 +91,7 @@ export class EventService {
   private static readonly ENDPOINTS = {
     CREATE_EVENT: "/events/",
     GET_EVENTS: "/events/",
-    GET_EVENT_BY_ID: "/events/", // Will append ID
+    GET_EVENT_BY_ID: "/events/",
   } as const;
 
   /**
@@ -224,14 +224,101 @@ export class EventService {
   }
 
   /**
+   * Generate coordinates from location data (same as stays service)
+   */
+  private static generateCoordinatesFromLocation(
+    location: EventsFormData["location"]
+  ): [number, number] {
+    // Use coordinates if available
+    if (location?.coordinates) {
+      return location.coordinates;
+    }
+
+    // Fallback coordinates for major Nigerian cities
+    const cityCoordinates: Record<string, [number, number]> = {
+      // Lagos
+      lagos: [3.3792, 6.5244],
+      ikeja: [3.3566, 6.6018],
+      lekki: [3.4716, 6.4698],
+
+      // Abuja
+      abuja: [7.5399, 9.0579],
+      garki: [7.4951, 9.0579],
+
+      // Port Harcourt
+      "port harcourt": [7.0134, 4.8156],
+
+      // Kano
+      kano: [8.5264, 11.9925],
+
+      // Ibadan
+      ibadan: [3.947, 7.3986],
+
+      // Kaduna
+      kaduna: [7.4421, 10.5264],
+
+      // Benin City
+      benin: [5.6037, 6.335],
+      "benin city": [5.6037, 6.335],
+
+      // Enugu
+      enugu: [7.5105, 6.2649],
+
+      // Jos
+      jos: [8.8932, 9.8965],
+
+      // Warri
+      warri: [5.75, 5.5166],
+
+      // Calabar
+      calabar: [8.3275, 4.9517],
+    };
+
+    // Try to match city
+    const cityKey = location?.city?.toLowerCase() || "";
+    if (cityCoordinates[cityKey]) {
+      return cityCoordinates[cityKey];
+    }
+
+    // Fallback: state (approximate center coordinates)
+    const stateCoordinates: Record<string, [number, number]> = {
+      lagos: [3.3792, 6.5244],
+      abuja: [7.5399, 9.0579],
+      rivers: [7.0134, 4.8156],
+      kano: [8.5264, 11.9925],
+      oyo: [3.947, 7.3986],
+      kaduna: [7.4421, 10.5264],
+      edo: [5.6037, 6.335],
+      enugu: [7.5105, 6.2649],
+      plateau: [8.8932, 9.8965],
+      delta: [5.75, 5.5166],
+      "cross river": [8.3275, 4.9517],
+      anambra: [6.9175, 6.2649],
+      imo: [7.0255, 5.4966],
+      abia: [7.5248, 5.4527],
+      "akwa ibom": [7.8249, 4.9059],
+      bayelsa: [6.0699, 4.7719],
+      benue: [8.734, 7.7099],
+      borno: [13.0827, 11.8846],
+      taraba: [9.7799, 7.8637],
+    };
+
+    const stateKey = location?.state?.toLowerCase() || "";
+    if (stateCoordinates[stateKey]) {
+      return stateCoordinates[stateKey];
+    }
+
+    // Default to Nigeria center coordinates
+    return [7.4951, 9.0579];
+  }
+
+  /**
    * Create a new event
    */
   static async createEvent(
     formData: EventsFormData
   ): Promise<CreateEventResponse> {
     try {
-      // Check if backend expects multipart/form-data or JSON
-      // Let's try JSON first with manual FormData for image
       const hasImage = formData.image && formData.image.length > 0;
 
       if (hasImage) {
@@ -300,7 +387,7 @@ export class EventService {
       });
     }
 
-    // Add tags - try multiple approaches
+    // Add tags
     if (formData.categories && formData.categories.length > 0) {
       formData.categories.forEach((tag, index) => {
         form.append(`tags[${index}]`, tag);
@@ -313,6 +400,25 @@ export class EventService {
       form.append("location[city]", formData.location.city);
       form.append("location[state]", formData.location.state);
       form.append("location[country]", formData.location.country);
+    }
+
+    // Add geoLocation coordinates for venue events (same as stays)
+    if (formData.eventType === "venue") {
+      const coordinates =
+        formData.geoLocation?.coordinates ||
+        this.generateCoordinatesFromLocation(formData.location);
+
+      form.append("geoLocation[coordinates][0]", coordinates[0].toString());
+      form.append("geoLocation[coordinates][1]", coordinates[1].toString());
+
+
+      // Log coordinates for debugging
+      console.log("Creating event with coordinates:", coordinates);
+    }
+
+    // Add online event link for remote events
+    if (formData.eventType === "remote" && formData.onlineEventLink) {
+      form.append("link", formData.onlineEventLink);
     }
 
     // Add image file
@@ -343,7 +449,7 @@ export class EventService {
       eventType,
       price: formData.price,
       capacity: formData.capacity,
-      tags: formData.categories || [], // Direct array assignment
+      tags: formData.categories || [],
     };
 
     // Add dates
@@ -377,7 +483,7 @@ export class EventService {
       }));
     }
 
-    // Add location
+    // Add location for physical events
     if (formData.eventType === "venue" && formData.location) {
       payload.location = {
         address: formData.location.address,
@@ -385,6 +491,24 @@ export class EventService {
         state: formData.location.state,
         country: formData.location.country,
       };
+
+      // Add geoLocation for venue events
+      const coordinates =
+        formData.geoLocation?.coordinates ||
+        this.generateCoordinatesFromLocation(formData.location);
+
+      payload.geoLocation = {
+        type: "Point",
+        coordinates: coordinates,
+      };
+
+      // Log coordinates for debugging
+      console.log("Creating event with coordinates:", coordinates);
+    }
+
+    // Add online event link for remote events
+    if (formData.eventType === "remote" && formData.onlineEventLink) {
+      payload.link = formData.onlineEventLink;
     }
 
     const response = await apiClient.post<CreateEventResponse>(
@@ -454,9 +578,21 @@ export class EventService {
       }
     }
 
+    // Validate online event link for remote events
+    if (formData.eventType === "remote") {
+      if (!formData.onlineEventLink || formData.onlineEventLink.trim().length === 0) {
+        errors.push("Meeting link or event details are required for remote events");
+      }
+    }
+
     // Validate price for paid events
     if (!formData.isFree && (!formData.price || formData.price <= 0)) {
       errors.push("Price is required for paid events");
+    }
+
+    // Coordinates validation (will be auto-generated if missing)
+    if (formData.eventType === "venue" && !formData.geoLocation?.coordinates && !formData.location) {
+      errors.push("Location coordinates are required for venue events");
     }
 
     return errors;

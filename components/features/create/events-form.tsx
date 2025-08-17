@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-unescaped-entities */
 "use client";
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -25,6 +25,22 @@ import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDebouncedFormStore } from "@/hooks/use-debounced-form-store";
 import { debounce } from "lodash";
+
+// Helper function to validate time order
+const isEndTimeAfterStartTime = (
+  startTime: string,
+  endTime: string
+): boolean => {
+  if (!startTime || !endTime) return true; // Don't validate if either is missing
+
+  const [startHour, startMinute] = startTime.split(":").map(Number);
+  const [endHour, endMinute] = endTime.split(":").map(Number);
+
+  const startMinutes = startHour * 60 + startMinute;
+  const endMinutes = endHour * 60 + endMinute;
+
+  return endMinutes > startMinutes;
+};
 
 const eventsFormSchema = z
   .object({
@@ -70,6 +86,7 @@ const eventsFormSchema = z
         country: z.string().min(1, { message: "Country is required." }),
       })
       .optional(),
+    onlineEventLink: z.string(),
     capacity: z
       .number()
       .min(1, { message: "Capacity is required." })
@@ -92,6 +109,19 @@ const eventsFormSchema = z
   )
   .refine(
     (data) => {
+      // If eventType is remote, onlineEventLink is required
+      if (data.eventType === "remote" && (!data.onlineEventLink || data.onlineEventLink.trim().length === 0)) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "Meeting link or event details are required for online events.",
+      path: ["onlineEventLink"],
+    }
+  )
+  .refine(
+    (data) => {
       // If event is not free, price must be greater than 0
       if (!data.isFree && data.price <= 0) {
         return false;
@@ -101,6 +131,19 @@ const eventsFormSchema = z
     {
       message: "Price is required for paid events.",
       path: ["price"],
+    }
+  )
+  .refine(
+    (data) => {
+      // Validate that end time is after start time
+      if (data.startTime && data.endTime) {
+        return isEndTimeAfterStartTime(data.startTime, data.endTime);
+      }
+      return true;
+    },
+    {
+      message: "End time must be after start time.",
+      path: ["endTime"],
     }
   );
 
@@ -115,24 +158,35 @@ export interface EventsFormData {
   categories: string[];
   eventType: EventType;
   location?: LocationData;
+  geoLocation?: { coordinates: [number, number] }; 
+  onlineEventLink: string;
   capacity: number;
   price: number;
   isFree: boolean;
 }
 
-// Component that uses useSearchParams
 function EventsFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
-  // Zustand store integration
-  const { formData: storeData, updateFormDataImmediate, updateFormDataDebounced } = useDebouncedFormStore();
-  
+
+
+  const [timeValidationErrors, setTimeValidationErrors] = useState<{
+    startTime?: string;
+    endTime?: string;
+  }>({});
+
+  const {
+    formData: storeData,
+    updateFormDataImmediate,
+    updateFormDataDebounced,
+  } = useDebouncedFormStore();
+
   const {
     register,
     setValue,
     watch,
     formState: { errors },
+    trigger,
   } = useForm<EventsFormData>({
     resolver: zodResolver(eventsFormSchema),
     mode: "onChange",
@@ -147,6 +201,7 @@ function EventsFormContent() {
       categories: storeData.categories || [],
       eventType: storeData.eventType || "remote",
       location: storeData.location || undefined,
+      onlineEventLink: storeData.onlineEventLink || "",
       capacity: storeData.capacity || 0,
       price: storeData.price || 0,
       isFree: storeData.isFree ?? true,
@@ -160,13 +215,26 @@ function EventsFormContent() {
   const categories = watch("categories");
   const eventType = watch("eventType");
   const location = watch("location");
+  const onlineEventLink = watch("onlineEventLink");
   const capacity = watch("capacity");
   const price = watch("price");
   const isFree = watch("isFree");
-  
+
   // Watch for text input changes
   const eventTitle = watch("eventTitle");
   const eventDescription = watch("eventDescription");
+
+  useEffect(() => {
+    const errors: typeof timeValidationErrors = {};
+
+    if (startTime && endTime) {
+      if (!isEndTimeAfterStartTime(startTime, endTime)) {
+        errors.endTime = "End time must be after start time";
+      }
+    }
+
+    setTimeValidationErrors(errors);
+  }, [startTime, endTime]);
 
   const handleImageChange = (images: File[]) => {
     setValue("image", images, { shouldValidate: true });
@@ -183,11 +251,19 @@ function EventsFormContent() {
   const handleStartTimeChange = (time: string) => {
     setValue("startTime", time, { shouldValidate: true });
     updateFormDataDebounced({ startTime: time });
+
+    // Trigger validation for end time when start time changes
+    if (endTime) {
+      setTimeout(() => trigger("endTime"), 100);
+    }
   };
 
   const handleEndTimeChange = (time: string) => {
     setValue("endTime", time, { shouldValidate: true });
     updateFormDataDebounced({ endTime: time });
+
+    // Trigger validation immediately when end time changes
+    setTimeout(() => trigger("endTime"), 100);
   };
 
   const handleAgendaChange = (newAgenda: AgendaItemData[]) => {
@@ -207,15 +283,39 @@ function EventsFormContent() {
     // Clear location when switching to remote
     if (newEventType === "remote") {
       setValue("location", undefined, { shouldValidate: true });
-      updateFormDataImmediate({ location: undefined });
+      updateFormDataImmediate({ location: undefined, geoLocation: undefined });
+    } else {
+      // Clear online event link when switching to venue
+      setValue("onlineEventLink", "", { shouldValidate: true });
+      updateFormDataImmediate({ onlineEventLink: "" });
     }
+  };
+
+  const handleOnlineEventChange = (link: string) => {
+    setValue("onlineEventLink", link, { shouldValidate: true });
+    updateFormDataDebounced({ onlineEventLink: link });
   };
 
   const handleLocationChange = (selectedLocation: LocationData | null) => {
     setValue("location", selectedLocation || undefined, {
       shouldValidate: true,
     });
-    updateFormDataImmediate({ location: selectedLocation || undefined });
+    
+    // Update both location and geoLocation in store
+    const updateData: Partial<EventsFormData> = {
+      location: selectedLocation || undefined,
+    };
+
+    // If coordinates are available, add geoLocation
+    if (selectedLocation?.coordinates) {
+      updateData.geoLocation = {
+        coordinates: selectedLocation.coordinates,
+      };
+    } else {
+      updateData.geoLocation = undefined;
+    }
+
+    updateFormDataImmediate(updateData);
   };
 
   const handleCapacityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -245,9 +345,10 @@ function EventsFormContent() {
 
   // Debounced sync for text inputs
   const debouncedSyncTextInputs = React.useMemo(
-    () => debounce((data: { eventTitle?: string; eventDescription?: string }) => {
-      updateFormDataDebounced(data);
-    }, 500),
+    () =>
+      debounce((data: { eventTitle?: string; eventDescription?: string }) => {
+        updateFormDataDebounced(data);
+      }, 500),
     [updateFormDataDebounced]
   );
 
@@ -348,8 +449,12 @@ function EventsFormContent() {
             onStartTimeChange={handleStartTimeChange}
             onEndTimeChange={handleEndTimeChange}
             dateError={errors.eventDate?.message}
-            startTimeError={errors.startTime?.message}
-            endTimeError={errors.endTime?.message}
+            startTimeError={
+              errors.startTime?.message || timeValidationErrors.startTime
+            }
+            endTimeError={
+              errors.endTime?.message || timeValidationErrors.endTime
+            }
             required={true}
           />
         </div>
@@ -361,6 +466,8 @@ function EventsFormContent() {
           </h2>
           <AgendaManager
             agenda={agenda}
+            eventStartTime={startTime}
+            eventEndTime={endTime}
             onChange={handleAgendaChange}
             errors={
               errors.agenda && Array.isArray(errors.agenda)
@@ -415,6 +522,8 @@ function EventsFormContent() {
             value={location}
             eventType={eventType}
             onChange={handleLocationChange}
+            onOnlineEventChange={handleOnlineEventChange}
+            onlineEventValue={onlineEventLink}
             onEventTypeChange={handleEventTypeChange}
             error={
               errors.location?.address?.message ||
@@ -423,6 +532,7 @@ function EventsFormContent() {
               errors.location?.country?.message ||
               (errors.location as any)?.message
             }
+            onlineEventError={errors.onlineEventLink?.message}
             required={eventType === "venue"}
           />
         </div>

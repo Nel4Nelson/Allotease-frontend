@@ -42,7 +42,6 @@ const partialStaysFormSchema = z.object({
     city: z.string().min(1, { message: "City is required." }),
     state: z.string().min(1, { message: "State is required." }),
     country: z.string().min(1, { message: "Country is required." }),
-    // Fix: Use tuple type for coordinates
     coordinates: z.tuple([z.number(), z.number()]).optional(),
   }),
   accommodationType: z
@@ -63,7 +62,6 @@ interface StaysFormProps {
   isLoading?: boolean;
 }
 
-// Component that uses useSearchParams
 function StaysFormContent({}: StaysFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();

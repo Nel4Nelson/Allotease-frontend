@@ -144,7 +144,7 @@ export function EventDetailsRegistrationCard({
       <div
         className={`sticky top-8 ${className}`}
         style={{
-          width: "300px", // Fixed width from Figma
+          width: "300px",
           display: "flex",
           flexDirection: "column",
           borderRadius: "16px",
@@ -160,7 +160,7 @@ export function EventDetailsRegistrationCard({
             background: "rgba(242, 244, 247, 0.80)",
             backdropFilter: "blur(21px)",
             display: "flex",
-            padding: "20px 0", // Increased padding to match Figma
+            padding: "20px 0",
             flexDirection: "column",
             alignItems: "center",
             gap: "4px",
@@ -173,7 +173,7 @@ export function EventDetailsRegistrationCard({
               fontFamily: "var(--font-space-grotesk), sans-serif",
               fontSize: "20px",
               fontWeight: 700,
-              lineHeight: "28px", // 140% of 20px
+              lineHeight: "28px",
               letterSpacing: "-0.4px",
               margin: 0,
             }}
@@ -187,7 +187,7 @@ export function EventDetailsRegistrationCard({
               fontFamily: "var(--font-source-sans), sans-serif",
               fontSize: "12px",
               fontWeight: 400,
-              lineHeight: "17.13px", // 142.745% of 12px
+              lineHeight: "17.13px",
               letterSpacing: "-0.24px",
               margin: 0,
             }}
@@ -201,7 +201,7 @@ export function EventDetailsRegistrationCard({
           style={{
             display: "flex",
             flexDirection: "column",
-            padding: "32px 24px 20px 24px", // Top padding 32px, bottom 20px, sides 24px
+            padding: "32px 24px 20px 24px",
             gap: "16px",
           }}
         >
@@ -332,10 +332,10 @@ export function EventDetailsRegistrationCard({
             onClick={handleReservation}
             style={{
               width: "100%",
-              height: "48px", // Fixed height
-              marginTop: "16px", // Space above button
-              borderRadius: "51px", // Rounded button
-              background: "#FF5B06", // Orange color from Figma
+              height: "48px", 
+              marginTop: "16px",
+              borderRadius: "51px",
+              background: "#FF5B06",
               border: "none",
               color: "white",
               fontSize: "16px",

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef, useState } from "react";
-import { useStaysFormStore } from "@/stores/stay-form-store";
+import { useEventFormStore } from "@/stores/event-form-store";
 
 const LocationIcon = () => (
   <svg
@@ -37,12 +37,41 @@ const LocationIcon = () => (
   </svg>
 );
 
+const OnlineIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="21"
+    viewBox="0 0 20 21"
+    fill="none"
+  >
+    <path
+      d="M10 18.5C14.1421 18.5 17.5 15.1421 17.5 11C17.5 6.85786 14.1421 3.5 10 3.5C5.85786 3.5 2.5 6.85786 2.5 11C2.5 15.1421 5.85786 18.5 10 18.5Z"
+      stroke="#1F3A3A"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M2.5 11H17.5"
+      stroke="#1F3A3A"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10 3.5C12.0711 5.82843 13.25 8.82843 13.25 12C13.25 15.1716 12.0711 18.1716 10 20.5C7.92893 18.1716 6.75 15.1716 6.75 12C6.75 8.82843 7.92893 5.82843 10 3.5Z"
+      stroke="#1F3A3A"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 interface EventLocationProps {
   className?: string;
 }
 
 export function EventLocation({ className = "" }: EventLocationProps) {
-  const { formData } = useStaysFormStore();
+  const { formData } = useEventFormStore();
   const [mounted, setMounted] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [mapboxgl, setMapboxgl] = useState<any>(null);
@@ -87,9 +116,15 @@ export function EventLocation({ className = "" }: EventLocationProps) {
     };
   }, [mounted]);
 
-  // Initialize Mapbox for accommodation locations
+  // Initialize Mapbox for venue events only
   useEffect(() => {
-    if (!mounted || !mapRef.current || !isOnline || !mapboxgl) return;
+    if (
+      !mounted || 
+      !mapRef.current || 
+      !isOnline || 
+      !mapboxgl || 
+      formData.eventType !== "venue"
+    ) return;
 
     try {
       mapboxgl.accessToken =
@@ -112,43 +147,65 @@ export function EventLocation({ className = "" }: EventLocationProps) {
 
       // If location exists, center map and add marker
       if (formData.location && formData.location.address) {
-        // Geocode the address to get coordinates
-        const geocodeAddress = async () => {
-          try {
-            const query = `${formData.location?.address}, ${formData.location?.city}, ${formData.location?.state}`;
-            const response = await fetch(
-              `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-                query
-              )}.json?access_token=${mapboxgl.accessToken}&country=ng&limit=1`
-            );
-            const data = await response.json();
+        // Use coordinates if available, otherwise geocode
+        if (formData.location.coordinates) {
+          const [lng, lat] = formData.location.coordinates;
+          
+          // Center map on location
+          mapInstance.current.flyTo({
+            center: [lng, lat],
+            zoom: 14,
+          });
 
-            if (data.features && data.features.length > 0) {
-              const [lng, lat] = data.features[0].center;
-
-              // Center map on location
-              mapInstance.current.flyTo({
-                center: [lng, lat],
-                zoom: 14,
-              });
-
-              // Add marker
-              if (markerRef.current) {
-                markerRef.current.remove();
-              }
-
-              markerRef.current = new mapboxgl.Marker({
-                color: "#FF5722",
-              })
-                .setLngLat([lng, lat])
-                .addTo(mapInstance.current);
-            }
-          } catch (error) {
-            console.error("Geocoding error:", error);
+          // Add marker
+          if (markerRef.current) {
+            markerRef.current.remove();
           }
-        };
 
-        geocodeAddress();
+          markerRef.current = new mapboxgl.Marker({
+            color: "#FF5722",
+          })
+            .setLngLat([lng, lat])
+            .addTo(mapInstance.current);
+        } else {
+          // Geocode the address to get coordinates
+          const geocodeAddress = async () => {
+            try {
+              const query = `${formData.location?.address}, ${formData.location?.city}, ${formData.location?.state}`;
+              const response = await fetch(
+                `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+                  query
+                )}.json?access_token=${mapboxgl.accessToken}&country=ng&limit=1`
+              );
+              const data = await response.json();
+
+              if (data.features && data.features.length > 0) {
+                const [lng, lat] = data.features[0].center;
+
+                // Center map on location
+                mapInstance.current.flyTo({
+                  center: [lng, lat],
+                  zoom: 14,
+                });
+
+                // Add marker
+                if (markerRef.current) {
+                  markerRef.current.remove();
+                }
+
+                markerRef.current = new mapboxgl.Marker({
+                  color: "#FF5722",
+                })
+                  .setLngLat([lng, lat])
+                  .addTo(mapInstance.current);
+              }
+            } catch (error) {
+              console.error("Geocoding error:", error);
+            }
+          };
+
+          geocodeAddress();
+        }
       }
     } catch (error) {
       console.error("Mapbox initialization error:", error);
@@ -163,17 +220,22 @@ export function EventLocation({ className = "" }: EventLocationProps) {
         markerRef.current = null;
       }
     };
-  }, [mounted, isOnline, mapboxgl, formData.location]);
+  }, [mounted, isOnline, mapboxgl, formData.location, formData.eventType]);
 
   // Don't render until mounted
   if (!mounted) {
     return <div className={className}>Loading location...</div>;
   }
 
-  // Handle accommodation location display
+  // Handle both remote and venue events
+  const isRemoteEvent = formData.eventType === "remote";
+  const isVenueEvent = formData.eventType === "venue";
   const location = formData.location;
+  const onlineEventLink = formData.onlineEventLink;
   const hasLocation = location && location.address;
+  const hasOnlineLink = onlineEventLink && onlineEventLink.trim().length > 0;
 
+  // Render based on event type
   return (
     <div className={className}>
       {/* Section Title */}
@@ -181,68 +243,113 @@ export function EventLocation({ className = "" }: EventLocationProps) {
         Location
       </h3>
 
-      {/* Location Info */}
-      <div className="flex items-start gap-3 mb-4">
-        <div className="mt-[1px]">
-          <LocationIcon />
-        </div>
-        <div>
-          {hasLocation ? (
-            <>
-              {/* Address (Primary) */}
-              <div className="text-[var(--Title,#1F2024)] font-source-sans-pro text-base font-semibold leading-[142.745%] tracking-[-0.32px]">
-                {location.address}
+      {/* Remote Event */}
+      {isRemoteEvent && (
+        <div className="flex items-start gap-3 mb-4">
+          <div className="mt-[1px]">
+            <OnlineIcon />
+          </div>
+          <div>
+            <div className="text-[var(--Title,#1F2024)] font-source-sans-pro text-base font-semibold leading-[142.745%] tracking-[-0.32px]">
+              Online Event
+            </div>
+            {hasOnlineLink ? (
+              <div className="text-[var(--Body,#71727A)] font-source-sans-pro text-base font-normal leading-[142.745%] tracking-[-0.32px] mt-1 break-all">
+                {onlineEventLink}
               </div>
-              {/* City, State (Secondary) */}
-              <div className="text-[var(--Body,#71727A)] font-source-sans-pro text-base font-normal leading-[142.745%] tracking-[-0.32px] mt-1">
-                {location.city}, {location.state}, {location.country}
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Placeholder */}
-              <div className="text-gray-400 font-source-sans-pro text-base font-semibold leading-[142.745%] tracking-[-0.32px]">
-                Accommodation Address
-              </div>
+            ) : (
               <div className="text-gray-400 font-source-sans-pro text-base font-normal leading-[142.745%] tracking-[-0.32px] mt-1">
-                City, State, Country will appear here
+                Meeting link will appear here
               </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Map */}
-      <div className="relative">
-        <div
-          ref={mapRef}
-          className="w-full max-w-[565px] h-[198px] rounded-[24px] bg-gray-100 border border-gray-200 overflow-hidden"
-          style={{ maxWidth: "100%" }}
-        />
-
-        {!isOnline && (
-          <div className="absolute inset-0 bg-gray-100 rounded-[24px] flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mx-auto mb-2">
-                <svg
-                  className="w-6 h-6 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 100 19.5 9.75 9.75 0 000-19.5z"
-                  />
-                </svg>
-              </div>
-              <p className="text-sm text-gray-600">Map unavailable offline</p>
+      {/* Venue Event */}
+      {isVenueEvent && (
+        <>
+          {/* Location Info */}
+          <div className="flex items-start gap-3 mb-4">
+            <div className="mt-[1px]">
+              <LocationIcon />
+            </div>
+            <div>
+              {hasLocation ? (
+                <>
+                  {/* Address (Primary) */}
+                  <div className="text-[var(--Title,#1F2024)] font-source-sans-pro text-base font-semibold leading-[142.745%] tracking-[-0.32px]">
+                    {location.address}
+                  </div>
+                  {/* City, State (Secondary) */}
+                  <div className="text-[var(--Body,#71727A)] font-source-sans-pro text-base font-normal leading-[142.745%] tracking-[-0.32px] mt-1">
+                    {location.city}, {location.state}, {location.country}
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Placeholder */}
+                  <div className="text-gray-400 font-source-sans-pro text-base font-semibold leading-[142.745%] tracking-[-0.32px]">
+                    Event Address
+                  </div>
+                  <div className="text-gray-400 font-source-sans-pro text-base font-normal leading-[142.745%] tracking-[-0.32px] mt-1">
+                    City, State, Country will appear here
+                  </div>
+                </>
+              )}
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Map - Only for venue events */}
+          <div className="relative">
+            <div
+              ref={mapRef}
+              className="w-full max-w-[565px] h-[198px] rounded-[24px] bg-gray-100 border border-gray-200 overflow-hidden"
+              style={{ maxWidth: "100%" }}
+            />
+
+            {!isOnline && (
+              <div className="absolute inset-0 bg-gray-100 rounded-[24px] flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <svg
+                      className="w-6 h-6 text-gray-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 100 19.5 9.75 9.75 0 000-19.5z"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-sm text-gray-600">Map unavailable offline</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Fallback for missing event type */}
+      {!isRemoteEvent && !isVenueEvent && (
+        <div className="flex items-start gap-3 mb-4">
+          <div className="mt-[1px]">
+            <LocationIcon />
+          </div>
+          <div>
+            <div className="text-gray-400 font-source-sans-pro text-base font-semibold leading-[142.745%] tracking-[-0.32px]">
+              Event Location
+            </div>
+            <div className="text-gray-400 font-source-sans-pro text-base font-normal leading-[142.745%] tracking-[-0.32px] mt-1">
+              Select event type to see location details
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

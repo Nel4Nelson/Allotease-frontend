@@ -43,8 +43,8 @@ export function DateTimePicker({
   return (
     <div className="space-y-4">
       {/* Date and Time Row */}
-      <div className="flex gap-4">
-        {/* Date Picker - Takes half width */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        {/* Date Picker - Full width on mobile, half width on desktop */}
         <div className="flex-1">
           <DatePicker
             label={dateLabel}
@@ -56,8 +56,8 @@ export function DateTimePicker({
           />
         </div>
 
-        {/* Time Pickers - Share the other half */}
-        <div className="flex-1 flex gap-4">
+        {/* Time Pickers - Full width on mobile (below date), half width on desktop (beside date) */}
+        <div className="flex-1 flex gap-3 sm:gap-4">
           <TimePicker
             label={startTimeLabel}
             placeholder={startTimePlaceholder}
@@ -79,9 +79,9 @@ export function DateTimePicker({
 
       {/* Error Messages Row */}
       {(dateError || startTimeError || endTimeError) && (
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">{/* Date error space */}</div>
-          <div className="flex-1 flex gap-4">{/* Time errors space */}</div>
+          <div className="flex-1 flex gap-3 sm:gap-4">{/* Time errors space */}</div>
         </div>
       )}
     </div>

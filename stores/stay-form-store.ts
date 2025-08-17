@@ -18,11 +18,11 @@ export interface FacilityDetail {
 // Unit data interface
 export interface UnitData {
   id: string;                    // Frontend generated ID
-  title: string;                 // "Standard Twin Room x15"
-  description: string;           // Room description
-  price: number;                 // 195520
+  title: string;               
+  description: string;      
+  price: number;               
   frequency: "daily" | "weekly" | "monthly" | "yearly";
-  quantity: number;              // Available quantity
+  quantity: number;           
   facilities: string[];          // Unit-specific facility IDs
 }
 

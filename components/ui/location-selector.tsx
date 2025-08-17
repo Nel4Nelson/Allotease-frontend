@@ -18,7 +18,10 @@ interface LocationSelectorProps {
   eventType?: EventType;
   onChange?: (location: LocationData | null) => void;
   onEventTypeChange?: (eventType: EventType) => void;
+  onOnlineEventChange?: (onlineEventDetails: string) => void; // New prop for online event details
+  onlineEventValue?: string; // New prop for online event value
   error?: string;
+  onlineEventError?: string; // New prop for online event error
   required?: boolean;
   mode?: "events" | "stays"; // New prop to determine display mode
 }
@@ -28,7 +31,10 @@ export function LocationSelector({
   eventType = "venue", // Default to venue for stays
   onChange,
   onEventTypeChange,
+  onOnlineEventChange,
+  onlineEventValue = "",
   error,
+  onlineEventError,
   required = false,
   mode = "events", // Default to events mode for backward compatibility
 }: LocationSelectorProps) {
@@ -293,7 +299,16 @@ export function LocationSelector({
       setSearchQuery("");
       setSuggestions([]);
       setShowSuggestions(false);
+    } else {
+      // Clear online event data when switching to venue
+      onOnlineEventChange?.("");
     }
+  };
+
+  // Handle online event input change
+  const handleOnlineEventChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('Online event input changed:', e.target.value); // Debug log
+    onOnlineEventChange?.(e.target.value);
   };
 
   // Don't render until mounted to prevent hydration mismatch
@@ -398,29 +413,22 @@ export function LocationSelector({
         </TabsList>
 
         <TabsContent value="remote" className="space-y-4">
-          <div className="w-full max-w-[565px] h-[198px] rounded-[24px] bg-[#D9D9D9] border border-gray-200 flex flex-col items-center justify-center text-center p-8">
-            <div className="w-16 h-16 bg-(--body-text) rounded-full flex items-center justify-center mb-4">
-              <svg
-                className="w-8 h-8 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-3a5 5 0 00-5-5 5 5 0 00-5 5v3m0 0h10"
-                />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Online Event
-            </h3>
-            <p className="text-(--body-text) text-sm">
-              This event will be hosted online. No physical location required.
-            </p>
-          </div>
+          {/* Online Event Input instead of placeholder */}
+          <FormInput
+            placeholder="Enter meeting link or event details*"
+            value={onlineEventValue || ""}
+            onChange={handleOnlineEventChange}
+            error={onlineEventError}
+            required={required}
+            className="w-full"
+            label="Online event details"
+            showLabel={false}
+          />
+          
+          {/* Optional: Helper text */}
+          <p className="text-sm text-gray-600">
+            Add your Zoom link, Google Meet URL, or other online event details here.
+          </p>
         </TabsContent>
 
         <TabsContent value="venue" className="space-y-4">

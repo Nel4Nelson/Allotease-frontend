@@ -18,6 +18,8 @@ interface SerializableFormData {
   categories: string[]
   eventType: EventType
   location?: LocationData
+  geoLocation?: { coordinates: [number, number] }
+  onlineEventLink: string
   capacity: number
   price: number
   isFree: boolean
@@ -52,6 +54,8 @@ const serializeFormData = (data: Partial<EventsFormData>): Partial<SerializableF
   return {
     ...rest,
     eventDate: eventDate ? eventDate.toISOString() : undefined,
+    // Include geoLocation in serialization
+    geoLocation: data.geoLocation,
     // Exclude image array from serialization
   }
 }
@@ -63,6 +67,7 @@ const deserializeFormData = (data: Partial<SerializableFormData>): Partial<Event
     ...rest,
     eventDate: eventDate ? new Date(eventDate) : undefined,
     image: [], // Always start with empty image array
+    geoLocation: data.geoLocation, // Include geoLocation in deserialization
   }
 }
 
@@ -80,6 +85,8 @@ export const useEventFormStore = create<EventFormStore>()(
       categories: [],
       eventType: 'remote',
       location: undefined,
+      geoLocation: undefined,
+      onlineEventLink: '',
       capacity: 0,
       price: 0,
       isFree: true,
@@ -123,6 +130,8 @@ export const useEventFormStore = create<EventFormStore>()(
           categories: [],
           eventType: 'remote',
           location: undefined,
+          geoLocation: undefined,
+          onlineEventLink: '', 
           capacity: 0,
           price: 0,
           isFree: true,
@@ -186,6 +195,13 @@ export const useEventFormStore = create<EventFormStore>()(
         }
       }
 
+      // Check online event link for remote events
+      if (formData.eventType === 'remote') {
+        if (!formData.onlineEventLink || formData.onlineEventLink.trim().length === 0) {
+          return false;
+        }
+      }
+
       // Check price for paid events
       if (!formData.isFree && (!formData.price || formData.price <= 0)) {
         return false;
@@ -226,6 +242,13 @@ export const useEventFormStore = create<EventFormStore>()(
         if (!formData.location?.city) missing.push('Event city')
         if (!formData.location?.state) missing.push('Event state')
         if (!formData.location?.country) missing.push('Event country')
+      }
+
+      // Check online event link for remote events
+      if (formData.eventType === 'remote') {
+        if (!formData.onlineEventLink || formData.onlineEventLink.trim().length === 0) {
+          missing.push('Meeting link or event details')
+        }
       }
 
       // Check price for paid events

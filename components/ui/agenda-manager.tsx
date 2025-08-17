@@ -1,7 +1,10 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from "react";
 import { TimePicker } from "./time-picker";
 import { Button } from "./button";
 import { FormInput } from "./form-input";
+import { EditAgendaModal } from "./modals/edit-agenda-modal";
+import { PencilIcon } from "@/components/icons";
 
 export interface AgendaItemData {
   id: string;
@@ -14,6 +17,8 @@ export interface AgendaItemData {
 interface AgendaManagerProps {
   agenda: AgendaItemData[];
   onChange: (agenda: AgendaItemData[]) => void;
+  eventStartTime?: string; 
+  eventEndTime?: string;
   errors?: Record<
     string,
     {
@@ -25,7 +30,12 @@ interface AgendaManagerProps {
   >;
 }
 
-export function AgendaManager({ agenda, onChange }: AgendaManagerProps) {
+export function AgendaManager({ 
+  agenda, 
+  onChange, 
+  eventStartTime = "", 
+  eventEndTime = "" 
+}: AgendaManagerProps) {
   const [currentItem, setCurrentItem] = useState({
     title: "",
     description: "",
@@ -40,6 +50,10 @@ export function AgendaManager({ agenda, onChange }: AgendaManagerProps) {
     endTime?: string;
     general?: string;
   }>({});
+
+  // Edit modal state
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<AgendaItemData | null>(null);
 
   const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -56,6 +70,41 @@ export function AgendaManager({ agenda, onChange }: AgendaManagerProps) {
     return endMinutes > startMinutes;
   };
 
+  // Helper function to check if agenda time is within event time range
+  const isTimeWithinEventRange = (time: string, isStartTime: boolean): boolean => {
+    if (!time || !eventStartTime || !eventEndTime) return true; // Don't validate if missing
+    
+    const [timeHour, timeMinute] = time.split(':').map(Number);
+    const [eventStartHour, eventStartMinute] = eventStartTime.split(':').map(Number);
+    const [eventEndHour, eventEndMinute] = eventEndTime.split(':').map(Number);
+    
+    const timeMinutes = timeHour * 60 + timeMinute;
+    const eventStartMinutes = eventStartHour * 60 + eventStartMinute;
+    const eventEndMinutes = eventEndHour * 60 + eventEndMinute;
+    
+    if (isStartTime) {
+      // Start time should be >= event start time
+      return timeMinutes >= eventStartMinutes;
+    } else {
+      // End time should be <= event end time
+      return timeMinutes <= eventEndMinutes;
+    }
+  };
+
+  // Format time for display in error messages
+  const formatTimeForError = (time: string) => {
+    if (!time) return "";
+    try {
+      return new Date(`2000-01-01T${time}`).toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      return time;
+    }
+  };
+
   // Validate current item whenever it changes
   useEffect(() => {
     const errors: typeof validationErrors = {};
@@ -68,14 +117,28 @@ export function AgendaManager({ agenda, onChange }: AgendaManagerProps) {
       errors.description = "Description is required";
     }
     
+    // Validate agenda item times against each other
     if (currentItem.startTime && currentItem.endTime) {
       if (!isEndTimeAfterStartTime(currentItem.startTime, currentItem.endTime)) {
         errors.endTime = "End time must be after start time";
       }
     }
     
+    // Validate agenda item times against event times
+    if (currentItem.startTime && eventStartTime && eventEndTime) {
+      if (!isTimeWithinEventRange(currentItem.startTime, true)) {
+        errors.startTime = `Start time must be after event start time (${formatTimeForError(eventStartTime)})`;
+      }
+    }
+    
+    if (currentItem.endTime && eventStartTime && eventEndTime) {
+      if (!isTimeWithinEventRange(currentItem.endTime, false)) {
+        errors.endTime = `End time must be before event end time (${formatTimeForError(eventEndTime)})`;
+      }
+    }
+    
     setValidationErrors(errors);
-  }, [currentItem]);
+  }, [currentItem, eventStartTime, eventEndTime]);
 
   // Check if current item is valid for adding
   const canAddItem = () => {
@@ -98,8 +161,18 @@ export function AgendaManager({ agenda, onChange }: AgendaManagerProps) {
       if (!currentItem.startTime) errors.startTime = "Start time is required";
       if (!currentItem.endTime) errors.endTime = "End time is required";
       
+      // Check time order
       if (currentItem.startTime && currentItem.endTime && !isEndTimeAfterStartTime(currentItem.startTime, currentItem.endTime)) {
         errors.endTime = "End time must be after start time";
+      }
+      
+      // Check event time range
+      if (currentItem.startTime && eventStartTime && eventEndTime && !isTimeWithinEventRange(currentItem.startTime, true)) {
+        errors.startTime = `Start time must be after event start time (${formatTimeForError(eventStartTime)})`;
+      }
+      
+      if (currentItem.endTime && eventStartTime && eventEndTime && !isTimeWithinEventRange(currentItem.endTime, false)) {
+        errors.endTime = `End time must be before event end time (${formatTimeForError(eventEndTime)})`;
       }
       
       setValidationErrors(errors);
@@ -131,6 +204,24 @@ export function AgendaManager({ agenda, onChange }: AgendaManagerProps) {
     onChange(updatedAgenda);
   };
 
+  // Edit functionality
+  const openEditModal = (item: AgendaItemData) => {
+    setEditingItem(item);
+    setIsEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingItem(null);
+  };
+
+  const handleEditSave = (updatedItem: AgendaItemData) => {
+    const updatedAgenda = agenda.map((item) =>
+      item.id === updatedItem.id ? updatedItem : item
+    );
+    onChange(updatedAgenda);
+  };
+
   // Update handlers with validation
   const handleStartTimeChange = (time: string) => {
     setCurrentItem({ ...currentItem, startTime: time });
@@ -153,37 +244,84 @@ export function AgendaManager({ agenda, onChange }: AgendaManagerProps) {
     }
   };
 
+  // Check if existing agenda item is within event time range
+  const isExistingItemValid = (item: AgendaItemData) => {
+    const validStartTime = isTimeWithinEventRange(item.startTime, true);
+    const validEndTime = isTimeWithinEventRange(item.endTime, false);
+    const validTimeOrder = isEndTimeAfterStartTime(item.startTime, item.endTime);
+    
+    return validStartTime && validEndTime && validTimeOrder;
+  };
+
   return (
     <div className="space-y-4">
+      {/* Event time range info */}
+      {eventStartTime && eventEndTime && (
+        <div className="bg-gray-50 border border-gray-200  rounded-lg p-3 text-sm">
+          <span className="font-medium text-(--body-text)">Event Time:</span>{" "}
+          <span className="text-(--body-text)">
+            {formatTimeDisplay(eventStartTime)} - {formatTimeDisplay(eventEndTime)}
+          </span>
+          <div className="text-(--body-text) mt-1">
+            All agenda items must fall within this time range.
+          </div>
+        </div>
+      )}
+
       {/* Display existing agenda items */}
       {agenda.map((item, index) => (
         <div
           key={item.id}
           className="p-4 border border-gray-200 rounded-lg bg-gray-50 relative"
         >
-          <button
-            type="button"
-            onClick={() => removeAgendaItem(item.id)}
-            className="absolute top-2 right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
-            title="Remove agenda item"
-          >
-            ×
-          </button>
+          {/* Action buttons container */}
+          <div className="absolute top-2 right-2 flex gap-1">
+            {/* Edit button */}
+            <button
+              type="button"
+              onClick={() => openEditModal(item)}
+              className="w-7 h-7 bg-gray-50 border rounded-full flex items-center justify-center text-xs transition-colors"
+              title="Edit agenda item"
+            >
+              <PencilIcon />
+            </button>
 
-          <div className="flex items-center gap-4 mb-2">
-            <span className="font-semibold text-lg">{index + 1}.</span>
-            <span className="font-medium">{item.title}</span>
+            {/* Remove button */}
+            <button
+              type="button"
+              onClick={() => removeAgendaItem(item.id)}
+              className="w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+              title="Remove agenda item"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-2">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-lg">{index + 1}.</span>
+              <span className="font-medium">{item.title}</span>
+            </div>
             <span className="text-sm text-(--body-text)">
               {formatTimeDisplay(item.startTime)} - {formatTimeDisplay(item.endTime)}
             </span>
           </div>
 
-          <div className="text-(--body-text) pr-8">{item.description}</div>
+          <div className="text-(--body-text) pr-16">{item.description}</div>
           
-          {/* Show validation warning for existing items */}
-          {!isEndTimeAfterStartTime(item.startTime, item.endTime) && (
+          {/* Show validation warnings for existing items */}
+          {!isExistingItemValid(item) && (
             <div className="mt-2 text-red-500 text-sm">
-              ⚠️ Warning: End time should be after start time
+              ⚠️ Warning: This agenda item has invalid times
+              {!isEndTimeAfterStartTime(item.startTime, item.endTime) && (
+                <div>• End time should be after start time</div>
+              )}
+              {eventStartTime && eventEndTime && !isTimeWithinEventRange(item.startTime, true) && (
+                <div>• Start time should be after event start time ({formatTimeDisplay(eventStartTime)})</div>
+              )}
+              {eventStartTime && eventEndTime && !isTimeWithinEventRange(item.endTime, false) && (
+                <div>• End time should be before event end time ({formatTimeDisplay(eventEndTime)})</div>
+              )}
             </div>
           )}
         </div>
@@ -191,12 +329,13 @@ export function AgendaManager({ agenda, onChange }: AgendaManagerProps) {
 
       {/* Current agenda item form */}
       <div className="space-y-4">
-        <div className="grid grid-cols-2 items-start gap-4">
+        {/* Title and Time Pickers Row - Responsive */}
+        <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4">
+          {/* Event Title Section */}
           <div className="flex items-start gap-2">
             <span className="text-[var(--color-dark-slate)] font-source-sans-pro text-lg font-semibold pt-3">
               {agenda.length + 1}.
             </span>
-
             <div className="flex-1">
               <FormInput
                 placeholder="Event title*"
@@ -210,8 +349,8 @@ export function AgendaManager({ agenda, onChange }: AgendaManagerProps) {
             </div>
           </div>
 
-          {/* Time Pickers */}
-          <div className="flex gap-2">
+          {/* Time Pickers Section */}
+          <div className="flex gap-3 sm:gap-2">
             <TimePicker
               placeholder="Start time*"
               value={currentItem.startTime}
@@ -273,6 +412,16 @@ export function AgendaManager({ agenda, onChange }: AgendaManagerProps) {
           Add at least one agenda item to continue
         </div>
       )}
+
+      {/* Edit Modal */}
+      <EditAgendaModal
+        isOpen={isEditModalOpen}
+        onClose={closeEditModal}
+        onSave={handleEditSave}
+        agendaItem={editingItem}
+        eventStartTime={eventStartTime}
+        eventEndTime={eventEndTime}
+      />
     </div>
   );
 }

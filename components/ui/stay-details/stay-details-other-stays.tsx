@@ -2,11 +2,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
-import {
-  StaysService,
-  Stay,
-  GetStaysParams,
-} from "@/services/stays-service";
+import { StaysService, Stay, GetStaysParams } from "@/services/stays-service";
 import { LeftArrowIcon, RightArrowIcon } from "@/components/icons";
 import { StayCard } from "../stays-card";
 
@@ -111,8 +107,8 @@ export function StayDetailsOtherStays({
     return {
       title: stay.title,
       location: StaysService.formatStayLocation(stay.location),
-      rating: StaysService.getMockRating(), // Using mock rating as per existing service
-      reviewCount: StaysService.getMockReviewCount(), // Using mock review count
+      rating: stay.averageRating,
+      reviewCount: StaysService.formatReviewCount(stay.totalReviews),
       description: stay.description,
       imageUrl: StaysService.getStayBannerImage(stay),
     };
