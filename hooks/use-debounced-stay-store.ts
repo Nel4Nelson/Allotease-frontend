@@ -28,6 +28,7 @@ export const useDebouncedStaysFormStore = () => {
     setFacilitiesCache,
     getFacilityFromCache,
     clearFacilitiesCache,
+    loadMissingFacilities, // New method for loading missing facilities
     getSelectedFacilities,
     getUnits,
     getUnit,
@@ -136,6 +137,19 @@ export const useDebouncedStaysFormStore = () => {
     clearFacilitiesCache();
   }, [clearFacilitiesCache]);
 
+  // Load missing facilities - exposed for components to use
+  const loadMissingFacilitiesHelper = useCallback(
+    async (facilityIds: string[]) => {
+      try {
+        await loadMissingFacilities(facilityIds);
+      } catch (error) {
+        console.error('Failed to load missing facilities:', error);
+        throw error;
+      }
+    },
+    [loadMissingFacilities]
+  );
+
   // Get unit-specific data
   const getUnitFacilities = useCallback(
     (unitId: string) => {
@@ -183,6 +197,7 @@ export const useDebouncedStaysFormStore = () => {
     updateFacilitiesCache,
     getFacilityDetails,
     clearCache,
+    loadMissingFacilities: loadMissingFacilitiesHelper, // Expose the helper method
     
     // Validation
     isFormComplete,

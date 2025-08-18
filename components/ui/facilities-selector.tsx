@@ -17,7 +17,7 @@ export function FacilitiesSelector() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState<string>("");
-  const [hasInitiallyFetched, setHasInitiallyFetched] = useState(false);
+  const [isSelecting, setIsSelecting] = useState(false); // Prevent race conditions
 
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -28,15 +28,20 @@ export function FacilitiesSelector() {
     removeFacilityFromSelection,
     updateFacilitiesCache,
     getFacilityDetails,
+    loadMissingFacilities, // New method to load missing facility details
   } = useDebouncedStaysFormStore();
 
   // Fetch facilities from API using the service
-  const fetchFacilities = async (query: string) => {
+  const fetchFacilities = async (query: string = "") => {
+    if (isSelecting) return; // Prevent fetch during selection
+    
     setIsLoading(true);
     setError("");
 
     try {
-      const facilities = await FacilitiesService.searchFacilities({ query });
+      const facilities = await FacilitiesService.searchFacilities(
+        query ? { query } : undefined
+      );
       setSuggestions(facilities);
       setShowSuggestions(true);
       // Update cache with fetched facilities
@@ -51,46 +56,16 @@ export function FacilitiesSelector() {
     }
   };
 
-  // Fetch all facilities (for initial load on focus)
-  const fetchAllFacilities = async () => {
-    setIsLoading(true);
-    setError("");
-
-    try {
-      const facilities = await FacilitiesService.searchFacilities(); // No query = get all
-      setSuggestions(facilities);
-      setShowSuggestions(true);
-      setHasInitiallyFetched(true);
-      // Update cache with fetched facilities
-      updateFacilitiesCache(facilities);
-    } catch (error) {
-      console.error("Error fetching all facilities:", error);
-      setError("Failed to fetch facilities. Please try again.");
-      setSuggestions([]);
-      setShowSuggestions(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Debounced search function for typed queries
   const debouncedSearch = debounce((query: string) => {
-    if (!query.trim()) {
-      // If query is empty, fetch all facilities
-      fetchAllFacilities();
-    } else {
-      // If query has content, search with query
-      fetchFacilities(query);
-    }
+    fetchFacilities(query);
   }, 300);
 
-  // Handle input focus - fetch all facilities
+  // Handle input focus - always fetch facilities
   const handleInputFocus = () => {
-    if (!hasInitiallyFetched) {
-      fetchAllFacilities();
-    } else {
-      // If already fetched, just show existing suggestions
-      setShowSuggestions(true);
+    if (!isSelecting) {
+      // Always fetch on focus to ensure fresh data
+      fetchFacilities(searchQuery);
     }
   };
 
@@ -101,23 +76,45 @@ export function FacilitiesSelector() {
     debouncedSearch(value);
   };
 
-  // Handle suggestion selection
-  const handleSuggestionSelect = (facility: FacilityDetail) => {
-    if (!selectedFacilities.includes(facility._id)) {
-      addFacilityToSelection(facility._id);
+  // Handle suggestion selection with race condition prevention
+  const handleSuggestionSelect = async (facility: FacilityDetail) => {
+    if (isSelecting) return; // Prevent multiple rapid clicks
+    
+    setIsSelecting(true);
+    
+    try {
+      if (!selectedFacilities.includes(facility._id)) {
+        addFacilityToSelection(facility._id);
+      }
+      
+      // Clear search and close suggestions
+      setSearchQuery("");
+      setSuggestions([]);
+      setShowSuggestions(false);
+      
+      // Focus back to input for better UX
+      if (inputRef.current) {
+        inputRef.current.blur();
+      }
+    } finally {
+      // Add delay to prevent rapid successive selections
+      setTimeout(() => {
+        setIsSelecting(false);
+      }, 200);
     }
-    setSearchQuery("");
-    setSuggestions([]);
-    setShowSuggestions(false);
   };
 
   // Handle facility removal
   const handleFacilityRemove = (facilityId: string) => {
+    if (isSelecting) return;
     removeFacilityFromSelection(facilityId);
   };
 
   // Handle add facility from modal
-  const handleAddFacility = async (facilityName: string, facilityIcon?: File | string) => {
+  const handleAddFacility = async (
+    facilityName: string,
+    facilityIcon?: File | string
+  ) => {
     try {
       // Create the facility using the service
       const newFacility = await FacilitiesService.createFacility({
@@ -153,6 +150,25 @@ export function FacilitiesSelector() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Load missing facility details on component mount (fixes refresh issue)
+  useEffect(() => {
+    const loadMissingDetails = async () => {
+      const missingFacilities = selectedFacilities.filter(
+        (facilityId) => !getFacilityDetails(facilityId)
+      );
+
+      if (missingFacilities.length > 0) {
+        try {
+          await loadMissingFacilities(missingFacilities);
+        } catch (error) {
+          console.error("Failed to load missing facility details:", error);
+        }
+      }
+    };
+
+    loadMissingDetails();
+  }, [selectedFacilities, getFacilityDetails, loadMissingFacilities]);
+
   // Get selected facility details for display
   const getSelectedFacilityDetails = (facilityId: string) => {
     return getFacilityDetails(facilityId);
@@ -180,7 +196,7 @@ export function FacilitiesSelector() {
         )}
 
         {/* Suggestions dropdown */}
-        {showSuggestions && suggestions.length > 0 && (
+        {showSuggestions && suggestions.length > 0 && !isSelecting && (
           <div
             ref={suggestionsRef}
             className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto"
@@ -189,7 +205,11 @@ export function FacilitiesSelector() {
               <div
                 key={facility._id}
                 onClick={() => handleSuggestionSelect(facility)}
-                className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+                className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 transition-colors"
+                style={{ 
+                  pointerEvents: isSelecting ? 'none' : 'auto',
+                  opacity: isSelecting ? 0.7 : 1
+                }}
               >
                 <div className="flex items-center gap-3">
                   <Image
@@ -197,7 +217,8 @@ export function FacilitiesSelector() {
                     alt={facility.name}
                     width={24}
                     height={24}
-                    className="object-cover rounded"
+                    className="object-contain !bg-transparent"
+                    style={{ backgroundColor: "transparent" }}
                   />
                   <span className="font-source-sans-pro text-sm text-[var(--color-dark-slate)]">
                     {facility.name}
@@ -236,44 +257,60 @@ export function FacilitiesSelector() {
 
       {/* Selected facilities list */}
       {selectedFacilities.length > 0 && (
-        <div className="mb-4 space-y-2">
+        <div className="mb-4 flex flex-wrap gap-2">
           {selectedFacilities.map((facilityId) => {
             const facilityDetails = getSelectedFacilityDetails(facilityId);
-            if (!facilityDetails) return null;
+            
+            // Show loading state for missing facility details
+            if (!facilityDetails) {
+              return (
+                <div
+                  key={facilityId}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-full animate-pulse"
+                >
+                  <div className="w-4 h-4 bg-gray-300 rounded-full"></div>
+                  <span className="font-source-sans-pro text-sm text-gray-400">
+                    Loading...
+                  </span>
+                </div>
+              );
+            }
 
             return (
               <div
                 key={facilityId}
-                className="flex items-center gap-1 p-2 bg-gray-50 rounded-md"
-                style={{ display: "flex", alignItems: "center", gap: "4px" }}
+                className="relative inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-full hover:shadow-md transition-all duration-200"
+                style={{
+                  background: "rgba(255, 255, 255, 0.9)",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(229, 229, 229, 0.8)",
+                }}
               >
                 <Image
                   src={facilityDetails.icon}
                   alt={facilityDetails.name}
-                  width={20}
-                  height={20}
-                  className="object-cover rounded"
+                  width={16}
+                  height={16}
+                  className="object-contain flex-shrink-0"
+                  style={{ backgroundColor: "transparent" }}
                 />
-                <span className="font-source-sans-pro text-sm text-[var(--color-dark-slate)] flex-grow">
+                <span className="font-source-sans-pro text-sm text-[var(--color-dark-slate)] font-medium pr-2">
                   {facilityDetails.name}
                 </span>
+                
+                {/* Remove button positioned at top-right */}
                 <button
                   type="button"
                   onClick={() => handleFacilityRemove(facilityId)}
-                  className="text-red-500 hover:text-red-700 p-1"
+                  disabled={isSelecting}
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs transition-colors disabled:opacity-50 shadow-sm"
                   aria-label={`Remove ${facilityDetails.name}`}
+                  style={{
+                    fontSize: "10px",
+                    lineHeight: "1",
+                  }}
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  ×
                 </button>
               </div>
             );

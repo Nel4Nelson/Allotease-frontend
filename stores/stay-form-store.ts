@@ -3,8 +3,11 @@ import { subscribeWithSelector } from 'zustand/middleware'
 import { StaysFormData } from "@/types/stays-form-schema";
 import type { LocationData } from '@/components/ui/location-selector'
 
-// SessionStorage key
+
+//Todo: The custom caching - transfer it to tanstack
+// SessionStorage keys
 const STORAGE_KEY = 'stays-form-data'
+const CACHE_STORAGE_KEY = 'stays-facilities-cache'
 
 // Facility detail interface for caching
 export interface FacilityDetail {
@@ -36,6 +39,11 @@ interface SerializableFormData {
   units: UnitData[]    // Array of units with their facilities
 }
 
+// Serializable cache data
+interface SerializableCacheData {
+  [facilityId: string]: FacilityDetail
+}
+
 interface StaysFormStore {
   // Form data
   formData: Partial<StaysFormData>
@@ -63,6 +71,7 @@ interface StaysFormStore {
   setFacilitiesCache: (facilities: FacilityDetail[]) => void
   getFacilityFromCache: (facilityId: string) => FacilityDetail | undefined
   clearFacilitiesCache: () => void
+  loadMissingFacilities: (facilityIds: string[]) => Promise<void> // New method
   
   resetForm: () => void
   
@@ -78,6 +87,8 @@ interface StaysFormStore {
   // Internal
   _loadFromSessionStorage: () => void
   _saveToSessionStorage: () => void
+  _loadCacheFromSessionStorage: () => void
+  _saveCacheToSessionStorage: () => void
 }
 
 // Helper to serialize form data for sessionStorage
@@ -99,6 +110,24 @@ const deserializeFormData = (data: Partial<SerializableFormData>): Partial<Stays
     facilities: data.facilities || [],
     units: data.units || [],
   }
+}
+
+// Helper to serialize cache for sessionStorage
+const serializeCache = (cache: Map<string, FacilityDetail>): SerializableCacheData => {
+  const serialized: SerializableCacheData = {}
+  cache.forEach((facility, id) => {
+    serialized[id] = facility
+  })
+  return serialized
+}
+
+// Helper to deserialize cache from sessionStorage
+const deserializeCache = (data: SerializableCacheData): Map<string, FacilityDetail> => {
+  const cache = new Map<string, FacilityDetail>()
+  Object.entries(data).forEach(([id, facility]) => {
+    cache.set(id, facility)
+  })
+  return cache
 }
 
 export const useStaysFormStore = create<StaysFormStore>()(
@@ -285,6 +314,38 @@ export const useStaysFormStore = create<StaysFormStore>()(
     // Clear facilities cache
     clearFacilitiesCache: () => {
       set({ facilitiesCache: new Map() })
+      // Also clear from sessionStorage
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem(CACHE_STORAGE_KEY)
+      }
+    },
+
+    // Load missing facilities from API (fixes refresh issue)
+    loadMissingFacilities: async (facilityIds: string[]) => {
+      try {
+        // Import here to avoid circular dependency
+        const { FacilitiesService } = await import('@/services/facilities-service')
+        
+        // Fetch missing facilities
+        const facilitiesPromises = facilityIds.map(async (id) => {
+          try {
+            return await FacilitiesService.getFacilityById(id)
+          } catch (error) {
+            console.error(`Failed to load facility ${id}:`, error)
+            return null
+          }
+        })
+
+        const facilities = await Promise.all(facilitiesPromises)
+        const validFacilities = facilities.filter((f): f is FacilityDetail => f !== null)
+        
+        if (validFacilities.length > 0) {
+          const { setFacilitiesCache } = get()
+          setFacilitiesCache(validFacilities)
+        }
+      } catch (error) {
+        console.error('Failed to load missing facilities:', error)
+      }
     },
 
     // Reset form
@@ -305,6 +366,7 @@ export const useStaysFormStore = create<StaysFormStore>()(
       // Clear sessionStorage
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem(STORAGE_KEY)
+        sessionStorage.removeItem(CACHE_STORAGE_KEY)
       }
     },
 
@@ -447,10 +509,39 @@ export const useStaysFormStore = create<StaysFormStore>()(
         console.error('Failed to save to sessionStorage:', error)
       }
     },
+
+    // Load cache from sessionStorage
+    _loadCacheFromSessionStorage: () => {
+      try {
+        if (typeof window === 'undefined') return
+        
+        const stored = sessionStorage.getItem(CACHE_STORAGE_KEY)
+        if (stored) {
+          const serializedCache: SerializableCacheData = JSON.parse(stored)
+          const cache = deserializeCache(serializedCache)
+          set({ facilitiesCache: cache })
+        }
+      } catch (error) {
+        console.error('Failed to load cache from sessionStorage:', error)
+      }
+    },
+
+    // Save cache to sessionStorage
+    _saveCacheToSessionStorage: () => {
+      try {
+        if (typeof window === 'undefined') return
+        
+        const { facilitiesCache } = get()
+        const serializedCache = serializeCache(facilitiesCache)
+        sessionStorage.setItem(CACHE_STORAGE_KEY, JSON.stringify(serializedCache))
+      } catch (error) {
+        console.error('Failed to save cache to sessionStorage:', error)
+      }
+    },
   }))
 )
 
-// Auto-save to sessionStorage when formData changes (exclude hasImages and cache)
+// Auto-save to sessionStorage when formData changes
 useStaysFormStore.subscribe(
   (state) => state.formData,
   () => {
@@ -459,7 +550,18 @@ useStaysFormStore.subscribe(
   }
 )
 
+// Auto-save cache to sessionStorage when facilitiesCache changes
+useStaysFormStore.subscribe(
+  (state) => state.facilitiesCache,
+  () => {
+    const store = useStaysFormStore.getState()
+    store._saveCacheToSessionStorage()
+  }
+)
+
 // Load from sessionStorage on store creation
 if (typeof window !== 'undefined') {
-  useStaysFormStore.getState()._loadFromSessionStorage()
+  const store = useStaysFormStore.getState()
+  store._loadFromSessionStorage()
+  store._loadCacheFromSessionStorage()
 }

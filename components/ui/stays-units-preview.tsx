@@ -3,12 +3,28 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { useDebouncedStaysFormStore } from "@/hooks/use-debounced-stay-store";
 import { CheckIcon, PlusIcon } from "@/components/icons";
+import { DateRangeSelector } from "@/components/ui/date-range-selector";
+
+interface DateRange {
+  from: Date | undefined;
+  to: Date | undefined;
+}
 
 interface StaysUnitsPreviewProps {
   className?: string;
 }
 
-export function StaysUnitsPreview({ className = "" }: StaysUnitsPreviewProps) {
+interface StaysUnitsPreviewProps {
+  className?: string;
+  dateRange: DateRange;
+  onDateRangeChange: (range: DateRange) => void;
+}
+
+export function StaysUnitsPreview({ 
+  className = "", 
+  dateRange, 
+  onDateRangeChange 
+}: StaysUnitsPreviewProps) {
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   const [selectedUnits, setSelectedUnits] = useState<Set<string>>(new Set());
 
@@ -46,7 +62,7 @@ export function StaysUnitsPreview({ className = "" }: StaysUnitsPreviewProps) {
     return `${formatter.format(price)} / ${frequency}`;
   };
 
-  // Get facilities for a unit - FIXED to properly handle undefined values
+  // Get facilities for a unit
   const getUnitFacilitiesData = (unitId: string) => {
     const unitFacilityIds = getUnitFacilities(unitId);
     return unitFacilityIds
@@ -61,41 +77,14 @@ export function StaysUnitsPreview({ className = "" }: StaysUnitsPreviewProps) {
         Availability
       </h3>
 
-      {/* Placeholder Date Range Selector */}
+      {/* Synchronized Date Range Selector */}
       <div className="mb-6">
-        <div
-          className="flex items-center w-[50%] gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50 cursor-not-allowed"
-          title="Date selection coming soon"
-        >
-          <svg
-            className="w-5 h-5 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-          <span className="text-gray-500 text-sm">
-            Fri 23 May - Saturday 24 May
-          </span>
-          <svg
-            className="w-4 h-4 text-gray-400 ml-auto"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
+        <div className="space-y-2 lg:w-[220px]">
+          <DateRangeSelector
+            value={dateRange}
+            onChange={onDateRangeChange}
+            placeholder="check-in and check-out"
+          />
         </div>
       </div>
 

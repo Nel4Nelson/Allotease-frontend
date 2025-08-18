@@ -30,51 +30,6 @@ const facilityIcons = [
     label: "No Smoking",
     displayPath: "/icons/prohibit.svg"
   },
-  {
-    value: "gym.svg",
-    label: "Gym",
-    displayPath: "/icons/gym.svg"
-  },
-  {
-    value: "parking.svg",
-    label: "Parking",
-    displayPath: "/icons/parking.svg"
-  },
-  {
-    value: "restaurant.svg",
-    label: "Restaurant",
-    displayPath: "/icons/restaurant.svg"
-  },
-  {
-    value: "spa.svg",
-    label: "Spa",
-    displayPath: "/icons/spa.svg"
-  },
-  {
-    value: "laundry.svg",
-    label: "Laundry",
-    displayPath: "/icons/laundry.svg"
-  },
-  {
-    value: "elevator.svg",
-    label: "Elevator",
-    displayPath: "/icons/elevator.svg"
-  },
-  {
-    value: "conference.svg",
-    label: "Conference Room",
-    displayPath: "/icons/conference.svg"
-  },
-  {
-    value: "bar.svg",
-    label: "Bar",
-    displayPath: "/icons/bar.svg"
-  },
-  {
-    value: "garden.svg",
-    label: "Garden",
-    displayPath: "/icons/garden.svg"
-  }
 ];
 
 export function FacilitiesModal({
@@ -84,7 +39,6 @@ export function FacilitiesModal({
 }: FacilitiesModalProps) {
   const [facilityName, setFacilityName] = useState("");
   const [selectedIcon, setSelectedIcon] = useState("");
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Convert preset icon to File object
@@ -96,18 +50,11 @@ export function FacilitiesModal({
   };
 
   const handleSubmit = async () => {
-    if (facilityName.trim()) {
+    if (facilityName.trim() && selectedIcon) {
       setIsSubmitting(true);
       try {
-        let iconToUse: File | undefined = undefined;
-
-        if (uploadedFile) {
-          // Use uploaded file directly
-          iconToUse = uploadedFile;
-        } else if (selectedIcon) {
-          // Convert preset icon to File object
-          iconToUse = await convertPresetIconToFile(selectedIcon);
-        }
+        // Convert preset icon to File object
+        const iconToUse = await convertPresetIconToFile(selectedIcon);
 
         await onAddFacility(facilityName.trim(), iconToUse);
         
@@ -117,7 +64,6 @@ export function FacilitiesModal({
         // Reset form
         setFacilityName("");
         setSelectedIcon("");
-        setUploadedFile(null);
         onClose();
       } catch (error) {
         console.error("Failed to add facility:", error);
@@ -133,7 +79,6 @@ export function FacilitiesModal({
     if (!isSubmitting) {
       setFacilityName("");
       setSelectedIcon("");
-      setUploadedFile(null);
       onClose();
     }
   };
@@ -144,33 +89,14 @@ export function FacilitiesModal({
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        toast.error("Please select a valid image file");
-        return;
-      }
-      
-      // Validate file size (e.g., max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("File size must be less than 5MB");
-        return;
-      }
-      
-      setUploadedFile(file);
-      setSelectedIcon(""); // Clear selected icon when file is uploaded
-    }
-  };
-
   // Get display path for selected icon
   const getSelectedIconDisplayPath = () => {
     const selectedIconData = facilityIcons.find(icon => icon.value === selectedIcon);
     return selectedIconData?.displayPath || selectedIcon;
   };
 
-  const isSelectDisabled = isSubmitting || !!uploadedFile;
+  // Check if form is valid
+  const isFormValid = facilityName.trim() && selectedIcon;
 
   if (!isOpen) return null;
 
@@ -191,11 +117,11 @@ export function FacilitiesModal({
           boxShadow: "0 4px 10px 0 rgba(0, 0, 0, 0.04)",
           backdropFilter: "blur(83.3499984741211px)",
           display: "flex",
-          width: "666px",
-          padding: "20px",
+          width: "600px",
+          maxWidth: "90vw",
+          padding: "32px",
           justifyContent: "center",
           alignItems: "center",
-          gap: "40px",
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -204,7 +130,16 @@ export function FacilitiesModal({
           type="button"
           onClick={handleClose}
           disabled={isSubmitting}
-          className="absolute top-4 right-4 p-2 hover:bg-black/5 rounded-full transition-colors disabled:opacity-50 z-20"
+          className="absolute top-4 right-4 p-3 hover:bg-black/5 rounded-full transition-colors disabled:opacity-50 z-20"
+          style={{ 
+            minWidth: "44px", 
+            minHeight: "44px",
+            WebkitTapHighlightColor: "transparent",
+            touchAction: "manipulation",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer"
+          }}
           aria-label="Close modal"
         >
           <svg
@@ -235,7 +170,7 @@ export function FacilitiesModal({
         />
 
         {/* Content Container */}
-        <div className="relative z-10 flex flex-col items-center justify-center text-center space-y-6 w-full">
+        <div className="relative z-10 flex flex-col items-center justify-center text-center space-y-8 w-full">
           {/* Title */}
           <h2
             style={{
@@ -252,7 +187,7 @@ export function FacilitiesModal({
             Add extra facility to space
           </h2>
 
-          {/* Subtitle */}
+          {/* Subtitle - Increased spacing */}
           <p
             style={{
               color: "#7A7A7A",
@@ -263,76 +198,49 @@ export function FacilitiesModal({
               fontWeight: 400,
               lineHeight: "140%",
               margin: 0,
+              marginTop: "8px",
             }}
           >
             This facility will be added to your accommodation's general facilities.
           </p>
 
           {/* Form */}
-          <div className="w-full space-y-4">
-            {/* Facility Name Input */}
-            <FormInput
-              label="Facility"
-              placeholder="Facility* e.g Outdoor swimming pool"
-              value={facilityName}
-              onChange={(e) => setFacilityName(e.target.value)}
-              required={true}
-              disabled={isSubmitting}
-            />
-
-            {/* Icon Selection Options */}
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-[var(--color-dark-slate)] text-left">
-                Choose icon (optional):
-              </p>
-              
-              {/* Predefined Icons Selector */}
-              <div className="space-y-2">
-                <label className="text-xs text-gray-600 text-left block">Select from presets:</label>
-                <div className={isSelectDisabled ? "opacity-50 pointer-events-none" : ""}>
-                  <FormSelect
-                    placeholder="Select preset icon"
-                    options={facilityIcons}
-                    value={selectedIcon}
-                    onValueChange={(value) => {
-                      setSelectedIcon(value);
-                      setUploadedFile(null); // Clear uploaded file when preset is selected
-                    }}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* OR Divider */}
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-gray-300"></div>
-                <span className="text-xs text-gray-500">OR</span>
-                <div className="flex-1 h-px bg-gray-300"></div>
-              </div>
-
-              {/* File Upload */}
-              <div className="space-y-2">
-                <label className="text-xs text-gray-600 text-left block">Upload custom icon:</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  disabled={isSubmitting || !!selectedIcon}
-                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
+          <div className="w-full space-y-6">
+            {/* Facility Name and Icon - Side by side */}
+            <div className="grid grid-cols-1 gap-4">
+              {/* Facility Name Input */}
+              <div className="mt-4">
+                <FormInput
+                  label="Facility"
+                  placeholder="Facility* e.g Outdoor swimming pool"
+                  value={facilityName}
+                  onChange={(e) => setFacilityName(e.target.value)}
+                  required={true}
+                  disabled={isSubmitting}
                 />
-                {uploadedFile && (
-                  <p className="text-xs text-green-600">
-                    ✓ {uploadedFile.name} selected
-                  </p>
-                )}
+              </div>
+
+              {/* Icon Selection */}
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-[var(--color-dark-slate)] text-left">
+                  Choose icon:
+                </p>
+                
+                <FormSelect
+                  placeholder="Select facility icon*"
+                  options={facilityIcons}
+                  value={selectedIcon}
+                  onValueChange={setSelectedIcon}
+                  className="w-full"
+                />
               </div>
             </div>
 
             {/* Elegant Icon Preview */}
-            {(selectedIcon || uploadedFile) && (
-              <div className="flex items-center justify-center py-3">
+            {selectedIcon && (
+              <div className="flex items-center justify-center py-2">
                 <div 
-                  className="flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-200"
+                  className="flex items-center gap-3 px-4 py-3 rounded-full transition-all duration-200"
                   style={{
                     background: "rgba(255, 255, 255, 0.4)",
                     backdropFilter: "blur(10px)",
@@ -341,45 +249,62 @@ export function FacilitiesModal({
                   }}
                 >
                   <div className="relative">
-                    {uploadedFile ? (
-                      <div className="w-5 h-5 bg-gray-200 rounded flex items-center justify-center">
-                        <span className="text-xs">📁</span>
-                      </div>
-                    ) : (
-                      <Image
-                        src={getSelectedIconDisplayPath()}
-                        alt="Selected facility icon"
-                        width={20}
-                        height={20}
-                        className="object-contain"
-                      />
-                    )}
+                    <Image
+                      src={getSelectedIconDisplayPath()}
+                      alt="Selected facility icon"
+                      width={24}
+                      height={24}
+                      className="object-contain"
+                    />
                   </div>
                   <span 
-                    className="text-xs font-medium"
+                    className="text-sm font-medium"
                     style={{
                       color: "var(--color-dark-slate)",
                       fontFamily: "var(--font-source-sans), sans-serif",
                     }}
                   >
-                    {uploadedFile ? uploadedFile.name : "Selected icon"}
+                    {facilityIcons.find(icon => icon.value === selectedIcon)?.label}
                   </span>
                 </div>
               </div>
             )}
 
-            {/* Add Facility Button */}
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              disabled={!facilityName.trim() || isSubmitting}
-              loading={isSubmitting}
-              variant="signup-primary"
-              size="allotease-md"
-              className="w-full"
-            >
-              Add facility
-            </Button>
+            {/* Add Facility Button - Auto width */}
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!isFormValid || isSubmitting}
+                loading={isSubmitting}
+                variant="signup-primary"
+                size="allotease-md"
+                style={{
+                  background: isFormValid ? "#FF5B06" : "#ccc",
+                  borderRadius: "51px",
+                  padding: "12px 24px",
+                  color: "white",
+                  fontSize: "16px",
+                  fontWeight: 600,
+                  fontFamily: "var(--font-source-sans), sans-serif",
+                  border: "none",
+                  cursor: isFormValid ? "pointer" : "not-allowed",
+                  transition: "background-color 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (isFormValid && !isSubmitting) {
+                    e.currentTarget.style.background = "#E54A00";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (isFormValid && !isSubmitting) {
+                    e.currentTarget.style.background = "#FF5B06";
+                  }
+                }}
+              >
+                Add facility
+              </Button>
+            </div>
           </div>
         </div>
       </div>

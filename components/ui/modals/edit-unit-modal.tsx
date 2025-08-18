@@ -7,7 +7,6 @@ import { FormSelect } from "@/components/ui/form-select";
 import { Button } from "@/components/ui/button";
 import type { UnitData } from "@/stores/stay-form-store";
 
-// Icons as React components
 const PlusIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
     <path d="M8 3.5V12.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
@@ -71,6 +70,23 @@ export function EditUnitModal({ isOpen, onClose, unit, onUpdate }: EditUnitModal
     }
   };
 
+  const handleQuantityChange = (delta: number) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      quantity: Math.max(1, prev.quantity + delta) 
+    }));
+  };
+
+  const handlePriceChange = (value: number) => {
+    setFormData(prev => ({ ...prev, price: value }));
+  };
+
+  const handleFrequencyChange = (value: string) => {
+    setFormData(prev => ({ ...prev, frequency: value as any }));
+  };
+
+  const canUpdate = formData.title.trim() && formData.description.trim() && formData.price > 0;
+
   if (!isOpen || !unit) return null;
 
   return (
@@ -90,11 +106,11 @@ export function EditUnitModal({ isOpen, onClose, unit, onUpdate }: EditUnitModal
           boxShadow: "0 4px 10px 0 rgba(0, 0, 0, 0.04)",
           backdropFilter: "blur(83.3499984741211px)",
           display: "flex",
-          width: "666px",
-          padding: "20px",
+          width: "600px",
+          maxWidth: "90vw",
+          padding: "32px",
           justifyContent: "center",
           alignItems: "center",
-          gap: "40px",
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -102,7 +118,16 @@ export function EditUnitModal({ isOpen, onClose, unit, onUpdate }: EditUnitModal
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 hover:bg-black/5 rounded-full transition-colors z-20"
+          className="absolute top-4 right-4 p-3 hover:bg-black/5 rounded-full transition-colors z-20"
+          style={{ 
+            minWidth: "44px", 
+            minHeight: "44px",
+            WebkitTapHighlightColor: "transparent",
+            touchAction: "manipulation",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer"
+          }}
           aria-label="Close modal"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -122,7 +147,7 @@ export function EditUnitModal({ isOpen, onClose, unit, onUpdate }: EditUnitModal
         />
 
         {/* Content Container */}
-        <div className="relative z-10 flex flex-col items-center justify-center text-center space-y-6 w-full">
+        <div className="relative z-10 flex flex-col items-center justify-center text-center space-y-8 w-full">
           {/* Title */}
           <h2
             style={{
@@ -150,139 +175,153 @@ export function EditUnitModal({ isOpen, onClose, unit, onUpdate }: EditUnitModal
               fontWeight: 400,
               lineHeight: "140%",
               margin: 0,
+              marginTop: "8px",
             }}
           >
-            This image will be the main visual representation of your event.
+            Update the details for this accommodation space.
           </p>
 
-          {/* Form */}
+          {/* Form  */}
           <div className="w-full space-y-4">
-            {/* Unit Name and Quantity Row */}
-            <div className="flex gap-4">
+            {/* Title Row - Matching UnitManager */}
+            <div className="flex items-start gap-2">
+              <span className="text-[var(--color-dark-slate)] font-source-sans-pro text-lg font-semibold pt-3">
+                1.
+              </span>
               <div className="flex-1">
                 <FormInput
-                  label="Name"
                   placeholder="Name* e.g 2 bedroom flat"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required={true}
+                  required
                 />
-              </div>
-              
-              {/* Quantity Controls */}
-              <div className="flex flex-col gap-1">
-                <span 
-                  className="text-sm font-medium text-left"
-                  style={{
-                    color: "var(--color-dark-slate)",
-                    fontFamily: "var(--font-source-sans), sans-serif",
-                  }}
-                >
-                  Quantity
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, quantity: Math.max(1, formData.quantity - 1) })}
-                    disabled={formData.quantity <= 1}
-                    style={{
-                      borderRadius: "50%",
-                      border: "0.778px solid rgba(138, 174, 164, 0.50)",
-                      display: "flex",
-                      width: "28px",
-                      height: "28px",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      background: "transparent",
-                      cursor: formData.quantity <= 1 ? "not-allowed" : "pointer",
-                      opacity: formData.quantity <= 1 ? 0.5 : 1,
-                      padding: 0,
-                    }}
-                  >
-                    <MinusIcon />
-                  </button>
-
-                  <span
-                    style={{
-                      color: "#20232A",
-                      textAlign: "center",
-                      fontFamily: "var(--font-source-sans), sans-serif",
-                      fontSize: "16px",
-                      fontWeight: 600,
-                      lineHeight: "16px",
-                      minWidth: "20px",
-                    }}
-                  >
-                    {formData.quantity}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, quantity: formData.quantity + 1 })}
-                    style={{
-                      borderRadius: "50%",
-                      border: "0.778px solid rgba(138, 174, 164, 0.50)",
-                      display: "flex",
-                      width: "28px",
-                      height: "28px",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      background: "transparent",
-                      cursor: "pointer",
-                      padding: 0,
-                    }}
-                  >
-                    <PlusIcon />
-                  </button>
-                </div>
               </div>
             </div>
 
             {/* Description */}
             <FormTextarea
-              label="Description"
               placeholder="Description*"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              required={true}
+              required
             />
 
-            {/* Price and Frequency Row */}
-            <div className="flex gap-4">
+            {/* Price, Frequency, and Quantity Row */}
+            <div className="flex gap-4 items-center">
+              {/* Price */}
               <div className="flex-1">
                 <FormInput
-                  label="Price"
                   placeholder="NGN Price*"
                   type="number"
                   value={formData.price || ""}
-                  onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                  required={true}
+                  onChange={(e) => handlePriceChange(Number(e.target.value))}
+                  required
                 />
               </div>
-              
+
+              {/* Frequency */}
               <div className="flex-1">
                 <FormSelect
-                  label="Frequency"
                   placeholder="Select frequency"
                   options={frequencyOptions}
                   value={formData.frequency}
-                  onValueChange={(value) => setFormData({ ...formData, frequency: value as any })}
-                  required={true}
+                  onValueChange={handleFrequencyChange}
+                  required
                 />
+              </div>
+
+              {/* Quantity Controls */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleQuantityChange(-1)}
+                  disabled={formData.quantity <= 1}
+                  style={{
+                    borderRadius: "50%",
+                    border: "0.778px solid rgba(138, 174, 164, 0.50)",
+                    display: "flex",
+                    width: "28px",
+                    height: "28px",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    background: "transparent",
+                    cursor: formData.quantity <= 1 ? "not-allowed" : "pointer",
+                    opacity: formData.quantity <= 1 ? 0.5 : 1,
+                    padding: 0,
+                  }}
+                >
+                  <MinusIcon />
+                </button>
+
+                <span
+                  style={{
+                    color: "#20232A",
+                    textAlign: "center",
+                    fontFamily: "var(--font-source-sans), sans-serif",
+                    fontSize: "16px",
+                    fontWeight: 600,
+                    lineHeight: "16px",
+                    minWidth: "20px",
+                  }}
+                >
+                  {formData.quantity}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => handleQuantityChange(1)}
+                  style={{
+                    borderRadius: "50%",
+                    border: "0.778px solid rgba(138, 174, 164, 0.50)",
+                    display: "flex",
+                    width: "28px",
+                    height: "28px",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    background: "transparent",
+                    cursor: "pointer",
+                    padding: 0,
+                  }}
+                >
+                  <PlusIcon />
+                </button>
               </div>
             </div>
 
-            {/* Update Button */}
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              disabled={!formData.title.trim() || !formData.description.trim() || formData.price <= 0 || formData.quantity <= 0}
-              variant="signup-primary"
-              size="allotease-md"
-              className="w-full"
-            >
-              Update Space
-            </Button>
+            {/* FacilitiesModal button */}
+            <div className="flex justify-center pt-4">
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!canUpdate}
+                variant="signup-primary"
+                size="allotease-md"
+                style={{
+                  background: canUpdate ? "#FF5B06" : "#ccc",
+                  borderRadius: "51px",
+                  padding: "12px 32px",
+                  color: "white",
+                  fontSize: "16px",
+                  fontWeight: 600,
+                  fontFamily: "var(--font-source-sans), sans-serif",
+                  border: "none",
+                  cursor: canUpdate ? "pointer" : "not-allowed",
+                  transition: "background-color 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (canUpdate) {
+                    e.currentTarget.style.background = "#E54A00";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (canUpdate) {
+                    e.currentTarget.style.background = "#FF5B06";
+                  }
+                }}
+              >
+                Update Space
+              </Button>
+            </div>
           </div>
         </div>
       </div>

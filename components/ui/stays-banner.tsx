@@ -16,6 +16,11 @@ export function StaysBanner({ className = "" }: StaysBannerProps) {
     containScroll: "keepSnaps",
     dragFree: true,
   });
+  const [imageDimensions, setImageDimensions] = React.useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+  const [screenWidth, setScreenWidth] = React.useState<number>(0);
 
   // Convert Files to URLs
   const imageUrls = React.useMemo(() => {
@@ -23,12 +28,107 @@ export function StaysBanner({ className = "" }: StaysBannerProps) {
     return staysImages.map(file => URL.createObjectURL(file));
   }, [staysImages]);
 
+  // Track screen width for responsive calculations
+  React.useEffect(() => {
+    const updateScreenWidth = () => {
+      setScreenWidth(window.innerWidth);
+    };
+
+    // Set initial screen width
+    updateScreenWidth();
+
+    // Add event listener for resize
+    window.addEventListener('resize', updateScreenWidth);
+    
+    return () => window.removeEventListener('resize', updateScreenWidth);
+  }, []);
+
+  // Get image dimensions to calculate proper height (using first image)
+  React.useEffect(() => {
+    if (!imageUrls || imageUrls.length === 0) return;
+
+    const img = document.createElement('img');
+    img.onload = () => {
+      setImageDimensions({
+        width: img.width,
+        height: img.height
+      });
+    };
+    img.src = imageUrls[0];
+  }, [imageUrls]);
+
   // Cleanup URLs when component unmounts
   React.useEffect(() => {
     return () => {
       imageUrls.forEach(url => URL.revokeObjectURL(url));
     };
   }, [imageUrls]);
+
+  // Calculate responsive height based on screen size and image aspect ratio
+  const containerHeight = React.useMemo(() => {
+    if (!imageDimensions || !screenWidth) return 360; // Default height
+    
+    let containerWidth: number;
+    let minHeight: number;
+    let maxHeight: number;
+
+    // Responsive container width calculation
+    if (screenWidth < 640) {
+      // Mobile (sm breakpoint)
+      containerWidth = screenWidth - 32; // Account for padding
+      minHeight = 200;
+      maxHeight = 300;
+    } else if (screenWidth < 768) {
+      // Small tablet (md breakpoint)
+      containerWidth = screenWidth - 48;
+      minHeight = 250;
+      maxHeight = 350;
+    } else if (screenWidth < 1024) {
+      // Tablet (lg breakpoint)
+      containerWidth = screenWidth * 0.8;
+      minHeight = 280;
+      maxHeight = 400;
+    } else {
+      // Desktop (xl breakpoint and above)
+      containerWidth = 600; // Your perfect desktop width
+      minHeight = 300;
+      maxHeight = 500;
+    }
+    
+    const aspectRatio = imageDimensions.height / imageDimensions.width;
+    const calculatedHeight = containerWidth * aspectRatio;
+    
+    // Set reasonable min/max heights based on screen size
+    return Math.min(Math.max(calculatedHeight, minHeight), maxHeight);
+  }, [imageDimensions, screenWidth]);
+
+  // Calculate responsive placeholder height
+  const placeholderHeight = React.useMemo(() => {
+    if (!screenWidth) return 400;
+    
+    if (screenWidth < 640) {
+      return 250; // Mobile
+    } else if (screenWidth < 768) {
+      return 300; // Small tablet
+    } else if (screenWidth < 1024) {
+      return 350; // Tablet
+    } else {
+      return 400; // Desktop
+    }
+  }, [screenWidth]);
+
+  // Calculate responsive thumbnail dimensions
+  const thumbnailDimensions = React.useMemo(() => {
+    if (!screenWidth) return { width: 64, height: 48 };
+    
+    if (screenWidth < 640) {
+      return { width: 48, height: 36 }; // Mobile - smaller thumbnails
+    } else if (screenWidth < 768) {
+      return { width: 56, height: 42 }; // Small tablet
+    } else {
+      return { width: 64, height: 48 }; // Desktop
+    }
+  }, [screenWidth]);
 
   // Handle thumbnail click
   const onThumbClick = React.useCallback(
@@ -58,12 +158,17 @@ export function StaysBanner({ className = "" }: StaysBannerProps) {
     return (
       <div className={`w-full ${className}`}>
         {/* Main Image Display */}
-        <div className="overflow-hidden rounded-[24px] mb-4" ref={mainViewportRef}>
+        <div 
+          className="overflow-hidden rounded-[24px] mb-4" 
+          ref={mainViewportRef}
+          style={{ height: `${containerHeight}px` }}
+        >
           <div className="flex">
             {imageUrls.map((url, index) => (
               <div
                 key={index}
-                className="flex-[0_0_100%] min-w-0 relative h-[400px]"
+                className="flex-[0_0_100%] min-w-0 relative"
+                style={{ height: `${containerHeight}px` }}
               >
                 <Image
                   src={url}
@@ -71,7 +176,7 @@ export function StaysBanner({ className = "" }: StaysBannerProps) {
                   fill
                   className="object-cover"
                   priority={index === 0}
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 90vw, (max-width: 1024px) 80vw, 600px"
                 />
               </div>
             ))}
@@ -80,14 +185,14 @@ export function StaysBanner({ className = "" }: StaysBannerProps) {
 
         {/* Thumbnail Carousel */}
         {imageUrls.length > 1 && (
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-2 sm:gap-4">
             {/* Left Arrow */}
             <button
               onClick={() => emblaThumbApi?.scrollPrev()}
-              className="flex-shrink-0 w-10 h-10 rounded-full border border-gray-300 bg-white hover:bg-gray-50 transition-colors flex items-center justify-center"
+              className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-300 bg-white hover:bg-gray-50 transition-colors flex items-center justify-center"
             >
               <svg
-                className="w-5 h-5 text-gray-600"
+                className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -102,8 +207,8 @@ export function StaysBanner({ className = "" }: StaysBannerProps) {
             </button>
 
             {/* Thumbnails Container */}
-            <div className="overflow-hidden max-w-md" ref={thumbViewportRef}>
-              <div className="flex gap-3">
+            <div className="overflow-hidden max-w-xs sm:max-w-md md:max-w-lg" ref={thumbViewportRef}>
+              <div className="flex gap-2 sm:gap-3">
                 {imageUrls.map((url, index) => (
                   <div
                     key={index}
@@ -112,13 +217,19 @@ export function StaysBanner({ className = "" }: StaysBannerProps) {
                     }`}
                     onClick={() => onThumbClick(index)}
                   >
-                    <div className="relative w-16 h-12 rounded-lg overflow-hidden border-2 border-transparent hover:border-orange-400 transition-colors">
+                    <div 
+                      className="relative rounded-lg overflow-hidden border-2 border-transparent hover:border-orange-400 transition-colors"
+                      style={{ 
+                        width: `${thumbnailDimensions.width}px`, 
+                        height: `${thumbnailDimensions.height}px` 
+                      }}
+                    >
                       <Image
                         src={url}
                         alt={`Stay thumbnail ${index + 1}`}
                         fill
                         className="object-cover"
-                        sizes="64px"
+                        sizes={`${thumbnailDimensions.width}px`}
                       />
                       {index === selectedIndex && (
                         <div className="absolute inset-0 border-2 border-orange-500 rounded-lg" />
@@ -132,10 +243,10 @@ export function StaysBanner({ className = "" }: StaysBannerProps) {
             {/* Right Arrow */}
             <button
               onClick={() => emblaThumbApi?.scrollNext()}
-              className="flex-shrink-0 w-10 h-10 rounded-full border border-gray-300 bg-white hover:bg-gray-50 transition-colors flex items-center justify-center"
+              className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-300 bg-white hover:bg-gray-50 transition-colors flex items-center justify-center"
             >
               <svg
-                className="w-5 h-5 text-gray-600"
+                className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -157,12 +268,13 @@ export function StaysBanner({ className = "" }: StaysBannerProps) {
   // Placeholder state - shows when no images or after refresh
   return (
     <div
-      className={`w-full h-[400px] relative overflow-hidden rounded-[24px] bg-gray-100 flex flex-col items-center justify-center ${className}`}
+      className={`w-full relative overflow-hidden rounded-[24px] bg-gray-100 flex flex-col items-center justify-center ${className}`}
+      style={{ height: `${placeholderHeight}px` }}
     >
       {/* Placeholder Image */}
-      <div className="w-24 h-24 bg-gray-300 rounded-lg mb-4 flex items-center justify-center">
+      <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-gray-300 rounded-lg mb-3 sm:mb-4 flex items-center justify-center">
         <svg
-          className="w-12 h-12 text-gray-400"
+          className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-gray-400"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -171,17 +283,17 @@ export function StaysBanner({ className = "" }: StaysBannerProps) {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
-            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z"
           />
         </svg>
       </div>
 
       {/* Helpful Message */}
-      <div className="text-center px-8">
-        <p className="text-gray-600 font-source-sans-pro text-base font-medium mb-2">
+      <div className="text-center px-4 sm:px-6 md:px-8">
+        <p className="text-gray-600 font-source-sans-pro text-sm sm:text-base font-medium mb-1 sm:mb-2">
           Accommodation Images Preview
         </p>
-        <p className="text-gray-500 font-source-sans-pro text-sm max-w-md">
+        <p className="text-gray-500 font-source-sans-pro text-xs sm:text-sm max-w-xs sm:max-w-md">
           Please upload images in the stays creation page to see your image carousel here.
         </p>
       </div>
