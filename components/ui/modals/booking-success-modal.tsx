@@ -1,14 +1,16 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import toast from "react-hot-toast";
 
-type BookingType = 'stays' | 'events';
+type BookingType = "stays" | "events";
 
 interface BookingSuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
   type: BookingType;
+  showToast?: boolean;
   className?: string;
 }
 
@@ -17,6 +19,7 @@ interface BookingConfig {
   message: string;
   buttonText: string;
   ticketUrl: string;
+  toastMessage: string;
 }
 
 const bookingConfigs: Record<BookingType, BookingConfig> = {
@@ -24,25 +27,40 @@ const bookingConfigs: Record<BookingType, BookingConfig> = {
     title: "Stay Booked!",
     message: "You have successfully booked your stay",
     buttonText: "View Your Ticket",
-    ticketUrl: "/tickets?stays"
+    ticketUrl: "/tickets?stays",
+    toastMessage: "Stay booking completed successfully!",
   },
   events: {
     title: "Event Registered!",
     message: "You have successfully registered for the event",
     buttonText: "View Your Ticket",
-    ticketUrl: "/tickets?events"
-  }
+    ticketUrl: "/tickets?events",
+    toastMessage: "Event registration completed successfully!",
+  },
 };
 
 export function BookingSuccessModal({
   isOpen,
   onClose,
   type,
+  showToast = false,
   className = "",
 }: BookingSuccessModalProps) {
-  if (!isOpen) return null;
-
   const config = bookingConfigs[type];
+
+  // Show toast only once when modal opens and showToast is true
+  useEffect(() => {
+    if (isOpen && showToast) {
+      // Use a small timeout to ensure the toast appears after modal animation
+      const timer = setTimeout(() => {
+        toast.success(config.toastMessage);
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, showToast, config.toastMessage]);
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

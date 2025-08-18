@@ -5,10 +5,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { TicketEventCard } from "./ticket-event-card";
-import { 
-  EventTicketService, 
+import {
+  EventTicketService,
   EventTicketBooking,
-  GetEventTicketsParams 
+  GetEventTicketsParams,
 } from "@/services/event-ticket-service";
 import { EventService } from "@/services/events-service";
 import { useAuthStore } from "@/stores/auth-store";
@@ -40,70 +40,70 @@ export function TicketEventsContent({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Fetch event tickets
-  const fetchEventTickets = useCallback(async (
-    page: number = 1, 
-    append: boolean = false
-  ) => {
-    if (!isAuthenticated) {
-      setLoading(false);
-      return;
-    }
-
-    if (!checkTokenExpiry()) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      if (!append) {
-        setLoading(true);
-      } else {
-        setIsLoadingMore(true);
+  const fetchEventTickets = useCallback(
+    async (page: number = 1, append: boolean = false) => {
+      if (!isAuthenticated) {
+        setLoading(false);
+        return;
       }
-      setError(null);
 
-      const params: GetEventTicketsParams = {
-        status: "all",
-        page,
-        limit: 20,
-      };
+      if (!checkTokenExpiry()) {
+        setLoading(false);
+        return;
+      }
 
-      const response = await EventTicketService.getEventTickets(params);
-
-      if (response.status === "success") {
-        const newTickets = response.data.items;
-
-        if (append) {
-          setTickets(prev => [...prev, ...newTickets]);
+      try {
+        if (!append) {
+          setLoading(true);
         } else {
-          setTickets(newTickets);
+          setIsLoadingMore(true);
         }
+        setError(null);
 
-        setCurrentPage(response.data.page);
-        setHasNextPage(response.data.hasNextPage);
+        const params: GetEventTicketsParams = {
+          status: "all",
+          page,
+          limit: 20,
+        };
 
-        // Fetch event details for tickets that don't have them yet
-        await fetchMissingEventDetails(newTickets);
-      } else {
-        setError("Failed to load event tickets");
+        const response = await EventTicketService.getEventTickets(params);
+
+        if (response.status === "success") {
+          const newTickets = response.data.items;
+
+          if (append) {
+            setTickets((prev) => [...prev, ...newTickets]);
+          } else {
+            setTickets(newTickets);
+          }
+
+          setCurrentPage(response.data.page);
+          setHasNextPage(response.data.hasNextPage);
+
+          // Fetch event details for tickets that don't have them yet
+          await fetchMissingEventDetails(newTickets);
+        } else {
+          setError("Failed to load event tickets");
+        }
+      } catch (error) {
+        console.error("Error fetching event tickets:", error);
+        setError("Failed to load event tickets. Please try again.");
+      } finally {
+        setLoading(false);
+        setIsLoadingMore(false);
       }
-    } catch (error) {
-      console.error("Error fetching event tickets:", error);
-      setError("Failed to load event tickets. Please try again.");
-    } finally {
-      setLoading(false);
-      setIsLoadingMore(false);
-    }
-  }, [isAuthenticated, checkTokenExpiry]);
+    },
+    [isAuthenticated, checkTokenExpiry]
+  );
 
   // Fetch event details for tickets
   const fetchMissingEventDetails = async (newTickets: EventTicketBooking[]) => {
     const uniqueEventIds = Array.from(
-      new Set(newTickets.map(ticket => ticket.eventId))
+      new Set(newTickets.map((ticket) => ticket.eventId))
     );
 
     const detailsToFetch = uniqueEventIds.filter(
-      eventId => !eventDetails[eventId]
+      (eventId) => !eventDetails[eventId]
     );
 
     if (detailsToFetch.length === 0) return;
@@ -141,7 +141,7 @@ export function TicketEventsContent({
         }
       });
 
-      setEventDetails(prev => ({ ...prev, ...newDetails }));
+      setEventDetails((prev) => ({ ...prev, ...newDetails }));
     } catch (error) {
       console.error("Error fetching event details:", error);
     }
@@ -191,7 +191,10 @@ export function TicketEventsContent({
           </div>
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="flex gap-4 p-4 bg-gray-100 rounded-lg animate-pulse">
+              <div
+                key={index}
+                className="flex gap-4 p-4 bg-gray-100 rounded-lg animate-pulse"
+              >
                 <div className="w-24 h-16 bg-gray-200 rounded" />
                 <div className="flex-1 space-y-2">
                   <div className="h-4 bg-gray-200 rounded w-3/4" />
@@ -211,12 +214,10 @@ export function TicketEventsContent({
     return (
       <div className={`space-y-8 ${className}`}>
         <div className="text-center py-12">
-          <div className="text-red-600 text-lg font-semibold mb-2">
-            {error}
-          </div>
+          <div className="text-red-600 text-lg font-semibold mb-2">{error}</div>
           <button
             onClick={() => fetchEventTickets(1, false)}
-            className="text-blue-600 hover:text-blue-800 underline"
+            className="text-gray-500 underline"
           >
             Try again
           </button>
@@ -234,7 +235,8 @@ export function TicketEventsContent({
             No event tickets found
           </div>
           <div className="text-gray-500">
-            You haven't booked any events yet. Start exploring events to book your first ticket!
+            You haven't booked any events yet. Start exploring events to book
+            your first ticket!
           </div>
         </div>
       </div>
@@ -284,10 +286,13 @@ export function TicketEventsContent({
                 <TicketEventCard
                   key={ticket._id}
                   title={details?.title || "Loading event details..."}
-                  dateTime={EventTicketService.formatEventDateTime(ticket.startTime)}
+                  dateTime={EventTicketService.formatEventDateTime(
+                    ticket.startTime
+                  )}
                   imageUrl={
-                    details?.coverImage || EventService.getEventCoverImage({ 
-                      coverImage: details?.coverImage 
+                    details?.coverImage ||
+                    EventService.getEventCoverImage({
+                      coverImage: details?.coverImage,
                     } as any)
                   }
                   badgeText={EventTicketService.getStatusBadgeText(
@@ -347,10 +352,13 @@ export function TicketEventsContent({
                 <TicketEventCard
                   key={ticket._id}
                   title={details?.title || "Loading event details..."}
-                  dateTime={EventTicketService.formatEventDateTime(ticket.startTime)}
+                  dateTime={EventTicketService.formatEventDateTime(
+                    ticket.startTime
+                  )}
                   imageUrl={
-                    details?.coverImage || EventService.getEventCoverImage({ 
-                      coverImage: details?.coverImage 
+                    details?.coverImage ||
+                    EventService.getEventCoverImage({
+                      coverImage: details?.coverImage,
                     } as any)
                   }
                   badgeText={EventTicketService.getStatusBadgeText(

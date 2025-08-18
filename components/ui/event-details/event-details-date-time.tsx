@@ -15,7 +15,7 @@ export function EventDetailsDateTime({
   // Format the date and time
   const formatDateTime = (): string => {
     if (!startTime) {
-      return "Saturday, September 21 - 10am - 4pm WAT";
+      return "Saturday, September 21 - 10am - 4pm WAT - Placeholder";
     }
 
     try {

@@ -1,7 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-
 "use client";
-
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -13,6 +11,7 @@ import {
 import { FallbackImage } from "@/components/ui/fallback-image";
 import { apiClient } from "@/services/api-client";
 import { useAuthStore } from "@/stores/auth-store";
+import { useProfileStore } from "@/stores/profile-store";
 
 interface Organizer {
   _id: string;
@@ -53,14 +52,14 @@ interface FollowStatusResponse {
 interface EventDetailsOrganizerProps {
   ownerId?: string;
   className?: string;
-  showTitle?: boolean; // New prop to control title display
-  title?: string; // New prop to customize title text
+  showTitle?: boolean;
+  title?: string;
 }
 
 export function EventDetailsOrganizer({
   ownerId,
   className = "",
-  showTitle = true, // Default to true for backward compatibility
+  showTitle = true,
   title = "Organizer", // Default title
 }: EventDetailsOrganizerProps) {
   const router = useRouter();
@@ -69,6 +68,8 @@ export function EventDetailsOrganizer({
     isLoading: authLoading,
     checkTokenExpiry,
   } = useAuthStore();
+
+  const { profile } = useProfileStore();
 
   const [organizer, setOrganizer] = useState<Organizer | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -208,13 +209,25 @@ export function EventDetailsOrganizer({
             {title}
           </h3>
         )}
-        <div className="flex w-full p-5 justify-center items-center gap-7 rounded-2xl border animate-pulse">
-          <div className="w-12 h-12 rounded-full bg-gray-200"></div>
-          <div className="flex-1">
+        {/* Desktop Loading Skeleton */}
+        <div className="hidden lg:flex w-full p-5 justify-center items-center gap-7 rounded-2xl border animate-pulse">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-gray-200"></div>
             <div className="h-5 bg-gray-200 rounded w-32"></div>
           </div>
+          <div className="flex-1" />
           <div className="h-4 bg-gray-200 rounded w-16"></div>
           <div className="h-8 bg-gray-200 rounded w-20"></div>
+        </div>
+
+        {/* Mobile Loading Skeleton */}
+        <div className="lg:hidden w-full p-5 flex items-center gap-4 rounded-2xl border animate-pulse">
+          <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0"></div>
+          <div className="flex flex-col justify-center gap-2 flex-1">
+            <div className="h-5 bg-gray-200 rounded w-32"></div>
+            <div className="h-4 bg-gray-200 rounded w-16"></div>
+            <div className="h-8 bg-gray-200 rounded w-20"></div>
+          </div>
         </div>
       </div>
     );
@@ -277,9 +290,15 @@ export function EventDetailsOrganizer({
   };
 
   const getTooltipText = () => {
+    if (isOwnProfile()) return "You can't follow yourself";
     if (!isAuthenticated) return "Sign in to follow";
     if (isFollowing) return "Click to unfollow";
     return "Click to follow";
+  };
+
+  // Check if the organizer is the current user
+  const isOwnProfile = (): boolean => {
+    return profile?._id === organizer?._id;
   };
 
   return (
@@ -292,7 +311,7 @@ export function EventDetailsOrganizer({
 
       <TooltipProvider>
         <div
-          className="flex w-full p-5 justify-center items-center gap-7 rounded-2xl border border-outline-on-system-teal bg-card-background backdrop-blur-[21px]"
+          className="hidden lg:flex w-full p-5 justify-center items-center gap-7 rounded-2xl border border-outline-on-system-teal bg-card-background backdrop-blur-[21px]"
           style={{
             border: "1px solid rgba(138, 174, 164, 0.20)",
             background: "rgba(242, 244, 247, 0.30)",
@@ -349,49 +368,154 @@ export function EventDetailsOrganizer({
           </span>
 
           {/* Follow Button with Tooltip */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={handleFollowToggle}
-                disabled={followLoading}
-                className={`flex px-3 py-1.5 justify-center items-center gap-[15px] rounded-[51px] border transition-colors ${
-                  isFollowing
-                    ? "border-gray-400 bg-gray-100"
-                    : "border-orange-red"
-                } ${
-                  followLoading
-                    ? "opacity-50 cursor-not-allowed"
-                    : "cursor-pointer"
-                }`}
-                style={{
-                  borderRadius: "51px",
-                  border: isFollowing
-                    ? "1px solid #9CA3AF"
-                    : "1px solid #FF5B00",
-                  padding: "6px 12px",
-                  backgroundColor: isFollowing ? "#F3F4F6" : "transparent",
-                }}
-              >
-                <span
-                  className={`font-source-sans-pro text-lg font-semibold leading-normal ${
-                    isFollowing ? "text-gray-600" : "text-orange-red"
+          {!isOwnProfile() && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleFollowToggle}
+                  disabled={followLoading}
+                  className={`flex px-3 py-1.5 justify-center items-center gap-[15px] rounded-[51px] border transition-colors ${
+                    isFollowing
+                      ? "border-gray-400 bg-gray-100"
+                      : "border-orange-red"
+                  } ${
+                    followLoading
+                      ? "opacity-50 cursor-not-allowed"
+                      : "cursor-pointer"
                   }`}
                   style={{
-                    color: isFollowing ? "#4B5563" : "#FF5B00",
-                    fontFamily: "var(--font-source-sans), sans-serif",
-                    fontSize: "18px",
-                    fontWeight: 600,
-                    lineHeight: "normal",
+                    borderRadius: "51px",
+                    border: isFollowing
+                      ? "1px solid #9CA3AF"
+                      : "1px solid #FF5B00",
+                    padding: "6px 12px",
+                    backgroundColor: isFollowing ? "#F3F4F6" : "transparent",
                   }}
                 >
-                  {getButtonText()}
-                </span>
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{getTooltipText()}</p>
-            </TooltipContent>
-          </Tooltip>
+                  <span
+                    className={`font-source-sans-pro text-lg font-semibold leading-normal ${
+                      isFollowing ? "text-gray-600" : "text-orange-red"
+                    }`}
+                    style={{
+                      color: isFollowing ? "#4B5563" : "#FF5B00",
+                      fontFamily: "var(--font-source-sans), sans-serif",
+                      fontSize: "18px",
+                      fontWeight: 600,
+                      lineHeight: "normal",
+                    }}
+                  >
+                    {getButtonText()}
+                  </span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{getTooltipText()}</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+
+        {/* Mobile Layout - Avatar left, content vertically centered right */}
+        <div
+          className="lg:hidden w-full p-5 flex items-center gap-4 rounded-2xl border border-outline-on-system-teal bg-card-background backdrop-blur-[21px]"
+          style={{
+            border: "1px solid rgba(138, 174, 164, 0.20)",
+            background: "rgba(242, 244, 247, 0.30)",
+            backdropFilter: "blur(21px)",
+          }}
+        >
+          {/* Avatar - Left side */}
+          <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+            <FallbackImage
+              src={organizer.avatar || "/icons/encircle-star-orange-avatar.svg"}
+              fallbackSrc="/icons/encircle-star-orange-avatar.svg"
+              alt={`${getDisplayName(organizer)} avatar`}
+              fallbackAlt={`${getDisplayName(organizer)} default avatar`}
+              width={48}
+              height={48}
+              className="w-full h-full object-cover"
+            />
+          </div>
+
+          {/* Content container - Right side, vertically stacked and centered */}
+          <div className="flex flex-col justify-center gap-2 flex-1">
+            {/* Name */}
+            <h4
+              className="text-title font-space-grotesk text-lg font-bold leading-[140%] tracking-[-0.36px]"
+              style={{
+                color: "#1F2024",
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: "18px",
+                fontWeight: 700,
+                lineHeight: "140%",
+                letterSpacing: "-0.36px",
+              }}
+            >
+              {getDisplayName(organizer)}
+            </h4>
+
+            {/* Followers count */}
+            <span
+              className="text-body font-source-sans-pro text-sm font-normal leading-[142.745%] tracking-[-0.28px]"
+              style={{
+                color: "#71727A",
+                fontFamily: "var(--font-source-sans), sans-serif",
+                fontSize: "14px",
+                fontWeight: 400,
+                lineHeight: "142.745%",
+                letterSpacing: "-0.28px",
+              }}
+            >
+              {formatFollowerCount(organizer.followersCount)}
+            </span>
+
+            {/* Follow button */}
+            {!isOwnProfile() && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={handleFollowToggle}
+                    disabled={followLoading}
+                    className={`flex px-3 py-1.5 justify-center items-center gap-[15px] rounded-[51px] border transition-colors w-fit ${
+                      isFollowing
+                        ? "border-gray-400 bg-gray-100"
+                        : "border-orange-red"
+                    } ${
+                      followLoading
+                        ? "opacity-50 cursor-not-allowed"
+                        : "cursor-pointer"
+                    }`}
+                    style={{
+                      borderRadius: "51px",
+                      border: isFollowing
+                        ? "1px solid #9CA3AF"
+                        : "1px solid #FF5B00",
+                      padding: "6px 12px",
+                      backgroundColor: isFollowing ? "#F3F4F6" : "transparent",
+                    }}
+                  >
+                    <span
+                      className={`font-source-sans-pro text-lg font-semibold leading-normal ${
+                        isFollowing ? "text-gray-600" : "text-orange-red"
+                      }`}
+                      style={{
+                        color: isFollowing ? "#4B5563" : "#FF5B00",
+                        fontFamily: "var(--font-source-sans), sans-serif",
+                        fontSize: "18px",
+                        fontWeight: 600,
+                        lineHeight: "normal",
+                      }}
+                    >
+                      {getButtonText()}
+                    </span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{getTooltipText()}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
         </div>
       </TooltipProvider>
     </div>

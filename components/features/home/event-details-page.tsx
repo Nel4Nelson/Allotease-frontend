@@ -1,8 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
-import React, { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import toast from "react-hot-toast";
+import React, { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { EventDetailsBanner } from "@/components/ui/event-details/event-details-banner";
 import { EventDetailsTicketSalesBadge } from "@/components/ui/event-details/event-details-ticket-sales-badge";
 import { EventDetailsTitle } from "@/components/ui/event-details/event-details-title";
@@ -17,6 +16,7 @@ import { EventDetailsOtherEvents } from "@/components/ui/event-details/event-det
 import { EventDetailsRegistrationCard } from "@/components/ui/event-details/event-details-registration-card";
 import { useEventBookingStore } from "@/stores/event-booking-store";
 import { BookingSuccessModal } from "@/components/ui/modals/booking-success-modal";
+import { EventDetailsPageSkeleton } from "@/components/ui/loading-skeletons/event-details-skeleton-page";
 
 interface EventDetailsPageProps {
   id: string;
@@ -34,10 +34,13 @@ export function EventDetailsPage({
   id,
   className = "",
 }: EventDetailsPageProps) {
-  const router = useRouter();
+
   const searchParams = useSearchParams();
   const { clearEventBookingData } = useEventBookingStore();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  
+  // Use ref to track if callback has been processed to prevent duplicate toasts
+  const callbackProcessedRef = useRef(false);
 
   const [state, setState] = useState<EventDetailsState>({
     event: null,
@@ -46,21 +49,55 @@ export function EventDetailsPage({
     error: null,
   });
 
-  // Handle payment callback
+  // Clean URL parameters by removing booking-related query params
+  const cleanUrlParameters = () => {
+    const currentUrl = new URL(window.location.href);
+    const params = new URLSearchParams(currentUrl.search);
+    
+    // Remove booking-related parameters
+    params.delete('trxref');
+    params.delete('reference');
+    params.delete('booking');
+    
+    // Build new URL
+    const newUrl = `${currentUrl.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+    
+    // Replace current URL without triggering navigation
+    window.history.replaceState({}, '', newUrl);
+  };
+
+  // Handle booking callback - with duplicate prevention
   useEffect(() => {
     const type = searchParams.get("type");
     const trxref = searchParams.get("trxref");
     const reference = searchParams.get("reference");
+    const booking = searchParams.get("booking");
 
-    if (type === "events") {
-      if (trxref || reference) {
-        // Payment successful
-        clearEventBookingData();
-        toast.success("Event registration completed successfully!");
-        setShowSuccessModal(true);
-      }
+    // Check if we have booking parameters and haven't processed them yet
+    const hasPaymentParams = type === "events" && (trxref || reference);
+    const hasFreeBookingParam = booking === "free";
+    
+    if ((hasPaymentParams || hasFreeBookingParam) && !callbackProcessedRef.current) {
+      // Mark as processed immediately to prevent any duplicate processing
+      callbackProcessedRef.current = true;
+      
+      // Clear booking data
+      clearEventBookingData();
+      
+      // Show the success modal
+      setShowSuccessModal(true);
+      
+      // Clean URL parameters immediately after processing
+      cleanUrlParameters();
     }
-  }, [searchParams, clearEventBookingData, router]);
+  }, [searchParams, clearEventBookingData]);
+
+  // Reset the processed flag when component unmounts or ID changes
+  useEffect(() => {
+    return () => {
+      callbackProcessedRef.current = false;
+    };
+  }, [id]);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -98,28 +135,16 @@ export function EventDetailsPage({
     }
   }, [id]);
 
+  // Handle success modal close
   const handleCloseSuccessModal = () => {
     setShowSuccessModal(false);
+    // Reset the processed flag after modal closes
+    callbackProcessedRef.current = false;
   };
 
   // Loading state
   if (state.loading) {
-    return (
-      <div className={`space-y-6 ${className}`}>
-        <div className="w-full h-[360px] bg-gray-200 rounded-[24px] animate-pulse" />
-        <div className="grid grid-cols-12 gap-8">
-          <div className="col-span-8 space-y-4">
-            <div className="h-6 bg-gray-200 rounded animate-pulse w-48" />
-            <div className="h-8 bg-gray-200 rounded animate-pulse" />
-            <div className="h-4 bg-gray-200 rounded animate-pulse" />
-            <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
-          </div>
-          <div className="col-span-4">
-            <div className="h-64 bg-gray-200 rounded animate-pulse" />
-          </div>
-        </div>
-      </div>
-    );
+    return <EventDetailsPageSkeleton />;
   }
 
   // Error state
@@ -132,7 +157,7 @@ export function EventDetailsPage({
           </div>
           <button
             onClick={() => window.location.reload()}
-            className="text-blue-600 hover:text-blue-800 underline"
+            className="text-gray-500 underline"
           >
             Try again
           </button>
@@ -168,70 +193,120 @@ export function EventDetailsPage({
           alt={event.title}
         />
 
-        {/* Two Column Grid Layout */}
-        <div className="grid grid-cols-12 gap-8">
-          {/* Left Column - Main Content (625px ≈ 64.8% ≈ 8 cols out of 12) */}
-          <div className="col-span-8">
-            {/* Ticket Sales Badge */}
-            <EventDetailsTicketSalesBadge
-              eventDate={event.startTime}
-              className="mb-4"
-            />
+        {/* Mobile Layout - Single Column */}
+        <div className="lg:hidden space-y-6">
+          {/* Ticket Sales Badge */}
+          <EventDetailsTicketSalesBadge
+            eventDate={event.startTime}
+          />
 
-            {/* Event Title Section */}
-            <div className="mb-2">
-              <EventDetailsTitle title={event.title} />
-            </div>
+          {/* Event Title Section */}
+          <EventDetailsTitle title={event.title} />
 
-            {/* Event Description Section */}
-            <div className="mb-4">
-              <EventDetailsDescription description={event.description} />
-            </div>
-
-            {/* Date & Time Section */}
-            <div className="mb-8">
-              <EventDetailsDateTime
-                startTime={event.startTime}
-                endTime={event.endTime}
-              />
-            </div>
-
-            {/* Location Section */}
-            <div className="mb-8">
-              <EventDetailsLocation
-                eventType={event.eventType}
-                location={event.location}
-              />
-            </div>
-
-            {/* Event Details Section */}
-            <div className="mb-8">
-              <EventDetailsEventDetails agenda={event.agenda} />
-            </div>
-
-            {/* Categories Section */}
-            <div className="mb-8">
-              <EventDetailsCategories tags={event.tags} />
-            </div>
-
-            {/* Follow card Section */}
-            <div className="mb-8">
-              <EventDetailsOrganizer ownerId={event.ownerId} />
-            </div>
-          </div>
-
-          {/* Right Column - Registration Sidebar (remaining space ≈ 35.2% ≈ 4 cols out of 12) */}
-          <div className="col-span-4">
-            {/* Registration Card */}
+          {/* Registration Card - Mobile Position (after title) */}
+          <div className="lg:sticky lg:top-8">
             <EventDetailsRegistrationCard
               event={event}
               availableCapacity={state.availableCapacity}
             />
           </div>
+
+          {/* Event Description Section */}
+          <EventDetailsDescription description={event.description} />
+
+          {/* Date & Time Section */}
+          <EventDetailsDateTime
+            startTime={event.startTime}
+            endTime={event.endTime}
+          />
+
+          {/* Location Section */}
+          <EventDetailsLocation
+            eventType={event.eventType}
+            location={event.location}
+          />
+
+          {/* Event Details Section */}
+          <EventDetailsEventDetails agenda={event.agenda} />
+
+          {/* Categories Section */}
+          <EventDetailsCategories tags={event.tags} />
+
+          {/* Follow card Section */}
+          <EventDetailsOrganizer ownerId={event.ownerId} />
+
+          {/* Other Events Section - Mobile Position */}
+          <EventDetailsOtherEvents currentEventId={event._id} />
         </div>
 
-        {/* Other Events Section - Full Width Below Grid */}
-        <EventDetailsOtherEvents currentEventId={event._id} />
+        {/* Desktop Layout - Two Column Grid (lg:block to show only on desktop) */}
+        <div className="hidden lg:block">
+          <div className="grid grid-cols-12 gap-8">
+            {/* Left Column - Main Content (625px ≈ 64.8% ≈ 8 cols out of 12) */}
+            <div className="col-span-8">
+              {/* Ticket Sales Badge */}
+              <EventDetailsTicketSalesBadge
+                eventDate={event.startTime}
+                className="mb-4"
+              />
+
+              {/* Event Title Section */}
+              <div className="mb-2">
+                <EventDetailsTitle title={event.title} />
+              </div>
+
+              {/* Event Description Section */}
+              <div className="mb-4">
+                <EventDetailsDescription description={event.description} />
+              </div>
+
+              {/* Date & Time Section */}
+              <div className="mb-8">
+                <EventDetailsDateTime
+                  startTime={event.startTime}
+                  endTime={event.endTime}
+                />
+              </div>
+
+              {/* Location Section */}
+              <div className="mb-8">
+                <EventDetailsLocation
+                  eventType={event.eventType}
+                  location={event.location}
+                />
+              </div>
+
+              {/* Event Details Section */}
+              <div className="mb-8">
+                <EventDetailsEventDetails agenda={event.agenda} />
+              </div>
+
+              {/* Categories Section */}
+              <div className="mb-8">
+                <EventDetailsCategories tags={event.tags} />
+              </div>
+
+              {/* Follow card Section */}
+              <div className="mb-8">
+                <EventDetailsOrganizer ownerId={event.ownerId} />
+              </div>
+            </div>
+
+            {/* Right Column - Registration Sidebar (remaining space ≈ 35.2% ≈ 4 cols out of 12) */}
+            <div className="col-span-4">
+              {/* Registration Card - Desktop Position */}
+              <div className="lg:sticky lg:top-8">
+                <EventDetailsRegistrationCard
+                  event={event}
+                  availableCapacity={state.availableCapacity}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Other Events Section - Full Width Below Grid (Desktop only) */}
+          <EventDetailsOtherEvents currentEventId={event._id} />
+        </div>
       </div>
 
       {/* Success Modal */}
@@ -239,6 +314,7 @@ export function EventDetailsPage({
         isOpen={showSuccessModal}
         onClose={handleCloseSuccessModal}
         type="events"
+        showToast={true}
       />
     </>
   );

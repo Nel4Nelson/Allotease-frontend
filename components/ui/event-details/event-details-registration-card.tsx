@@ -68,37 +68,13 @@ export function EventDetailsRegistrationCard({
     setNumberOfTickets 
   } = useEventBookingStore();
 
+  // Check if event is free
+  const isFreeEvent = event.price === 0;
+
   // Set event ID when component mounts
   useEffect(() => {
     setEventId(event._id);
   }, [event._id, setEventId]);
-
-  // Listen for successful payment callback
-  useEffect(() => {
-    const handleCallback = () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const type = urlParams.get("type");
-      const trxref = urlParams.get("trxref");
-      const reference = urlParams.get("reference");
-
-      // Check if this is a successful payment callback from Paystack
-      // Paystack returns trxref and reference parameters on successful payment
-      if (type === "events" && (trxref || reference)) {
-        // Close booking modal
-        setIsModalOpen(false);
-      }
-    };
-
-    // Check on component mount
-    handleCallback();
-
-    // Listen for popstate events (back/forward navigation)
-    window.addEventListener("popstate", handleCallback);
-
-    return () => {
-      window.removeEventListener("popstate", handleCallback);
-    };
-  }, []);
 
   // Format end date for ticket sales
   const formatTicketSalesEndDate = (startTime: string) => {
@@ -139,12 +115,16 @@ export function EventDetailsRegistrationCard({
     setIsModalOpen(false);
   };
 
+  // Get button text based on event price
+  const getButtonText = () => {
+    return isFreeEvent ? "Book event for free" : "Reserve a Spot";
+  };
+
   return (
     <>
       <div
         className={`sticky top-8 ${className}`}
         style={{
-          width: "300px",
           display: "flex",
           flexDirection: "column",
           borderRadius: "16px",
@@ -344,7 +324,7 @@ export function EventDetailsRegistrationCard({
               cursor: "pointer",
             }}
           >
-            Reserve a Spot
+            {getButtonText()}
           </Button>
         </div>
       </div>
