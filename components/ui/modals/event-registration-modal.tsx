@@ -50,7 +50,7 @@ const registrationFormSchema = z.object({
   phoneNumber: z
     .string()
     .min(1, { message: "Phone number is required." })
-    .min(10, { message: "Phone number must be at least 10 digits." }),
+    .min(11, { message: "Phone number must be at least 11 digits." }),
 });
 
 export interface RegistrationFormData {

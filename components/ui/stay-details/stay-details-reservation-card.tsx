@@ -8,20 +8,24 @@ import { StayBookingModal } from "@/components/ui/modals/stay-booking-modal";
 import { BookingSuccessModal } from "@/components/ui/modals/booking-success-modal";
 import { Divider } from "../divider";
 
-interface StayDetailsReservationCardProps {
-  stay: Stay;
-  stayUnits: StayUnit[];
-  className?: string;
-}
-
 interface DateRange {
   from: Date | undefined;
   to: Date | undefined;
 }
 
+interface StayDetailsReservationCardProps {
+  stay: Stay;
+  stayUnits: StayUnit[];
+  dateRange: DateRange;
+  onDateRangeChange: (range: DateRange) => void;
+  className?: string;
+}
+
 export function StayDetailsReservationCard({
   stay,
   stayUnits,
+  dateRange,
+  onDateRangeChange,
   className = "",
 }: StayDetailsReservationCardProps) {
   const {
@@ -32,13 +36,16 @@ export function StayDetailsReservationCard({
     clearBookingData,
   } = useBookingStore();
 
-  const [dateRange, setDateRangeState] = useState<DateRange>({
-    from: undefined,
-    to: undefined,
-  });
-  const [days, setDays] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  
+  // Independent counters for each frequency
+  const [frequencyCounters, setFrequencyCounters] = useState<Record<string, number>>({
+    daily: 1,
+    weekly: 1,
+    monthly: 1,
+    yearly: 1,
+  });
 
   // Set stay ID when component mounts
   useEffect(() => {
@@ -74,17 +81,66 @@ export function StayDetailsReservationCard({
     };
   }, [clearBookingData]);
 
-  // Calculate days when date range changes
+  // Update store with dates when date range changes (optional)
   useEffect(() => {
     if (dateRange.from && dateRange.to) {
-      const timeDiff = dateRange.to.getTime() - dateRange.from.getTime();
-      const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-      setDays(daysDiff > 0 ? daysDiff : 1);
-
-      // Update store with new dates
       setDateRange(dateRange.from, dateRange.to);
     }
   }, [dateRange, setDateRange]);
+
+  // Get unique frequencies from selected units
+  const getSelectedFrequencies = () => {
+    const frequencies = new Set<string>();
+    selectedUnitsWithDetails.forEach(unit => {
+      if (unit.details) {
+        frequencies.add(unit.details.frequency);
+      }
+    });
+    return Array.from(frequencies).sort((a, b) => {
+      const order = { 'daily': 1, 'weekly': 2, 'monthly': 3, 'yearly': 4 };
+      return (order[a as keyof typeof order] || 5) - (order[b as keyof typeof order] || 5);
+    });
+  };
+
+  // Get counter value for a specific frequency
+  const getCounterValue = (frequency: string) => {
+    return frequencyCounters[frequency] || 1;
+  };
+
+  // Set counter value for a specific frequency (independent)
+  const setCounterValue = (frequency: string, value: number) => {
+    setFrequencyCounters(prev => ({
+      ...prev,
+      [frequency]: Math.max(1, value)
+    }));
+  };
+
+  // Get display label for frequency
+  const getFrequencyLabel = (frequency: string) => {
+    const labels = {
+      'daily': 'Days',
+      'weekly': 'Weeks',
+      'monthly': 'Months',
+      'yearly': 'Years'
+    };
+    return labels[frequency as keyof typeof labels] || frequency;
+  };
+
+  // Get day equivalent text for non-daily frequencies
+  const getDayEquivalent = (frequency: string, value: number) => {
+    if (frequency === 'daily') return '';
+    
+    const totalDays = (() => {
+      switch (frequency) {
+        case 'weekly': return value * 7;
+        case 'monthly': return value * 30;
+        case 'yearly': return value * 365;
+        default: return value;
+      }
+    })();
+    
+    return `(${totalDays} day${totalDays !== 1 ? 's' : ''})`;
+  };
 
   // Get selected units with their details
   const selectedUnitsWithDetails = bookingData.units
@@ -99,11 +155,13 @@ export function StayDetailsReservationCard({
     })
     .filter((unit) => unit.details); // Filter out units that couldn't be found
 
-  // Calculate total price
+  // Calculate total price with independent frequency pricing
   const calculateTotalPrice = () => {
     return selectedUnitsWithDetails.reduce((total, unit) => {
       if (unit.details) {
-        return total + unit.details.price * unit.numberOfUnits * days;
+        const frequency = unit.details.frequency;
+        const counterValue = getCounterValue(frequency);
+        return total + unit.details.price * unit.numberOfUnits * counterValue;
       }
       return total;
     }, 0);
@@ -127,9 +185,11 @@ export function StayDetailsReservationCard({
     }
   };
 
-  // Handle date range change
-  const handleDateRangeChange = (range: DateRange) => {
-    setDateRangeState(range);
+  // Handle counter change for specific frequency (independent)
+  const handleCounterChange = (frequency: string, change: number) => {
+    const currentValue = getCounterValue(frequency);
+    const newValue = Math.max(1, currentValue + change);
+    setCounterValue(frequency, newValue);
   };
 
   // Handle reservation
@@ -145,16 +205,14 @@ export function StayDetailsReservationCard({
     setShowSuccessModal(false);
   };
 
-  // Check if reservation is possible
-  const canReserve =
-    selectedUnitsWithDetails.length > 0 && dateRange.from && dateRange.to;
+  // Check if reservation is possible (only requires selected units now)
+  const canReserve = selectedUnitsWithDetails.length > 0;
 
   return (
     <>
       <div
         className={`sticky top-8 ${className}`}
         style={{
-          width: "300px",
           display: "flex",
           flexDirection: "column",
           borderRadius: "16px",
@@ -312,108 +370,125 @@ export function StayDetailsReservationCard({
             </div>
           )}
 
-          {/* Date Range Selector */}
+          {/* Optional Date Range Selector */}
           <div className="space-y-2">
             <DateRangeSelector
               value={dateRange}
-              onChange={handleDateRangeChange}
-              placeholder="check-in and check-out"
+              onChange={onDateRangeChange}
+              placeholder="check-in and check-out (optional)"
             />
           </div>
 
-          {/* Days Counter */}
-          <div className="flex items-center justify-between">
-            <span
-              style={{
-                color: "#20232A",
-                fontFamily: "var(--font-source-sans), sans-serif",
-                fontSize: "16px",
-                fontWeight: 600,
-                lineHeight: "16px",
-                margin: 0,
-              }}
-            >
-              Days
-            </span>
+          {/* Independent Frequency Duration Counters */}
+          {(() => {
+            const selectedFrequencies = getSelectedFrequencies();
+            
+            if (selectedFrequencies.length === 0) {
+              return null;
+            }
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  if (days > 1) {
-                    setDays(days - 1);
-                    // Update checkout date based on new days count
-                    if (dateRange.from) {
-                      const newToDate = new Date(dateRange.from);
-                      newToDate.setDate(newToDate.getDate() + (days - 1));
-                      handleDateRangeChange({
-                        from: dateRange.from,
-                        to: newToDate,
-                      });
-                    }
-                  }
-                }}
-                disabled={days <= 1}
-                style={{
-                  borderRadius: "50%",
-                  border: "0.778px solid rgba(138, 174, 164, 0.50)",
-                  display: "flex",
-                  width: "28px",
-                  height: "28px",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  background: "transparent",
-                  cursor: days <= 1 ? "not-allowed" : "pointer",
-                  opacity: days <= 1 ? 0.5 : 1,
-                  padding: 0,
-                }}
-              >
-                <MinusIcon />
-              </button>
+            return (
+              <div className="space-y-3">
+                {selectedFrequencies.map((frequency, index) => {
+                  const value = getCounterValue(frequency);
+                  const label = getFrequencyLabel(frequency);
+                  const dayEquivalent = getDayEquivalent(frequency, value);
+                  const isOnlyDaily = selectedFrequencies.length === 1 && frequency === 'daily';
 
-              <span
-                style={{
-                  color: "#20232A",
-                  textAlign: "center",
-                  fontFamily: "var(--font-source-sans), sans-serif",
-                  fontSize: "16px",
-                  fontWeight: 600,
-                  lineHeight: "16px",
-                  minWidth: "20px",
-                }}
-              >
-                {days}
-              </span>
+                  return (
+                    <div key={frequency}>
+                      {index > 0 && <Divider />}
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span
+                            style={{
+                              color: "#20232A",
+                              fontFamily: "var(--font-source-sans), sans-serif",
+                              fontSize: "16px",
+                              fontWeight: 600,
+                              lineHeight: "16px",
+                              margin: 0,
+                            }}
+                          >
+                            {isOnlyDaily ? "Duration" : label}
+                          </span>
+                          {dayEquivalent && (
+                            <div
+                              style={{
+                                color: "#71727A",
+                                fontFamily: "var(--font-source-sans), sans-serif",
+                                fontSize: "12px",
+                                fontWeight: 400,
+                                lineHeight: "14px",
+                                marginTop: "2px",
+                              }}
+                            >
+                              {dayEquivalent}
+                            </div>
+                          )}
+                        </div>
 
-              <button
-                onClick={() => {
-                  setDays(days + 1);
-                  // Update checkout date based on new days count
-                  if (dateRange.from) {
-                    const newToDate = new Date(dateRange.from);
-                    newToDate.setDate(newToDate.getDate() + (days + 1));
-                    handleDateRangeChange({
-                      from: dateRange.from,
-                      to: newToDate,
-                    });
-                  }
-                }}
-                style={{
-                  borderRadius: "50%",
-                  border: "0.778px solid rgba(138, 174, 164, 0.50)",
-                  display: "flex",
-                  width: "28px",
-                  height: "28px",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  background: "transparent",
-                  cursor: "pointer",
-                  padding: 0,
-                }}
-              >
-                <PlusIcon />
-              </button>
-            </div>
-          </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleCounterChange(frequency, -1)}
+                            disabled={value <= 1}
+                            style={{
+                              borderRadius: "50%",
+                              border: "0.778px solid rgba(138, 174, 164, 0.50)",
+                              display: "flex",
+                              width: "28px",
+                              height: "28px",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              background: "transparent",
+                              cursor: value <= 1 ? "not-allowed" : "pointer",
+                              opacity: value <= 1 ? 0.5 : 1,
+                              padding: 0,
+                            }}
+                          >
+                            <MinusIcon />
+                          </button>
+
+                          <span
+                            style={{
+                              color: "#20232A",
+                              textAlign: "center",
+                              fontFamily: "var(--font-source-sans), sans-serif",
+                              fontSize: "16px",
+                              fontWeight: 600,
+                              lineHeight: "16px",
+                              minWidth: "20px",
+                            }}
+                          >
+                            {value}
+                          </span>
+
+                          <button
+                            onClick={() => handleCounterChange(frequency, 1)}
+                            style={{
+                              borderRadius: "50%",
+                              border: "0.778px solid rgba(138, 174, 164, 0.50)",
+                              display: "flex",
+                              width: "28px",
+                              height: "28px",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              background: "transparent",
+                              cursor: "pointer",
+                              padding: 0,
+                            }}
+                          >
+                            <PlusIcon />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           {/* Total Price */}
           {selectedUnitsWithDetails.length > 0 && (

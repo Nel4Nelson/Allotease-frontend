@@ -4,7 +4,6 @@ import { useDebouncedStaysFormStore } from "@/hooks/use-debounced-stay-store";
 import { DateRangeSelector } from "@/components/ui/date-range-selector";
 import { Divider } from "@/components/ui/divider";
 
-// Icons as React components
 const PlusIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
     <path
@@ -39,10 +38,6 @@ const MinusIcon = () => (
 interface DateRange {
   from: Date | undefined;
   to: Date | undefined;
-}
-
-interface StaysPreviewReservationCardProps {
-  className?: string;
 }
 
 interface StaysPreviewReservationCardProps {
@@ -94,11 +89,97 @@ export function StaysPreviewReservationCard({
     })
     .filter((unit) => unit.details);
 
+  // Get unique frequencies from selected units
+  const getSelectedFrequencies = () => {
+    const frequencies = new Set<string>();
+    selectedUnitsWithDetails.forEach(unit => {
+      if (unit.details) {
+        frequencies.add(unit.details.frequency);
+      }
+    });
+    return Array.from(frequencies).sort((a, b) => {
+      const order = { 'daily': 1, 'weekly': 2, 'monthly': 3, 'yearly': 4 };
+      return (order[a as keyof typeof order] || 5) - (order[b as keyof typeof order] || 5);
+    });
+  };
+
+  // Get counter value for a specific frequency
+  const getCounterValue = (frequency: string) => {
+    switch (frequency) {
+      case 'daily': return days;
+      case 'weekly': return Math.ceil(days / 7);
+      case 'monthly': return Math.ceil(days / 30);
+      case 'yearly': return Math.ceil(days / 365);
+      default: return 1;
+    }
+  };
+
+  // Set counter value for a specific frequency with enhanced date range handling
+  const setCounterValue = (frequency: string, value: number) => {
+    const newDays = (() => {
+      switch (frequency) {
+        case 'daily': return Math.max(1, value);
+        case 'weekly': return Math.max(7, value * 7);
+        case 'monthly': return Math.max(30, value * 30);
+        case 'yearly': return Math.max(365, value * 365);
+        default: return 1;
+      }
+    })();
+    
+    setDays(newDays);
+    
+    // Enhanced date range handling - auto-populate if empty
+    const startDate = dateRange.from || new Date(); // Use today if no start date
+    const newToDate = new Date(startDate);
+    newToDate.setDate(newToDate.getDate() + newDays);
+    
+    onDateRangeChange({
+      from: startDate,
+      to: newToDate,
+    });
+  };
+
+  // Get display label for frequency
+  const getFrequencyLabel = (frequency: string) => {
+    const labels = {
+      'daily': 'Days',
+      'weekly': 'Weeks',
+      'monthly': 'Months',
+      'yearly': 'Years'
+    };
+    return labels[frequency as keyof typeof labels] || frequency;
+  };
+
+  // Get day equivalent text for non-daily frequencies
+  const getDayEquivalent = (frequency: string, value: number) => {
+    if (frequency === 'daily') return '';
+    
+    const totalDays = (() => {
+      switch (frequency) {
+        case 'weekly': return value * 7;
+        case 'monthly': return value * 30;
+        case 'yearly': return value * 365;
+        default: return value;
+      }
+    })();
+    
+    return `(${totalDays} day${totalDays !== 1 ? 's' : ''})`;
+  };
+
+  // Handle counter change for specific frequency
+  const handleCounterChange = (frequency: string, change: number) => {
+    const currentValue = getCounterValue(frequency);
+    const newValue = Math.max(1, currentValue + change);
+    setCounterValue(frequency, newValue);
+  };
+
   // Calculate total price
   const calculateTotalPrice = () => {
     return selectedUnitsWithDetails.reduce((total, unit) => {
       if (unit.details) {
-        return total + unit.details.price * unit.numberOfUnits * days;
+        const frequency = unit.details.frequency;
+        const counterValue = getCounterValue(frequency);
+        return total + unit.details.price * unit.numberOfUnits * counterValue;
       }
       return total;
     }, 0);
@@ -106,11 +187,8 @@ export function StaysPreviewReservationCard({
 
   // Format price
   const formatPrice = (price: number) => {
-    const formatter = new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-    });
-    return formatter.format(price);
+    if (price === 0) return "Free";
+    return `₦${price.toLocaleString()}`;
   };
 
   // Handle quantity change (preview only)
@@ -122,22 +200,6 @@ export function StaysPreviewReservationCard({
           : unit
       ).filter(unit => unit.numberOfUnits > 0)
     );
-  };
-
-  // Handle days change
-  const handleDaysChange = (change: number) => {
-    const newDays = Math.max(1, days + change);
-    setDays(newDays);
-    
-    // Update checkout date based on new days count
-    if (dateRange.from) {
-      const newToDate = new Date(dateRange.from);
-      newToDate.setDate(newToDate.getDate() + newDays);
-      onDateRangeChange({
-        from: dateRange.from,
-        to: newToDate,
-      });
-    }
   };
 
   return (
@@ -244,54 +306,86 @@ export function StaysPreviewReservationCard({
           />
         </div>
 
-        {/* Days Counter */}
-        <div className="flex items-center justify-between">
-          <span className="text-[#20232A] font-source-sans text-sm lg:text-base font-semibold leading-4 m-0">
-            Days
-          </span>
+        {/* Multi-Frequency Duration Counters */}
+        {(() => {
+          const selectedFrequencies = getSelectedFrequencies();
+          
+          if (selectedFrequencies.length === 0) {
+            return null;
+          }
 
-          <div className="flex items-center gap-1.5 lg:gap-2">
-            <button
-              onClick={() => handleDaysChange(-1)}
-              disabled={days <= 1}
-              className={`
-                rounded-full 
-                border border-[rgba(138,174,164,0.50)]
-                flex w-6 h-6 lg:w-7 lg:h-7
-                justify-center items-center
-                bg-transparent
-                transition-opacity
-                ${days <= 1 
-                  ? 'cursor-not-allowed opacity-50' 
-                  : 'cursor-pointer hover:bg-gray-50'
-                }
-                p-0
-              `}
-            >
-              <MinusIcon />
-            </button>
+          return (
+            <div className="space-y-3">
+              {selectedFrequencies.map((frequency, index) => {
+                const value = getCounterValue(frequency);
+                const label = getFrequencyLabel(frequency);
+                const dayEquivalent = getDayEquivalent(frequency, value);
+                const isOnlyDaily = selectedFrequencies.length === 1 && frequency === 'daily';
 
-            <span className="text-[#20232A] text-center font-source-sans text-sm lg:text-base font-semibold leading-4 min-w-[16px] lg:min-w-[20px]">
-              {days}
-            </span>
+                return (
+                  <div key={frequency}>
+                    {index > 0 && <Divider />}
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[#20232A] font-source-sans text-sm lg:text-base font-semibold leading-4 m-0">
+                          {isOnlyDaily ? "Duration" : label}
+                        </span>
+                        {dayEquivalent && (
+                          <div className="text-[#71727A] font-source-sans text-xs font-normal leading-[14px] mt-0.5 lg:mt-1">
+                            {dayEquivalent}
+                          </div>
+                        )}
+                      </div>
 
-            <button
-              onClick={() => handleDaysChange(1)}
-              className="
-                rounded-full 
-                border border-[rgba(138,174,164,0.50)]
-                flex w-6 h-6 lg:w-7 lg:h-7
-                justify-center items-center
-                bg-transparent
-                cursor-pointer hover:bg-gray-50
-                transition-colors
-                p-0
-              "
-            >
-              <PlusIcon />
-            </button>
-          </div>
-        </div>
+                      <div className="flex items-center gap-1.5 lg:gap-2">
+                        <button
+                          onClick={() => handleCounterChange(frequency, -1)}
+                          disabled={value <= 1}
+                          className={`
+                            rounded-full 
+                            border border-[rgba(138,174,164,0.50)]
+                            flex w-6 h-6 lg:w-7 lg:h-7
+                            justify-center items-center
+                            bg-transparent
+                            transition-opacity
+                            ${value <= 1 
+                              ? 'cursor-not-allowed opacity-50' 
+                              : 'cursor-pointer hover:bg-gray-50'
+                            }
+                            p-0
+                          `}
+                        >
+                          <MinusIcon />
+                        </button>
+
+                        <span className="text-[#20232A] text-center font-source-sans text-sm lg:text-base font-semibold leading-4 min-w-[16px] lg:min-w-[20px]">
+                          {value}
+                        </span>
+
+                        <button
+                          onClick={() => handleCounterChange(frequency, 1)}
+                          className="
+                            rounded-full 
+                            border border-[rgba(138,174,164,0.50)]
+                            flex w-6 h-6 lg:w-7 lg:h-7
+                            justify-center items-center
+                            bg-transparent
+                            cursor-pointer hover:bg-gray-50
+                            transition-colors
+                            p-0
+                          "
+                        >
+                          <PlusIcon />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
 
         {/* Total Price */}
         {selectedUnitsWithDetails.length > 0 && (

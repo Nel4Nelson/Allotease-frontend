@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
@@ -14,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Stay, StayUnit, StaysService } from "@/services/stays-service";
 import { useBookingStore } from "@/stores/booking-store";
 import { apiClient } from "@/services/api-client";
+import { PaymentTimerModal } from "@/components/ui/modals/payment-timer-modal";
 
 interface StayBookingModalProps {
   isOpen: boolean;
@@ -27,8 +27,8 @@ interface BookingResponse {
   message: string;
   data: string; // Paystack URL
   status: string;
-  expiresIn: string;
-  timeoutInSeconds: number;
+  expiresIn?: number;
+  timeoutInSeconds?: number;
 }
 
 interface ApiError {
@@ -68,8 +68,8 @@ export function StayBookingModal({
 }: StayBookingModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number>(0);
-  const [showTimer, setShowTimer] = useState(false);
+  const [timeoutInSeconds, setTimeoutInSeconds] = useState<number>(0);
+  const [showTimerModal, setShowTimerModal] = useState(false);
   const [timerExpired, setTimerExpired] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { bookingData, getBookingPayload } = useBookingStore();
@@ -89,7 +89,7 @@ export function StayBookingModal({
     },
   });
 
-  // Get selected units with details
+  // Get selected units with details (using frequency counters from reservation card)
   const selectedUnitsWithDetails = bookingData.units
     .map((selectedUnit) => {
       const unitDetails = stayUnits.find(
@@ -102,23 +102,12 @@ export function StayBookingModal({
     })
     .filter((unit) => unit.details);
 
-  // Calculate days
-  const getDays = () => {
-    if (!bookingData.checkInDate || !bookingData.checkOutDate) return 1;
-    const checkIn = new Date(bookingData.checkInDate);
-    const checkOut = new Date(bookingData.checkOutDate);
-    const timeDiff = checkOut.getTime() - checkIn.getTime();
-    const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-    return daysDiff > 0 ? daysDiff : 1;
-  };
-
-  const days = getDays();
-
-  // Calculate total price
+  // Calculate total price with independent frequency pricing
   const calculateTotalPrice = () => {
     return selectedUnitsWithDetails.reduce((total, unit) => {
       if (unit.details) {
-        return total + unit.details.price * unit.numberOfUnits * days;
+        // This should match the calculation from the reservation card
+        return total + unit.details.price * unit.numberOfUnits;
       }
       return total;
     }, 0);
@@ -126,17 +115,14 @@ export function StayBookingModal({
 
   // Format price
   const formatPrice = (price: number) => {
-    const formatter = new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-    });
-    return formatter.format(price);
+    if (price === 0) return "Free";
+    return `NGN ${price.toLocaleString()}.00`;
   };
 
   // Format date range for display
   const formatDateRange = () => {
     if (!bookingData.checkInDate || !bookingData.checkOutDate) {
-      return "Select dates";
+      return "Dates selected";
     }
 
     const checkIn = new Date(bookingData.checkInDate);
@@ -157,60 +143,6 @@ export function StayBookingModal({
     return `${checkInStr} - ${checkOutStr}`;
   };
 
-  // Handle success callback (when payment is successful)
-  const handlePaymentSuccess = () => {
-    toast.success("Booking completed successfully!");
-    onClose();
-  };
-
-  // Listen for successful payment callback
-  useEffect(() => {
-    const handleCallback = () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const type = urlParams.get("type");
-      const status = urlParams.get("status");
-
-      if (type === "stays" && status === "success") {
-        handlePaymentSuccess();
-      }
-    };
-
-    // Check on component mount
-    handleCallback();
-
-    // Listen for popstate events (back/forward navigation)
-    window.addEventListener("popstate", handleCallback);
-
-    return () => {
-      window.removeEventListener("popstate", handleCallback);
-    };
-  }, []);
-
-  // Timer countdown effect
-  useEffect(() => {
-    if (showTimer && timeLeft > 0) {
-      const timer = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            setTimerExpired(true);
-            setShowTimer(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      return () => clearInterval(timer);
-    }
-  }, [showTimer, timeLeft]);
-
-  // Format timer display
-  const formatTimer = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-  };
-
   // Handle booking submission
   const handleBooking = async (data: BookingFormData) => {
     setIsLoading(true);
@@ -219,22 +151,20 @@ export function StayBookingModal({
     try {
       const payload = getBookingPayload();
 
-      // Create booking
+      // Create stay booking
       const response = await apiClient.post<BookingResponse>(
         "/book/stay-unit",
         payload
       );
 
       if (response.status === "success") {
+        // Show timer modal for payment
         setPaymentUrl(response.data);
-        setTimeLeft(response.timeoutInSeconds);
-        setShowTimer(true);
+        setTimeoutInSeconds(response.timeoutInSeconds || 600);
         setTimerExpired(false);
 
-        toast.success("Redirecting to payment...");
-
-        // Redirect to Paystack
-        window.location.href = response.data;
+        setShowTimerModal(true);
+        toast.success("Booking created! Complete payment within 10 minutes.");
       } else {
         throw new Error(response.message || "Booking failed");
       }
@@ -260,28 +190,61 @@ export function StayBookingModal({
     }
   };
 
+  // Handle timer modal proceed - redirects to Paystack
+  const handleTimerProceed = () => {
+    if (paymentUrl) {
+      setShowTimerModal(false);
+      toast.success("Redirecting to payment...");
+      window.location.href = paymentUrl;
+    }
+  };
+
+  // Handle timer modal cancel
+  const handleTimerCancel = () => {
+    setShowTimerModal(false);
+    setPaymentUrl(null);
+    setTimeoutInSeconds(0);
+    setError(null);
+  };
+
+  // Handle timer expiry
+  const handleTimerExpired = () => {
+    setShowTimerModal(false);
+    setTimerExpired(true);
+    setPaymentUrl(null);
+    toast.error("Payment time expired. Please try again.");
+  };
+
   const handleClose = () => {
     if (!isLoading) {
       onClose();
       reset();
       setPaymentUrl(null);
-      setShowTimer(false);
+      setShowTimerModal(false);
       setTimerExpired(false);
-      setTimeLeft(0);
+      setTimeoutInSeconds(0);
       setError(null);
     }
   };
 
+  // Clear any existing payment parameters when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      // Reset all payment-related states when modal opens
+      setPaymentUrl(null);
+      setShowTimerModal(false);
+      setTimerExpired(false);
+      setTimeoutInSeconds(0);
+      setError(null);
+    }
+  }, [isOpen]);
+
   const handleRetryBooking = () => {
     setTimerExpired(false);
     setPaymentUrl(null);
-    setShowTimer(false);
-    setTimeLeft(0);
+    setShowTimerModal(false);
+    setTimeoutInSeconds(0);
     setError(null);
-  };
-
-  const handleSuccessModalClose = () => {
-    // This is now handled in the reservation card
   };
 
   if (!isOpen) return null;
@@ -291,7 +254,7 @@ export function StayBookingModal({
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/20" onClick={handleClose} />
-        <div className="relative bg-white rounded-xl p-8 max-w-md w-full text-center">
+        <div className="relative bg-white rounded-xl p-6 sm:p-8 max-w-md w-full text-center">
           <div className="mb-4">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg
@@ -311,12 +274,12 @@ export function StayBookingModal({
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Payment Time Expired
             </h3>
-            <p className="text-gray-600 mb-6">
-              Your booking session has expired. Please re-initiate your booking
-              to continue.
+            <p className="text-gray-600 mb-6 text-sm sm:text-base">
+              Your booking session has expired. Please re-initiate your
+              booking to continue.
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Button variant="outline" onClick={handleClose} className="flex-1">
               Cancel
             </Button>
@@ -335,6 +298,7 @@ export function StayBookingModal({
 
   return (
     <>
+      {/* Booking Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         {/* Backdrop */}
         <div className="absolute inset-0 bg-black/20" onClick={handleClose} />
@@ -349,7 +313,9 @@ export function StayBookingModal({
             backdropFilter: "blur(83.3499984741211px)",
             display: "flex",
             width: "666px",
+            maxWidth: "95vw",
             height: "443px",
+            maxHeight: "90vh",
             padding: "20px",
             alignItems: "center",
             gap: "24px",
@@ -377,15 +343,9 @@ export function StayBookingModal({
             </svg>
           </button>
 
-          {/* Timer Display */}
-          {showTimer && (
-            <div className="absolute top-4 left-4 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
-              ⏱️ {formatTimer(timeLeft)}
-            </div>
-          )}
-
-          {/* Left Side - Order Summary */}
+          {/* Left Side - Order Summary - Hidden on mobile */}
           <div
+            className="hidden lg:flex"
             style={{
               borderRadius: "20px",
               border: "1px solid rgba(138, 174, 164, 0.20)",
@@ -393,7 +353,6 @@ export function StayBookingModal({
                 "linear-gradient(6deg, rgba(22, 244, 118, 0.08) 33.76%, rgba(255, 255, 255, 0.08) 56.29%)",
               boxShadow: "2px 2px 6px 0 rgba(0, 0, 0, 0.04)",
               backdropFilter: "blur(21px)",
-              display: "flex",
               width: "344px",
               padding: "16px",
               flexDirection: "column",
@@ -487,38 +446,10 @@ export function StayBookingModal({
                       }}
                     >
                       {unit.details &&
-                        formatPrice(
-                          unit.details.price * unit.numberOfUnits * days
-                        )}
+                        formatPrice(unit.details.price * unit.numberOfUnits)}
                     </span>
                   </div>
                 ))}
-
-                {/* Days */}
-                <div className="flex justify-between items-center">
-                  <span
-                    style={{
-                      color: "#20232A",
-                      fontFamily: "var(--font-source-sans), sans-serif",
-                      fontSize: "14px",
-                      fontWeight: 400,
-                      lineHeight: "160%",
-                    }}
-                  >
-                    {days} Day{days !== 1 ? "s" : ""}
-                  </span>
-                  <span
-                    style={{
-                      color: "#20232A",
-                      fontFamily: "var(--font-source-sans), sans-serif",
-                      fontSize: "14px",
-                      fontWeight: 400,
-                      lineHeight: "160%",
-                    }}
-                  >
-                    x{days}
-                  </span>
-                </div>
 
                 {/* Total */}
                 <div className="flex justify-between items-center pt-2 border-t border-gray-200">
@@ -549,7 +480,7 @@ export function StayBookingModal({
             </div>
           </div>
 
-          {/* Right Side - Booking Form */}
+          {/* Right Side - Booking Form - Full width on mobile */}
           <div className="flex-1 h-full flex flex-col">
             {/* Form Header */}
             <div className="mb-6">
@@ -580,7 +511,7 @@ export function StayBookingModal({
               onSubmit={handleSubmit(handleBooking)}
               className="flex-1 flex flex-col"
             >
-              <div className="space-y-4 flex-1">
+              <div className="space-y-4">
                 <FormInput
                   label="Full name"
                   placeholder="Full name*"
@@ -610,12 +541,11 @@ export function StayBookingModal({
               </div>
 
               {/* Submit Button */}
-              <div className="mt-6">
+              <div className="mt-4 flex justify-center">
                 <Button
                   type="submit"
                   variant="signup-primary"
                   size="allotease-md"
-                  className="w-full"
                   loading={isLoading}
                   disabled={isLoading || !isValid}
                   style={{
@@ -678,6 +608,15 @@ export function StayBookingModal({
           </div>
         </div>
       </div>
+
+      {/* Payment Timer Modal */}
+      <PaymentTimerModal
+        isOpen={showTimerModal}
+        onCancel={handleTimerCancel}
+        onProceed={handleTimerProceed}
+        timeoutInSeconds={timeoutInSeconds}
+        onTimeExpired={handleTimerExpired}
+      />
     </>
   );
 }

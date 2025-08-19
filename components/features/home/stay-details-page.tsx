@@ -1,8 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
-import React, { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import toast from "react-hot-toast";
+import React, { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { StayDetailsBanner } from "@/components/ui/stay-details/stay-details-banner";
 import { StaysService, GetStayByIdResponse } from "@/services/stays-service";
 import { RatingService, ReviewAllocator } from "@/services/rating-service";
@@ -17,6 +16,8 @@ import { EventDetailsOrganizer } from "@/components/ui/event-details/event-detai
 import { StayDetailsGuestReviews } from "@/components/ui/stay-details/stay-details-guest-reviews";
 import { StayDetailsOtherStays } from "@/components/ui/stay-details/stay-details-other-stays";
 import { useBookingStore } from "@/stores/booking-store";
+import { BookingSuccessModal } from "@/components/ui/modals/booking-success-modal";
+import { EventDetailsPageSkeleton } from "@/components/ui/loading-skeletons/event-details-skeleton-page";
 
 interface StayDetailsPageProps {
   id: string;
@@ -31,10 +32,18 @@ interface StayDetailsState {
   error: string | null;
 }
 
+interface DateRange {
+  from: Date | undefined;
+  to: Date | undefined;
+}
+
 export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { clearBookingData } = useBookingStore();
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  
+  // Use ref to track if callback has been processed to prevent duplicate toasts
+  const callbackProcessedRef = useRef(false);
   
   const [state, setState] = useState<StayDetailsState>({
     stayData: null,
@@ -44,30 +53,59 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
     error: null,
   });
 
-  // Handle payment callback
-  useEffect(() => {
-    const type = searchParams.get('type');
-    const status = searchParams.get('status');
+  // Shared date range state - lifted up from child components
+  const [sharedDateRange, setSharedDateRange] = useState<DateRange>({
+    from: undefined,
+    to: undefined,
+  });
+
+  // Clean URL parameters by removing booking-related query params
+  const cleanUrlParameters = () => {
+    const currentUrl = new URL(window.location.href);
+    const params = new URLSearchParams(currentUrl.search);
     
-    if (type === 'stays') {
-      if (status === 'success') {
-        // Payment successful
-        clearBookingData();
-        toast.success("Booking completed successfully!");
-        
-        // Clean up URL by removing query parameters
-        const newUrl = window.location.pathname;
-        router.replace(newUrl);
-      } else if (status === 'failed' || status === 'cancelled') {
-        // Payment failed or cancelled
-        toast.error("Payment was not completed. Please try again.");
-        
-        // Clean up URL by removing query parameters
-        const newUrl = window.location.pathname;
-        router.replace(newUrl);
-      }
+    // Remove booking-related parameters
+    params.delete('trxref');
+    params.delete('reference');
+
+    
+    // Build new URL
+    const newUrl = `${currentUrl.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+    
+    // Replace current URL without triggering navigation
+    window.history.replaceState({}, '', newUrl);
+  };
+
+  // Handle booking callback - with duplicate prevention
+  useEffect(() => {
+    const type = searchParams.get("type");
+    const trxref = searchParams.get("trxref");
+    const reference = searchParams.get("reference");
+
+    // Check if we have booking parameters and haven't processed them yet
+    const hasPaymentParams = type === "stays" && (trxref || reference);
+    
+    if (hasPaymentParams && !callbackProcessedRef.current) {
+      // Mark as processed immediately to prevent any duplicate processing
+      callbackProcessedRef.current = true;
+      
+      // Clear booking data
+      clearBookingData();
+      
+      // Show the success modal
+      setShowSuccessModal(true);
+      
+      // Clean URL parameters immediately after processing
+      cleanUrlParameters();
     }
-  }, [searchParams, clearBookingData, router]);
+  }, [searchParams, clearBookingData]);
+
+  // Reset the processed flag when component unmounts or ID changes
+  useEffect(() => {
+    return () => {
+      callbackProcessedRef.current = false;
+    };
+  }, [id]);
 
   useEffect(() => {
     const fetchStayData = async () => {
@@ -128,24 +166,16 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
     }
   }, [id]);
 
+  // Handle success modal close
+  const handleCloseSuccessModal = () => {
+    setShowSuccessModal(false);
+    // Reset the processed flag after modal closes
+    callbackProcessedRef.current = false;
+  };
+
   // Loading state
   if (state.loading) {
-    return (
-      <div className={`space-y-6 ${className}`}>
-        <div className="w-full h-[400px] bg-gray-200 rounded-[24px] animate-pulse" />
-        <div className="grid grid-cols-12 gap-8">
-          <div className="col-span-8 space-y-4">
-            <div className="h-6 bg-gray-200 rounded animate-pulse w-48" />
-            <div className="h-8 bg-gray-200 rounded animate-pulse" />
-            <div className="h-4 bg-gray-200 rounded animate-pulse" />
-            <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
-          </div>
-          <div className="col-span-4">
-            <div className="h-64 bg-gray-200 rounded animate-pulse" />
-          </div>
-        </div>
-      </div>
-    );
+     return <EventDetailsPageSkeleton />;
   }
 
   // Error state
@@ -186,100 +216,176 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
 
   const { stay, stayFacilities, stayUnits } = state.stayData.data;
 
-  return (
-    <div className={`space-y-6 ${className}`}>
-      {/* Stay Banner - Full Width */}
-      <StayDetailsBanner images={stay.images} title={stay.title} />
+  // Shared date range change handler
+  const handleSharedDateRangeChange = (range: DateRange) => {
+    setSharedDateRange(range);
+  };
 
-      {/* Two Column Grid Layout */}
-      <div className="grid grid-cols-12 gap-8">
-        {/* Left Column - Main Content (625px ≈ 64.8% ≈ 8 cols out of 12) */}
-        <div className="col-span-8">
+  // Helper function to render rating section
+  const renderRatingSection = () => {
+    if (state.reviewsLoading) {
+      return (
+        <div className="flex items-center gap-3">
+          <div className="w-16 h-6 bg-gray-200 rounded-xl animate-pulse" />
+          <div className="w-24 h-4 bg-gray-200 rounded animate-pulse" />
+        </div>
+      );
+    }
+
+    const displayData = RatingService.getRatingDisplayData(state.reviewsData);
+
+    return displayData.hasRating ? (
+      <div className="flex items-center gap-3">
+        <ReviewBadge rating={displayData.rating} />
+        <span
+          style={{
+            color: "#667085",
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: "14px",
+            fontStyle: "normal",
+            fontWeight: 400,
+            lineHeight: "140%",
+            letterSpacing: "-0.28px",
+          }}
+        >
+          {displayData.reviewsText}
+        </span>
+      </div>
+    ) : (
+      <div className="text-gray-500 text-sm">
+        {displayData.reviewsText}
+      </div>
+    );
+  };
+
+  return (
+    <>
+      <div className={`space-y-6 ${className}`}>
+        {/* Stay Banner - Full Width */}
+        <StayDetailsBanner images={stay.images} title={stay.title} />
+
+        {/* Mobile Layout - Single Column */}
+        <div className="lg:hidden space-y-6">
           {/* Stay Title Section */}
-          <div className="mb-2">
-            <StayDetailsTitle title={stay.title} />
-          </div>
+          <StayDetailsTitle title={stay.title} />
 
           {/* Rating & Reviews Section */}
-          <div className="mb-4">
-            {state.reviewsLoading ? (
-              <div className="flex items-center gap-3">
-                <div className="w-16 h-6 bg-gray-200 rounded-xl animate-pulse" />
-                <div className="w-24 h-4 bg-gray-200 rounded animate-pulse" />
-              </div>
-            ) : (
-              (() => {
-                const displayData = RatingService.getRatingDisplayData(
-                  state.reviewsData
-                );
-
-                return displayData.hasRating ? (
-                  <div className="flex items-center gap-3">
-                    <ReviewBadge rating={displayData.rating} />
-                    <span
-                      style={{
-                        color: "#667085",
-                        fontFamily: "var(--font-space-grotesk), sans-serif",
-                        fontSize: "14px",
-                        fontStyle: "normal",
-                        fontWeight: 400,
-                        lineHeight: "140%",
-                        letterSpacing: "-0.28px",
-                      }}
-                    >
-                      {displayData.reviewsText}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="text-gray-500 text-sm">
-                    {displayData.reviewsText}
-                  </div>
-                );
-              })()
-            )}
+          <div>
+            {renderRatingSection()}
           </div>
 
-          {/* Stay Description Section */}
-          <div className="mb-8">
-            <StayDetailsDescription description={stay.description} />
-          </div>
-
-          {/* Location Section */}
-          <div className="mb-8">
-            <StayDetailsLocation stay={stay} />
-          </div>
-
-          {/* Amenities Section */}
-          <div className="mb-8">
-            <StayDetailsAmenities facilitiesData={stayFacilities} />
-          </div>
-
-          {/* Room Types Section */}
-          <div className="mb-8">
-            <StayDetailsAvailability
-              units={stayUnits}
-              facilitiesData={stayFacilities}
+          {/* Reservation Card - Mobile Position (after title) */}
+          <div className="lg:sticky lg:top-8">
+            <StayDetailsReservationCard 
+              stay={stay} 
+              stayUnits={stayUnits}
+              dateRange={sharedDateRange}
+              onDateRangeChange={handleSharedDateRangeChange}
             />
           </div>
 
+          {/* Stay Description Section */}
+          <StayDetailsDescription description={stay.description} />
+
+          {/* Location Section */}
+          <StayDetailsLocation stay={stay} />
+
+          {/* Amenities Section */}
+          <StayDetailsAmenities facilitiesData={stayFacilities} />
+
+          {/* Room Types Section */}
+          <StayDetailsAvailability
+            units={stayUnits}
+            facilitiesData={stayFacilities}
+            dateRange={sharedDateRange}
+            onDateRangeChange={handleSharedDateRangeChange}
+          />
+
           {/* Follow card Section */}
-          <div className="mb-8">
-            <EventDetailsOrganizer ownerId={stay.ownerId} showTitle={false} />
-          </div>
+          <EventDetailsOrganizer ownerId={stay.ownerId} showTitle={false} />
+
+          {/* Guest Reviews Section - Mobile Position */}
+          <StayDetailsGuestReviews ownerId={stay.ownerId} />
+
+          {/* Other Stays Section - Mobile Position */}
+          <StayDetailsOtherStays currentStayId={stay._id} />
         </div>
 
-        {/* Right Column - Booking Sidebar (remaining space ≈ 35.2% ≈ 4 cols out of 12) */}
-        <div className="col-span-4">
-          {/* Reservation Card */}
-          <StayDetailsReservationCard stay={stay} stayUnits={stayUnits} />
+        {/* Desktop Layout - Two Column Grid (lg:block to show only on desktop) */}
+        <div className="hidden lg:block">
+          <div className="grid grid-cols-12 gap-8">
+            {/* Left Column - Main Content (625px ≈ 64.8% ≈ 8 cols out of 12) */}
+            <div className="col-span-8">
+              {/* Stay Title Section */}
+              <div className="mb-2">
+                <StayDetailsTitle title={stay.title} />
+              </div>
+
+              {/* Rating & Reviews Section */}
+              <div className="mb-4">
+                {renderRatingSection()}
+              </div>
+
+              {/* Stay Description Section */}
+              <div className="mb-8">
+                <StayDetailsDescription description={stay.description} />
+              </div>
+
+              {/* Location Section */}
+              <div className="mb-8">
+                <StayDetailsLocation stay={stay} />
+              </div>
+
+              {/* Amenities Section */}
+              <div className="mb-8">
+                <StayDetailsAmenities facilitiesData={stayFacilities} />
+              </div>
+
+              {/* Room Types Section */}
+              <div className="mb-8">
+                <StayDetailsAvailability
+                  units={stayUnits}
+                  facilitiesData={stayFacilities}
+                  dateRange={sharedDateRange}
+                  onDateRangeChange={handleSharedDateRangeChange}
+                />
+              </div>
+
+              {/* Follow card Section */}
+              <div className="mb-8">
+                <EventDetailsOrganizer ownerId={stay.ownerId} showTitle={false} />
+              </div>
+            </div>
+
+            {/* Right Column - Booking Sidebar (remaining space ≈ 35.2% ≈ 4 cols out of 12) */}
+            <div className="col-span-4">
+              {/* Reservation Card - Desktop Position */}
+              <div className="lg:sticky lg:top-8">
+                <StayDetailsReservationCard 
+                  stay={stay} 
+                  stayUnits={stayUnits}
+                  dateRange={sharedDateRange}
+                  onDateRangeChange={handleSharedDateRangeChange}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Guest Reviews Section - Full Width Below Grid (Desktop only) */}
+          <StayDetailsGuestReviews ownerId={stay.ownerId} />
+
+          {/* Other Stays Section - Full Width Below Grid (Desktop only) */}
+          <StayDetailsOtherStays currentStayId={stay._id} />
         </div>
       </div>
 
-      {/* Guest Reviews Section - Full Width Below Grid */}
-      <StayDetailsGuestReviews ownerId={stay.ownerId} />
-
-      {/* Other Stays Section - Full Width Below Grid */}
-      <StayDetailsOtherStays currentStayId={stay._id} />
-    </div>
+      {/* Success Modal */}
+      <BookingSuccessModal
+        isOpen={showSuccessModal}
+        onClose={handleCloseSuccessModal}
+        type="stays"
+        showToast={true}
+      />
+    </>
   );
 }
