@@ -26,6 +26,11 @@ export function FollowingSection({
     }
   };
 
+  // Deduplicate followers to prevent duplicate keys
+  const uniqueFollowers = followers.filter((follower, index, array) => 
+    array.findIndex(f => f.id === follower.id) === index
+  );
+
   return (
     <div 
       className={className}
@@ -42,16 +47,16 @@ export function FollowingSection({
         background: 'rgba(242, 244, 247, 0.30)'
       }}
     >
-      {followers.map((follower, index) => (
+      {uniqueFollowers.map((follower, index) => (
         <FollowerItem
-          key={follower.id}
+          key={`${follower.id}-${index}`}
           id={follower.id}
           name={follower.name}
           avatarUrl={follower.avatarUrl}
           isFollowing={follower.isFollowing}
           onToggleFollow={handleToggleFollow}
-          className={index === followers.length - 1 ? "border-b-0" : ""}
-          style={index === followers.length - 1 ? { borderBottom: 'none' } : {}}
+          className={index === uniqueFollowers.length - 1 ? "border-b-0" : ""}
+          style={index === uniqueFollowers.length - 1 ? { borderBottom: 'none' } : {}}
         />
       ))}
     </div>

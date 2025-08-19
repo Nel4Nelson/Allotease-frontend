@@ -64,7 +64,7 @@ export function TimePicker({
           {(segment) => (
             <DateSegment
               segment={segment}
-              className={`px-0.5 tabular-nums outline-none rounded-sm focus:bg-blue-100 focus:text-blue-900 placeholder-shown:text-[var(--input-placeholder)] ${
+              className={`px-0.5 tabular-nums outline-none rounded-sm focus:bg-blue-100 focus:text-black placeholder-shown:text-[var(--input-placeholder)] ${
                 segment.isPlaceholder
                   ? "text-[var(--input-placeholder)]"
                   : "text-[var(--input-text)]"

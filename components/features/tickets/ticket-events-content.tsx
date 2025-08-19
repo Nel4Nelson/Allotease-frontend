@@ -383,7 +383,7 @@ export function TicketEventsContent({
           <button
             onClick={loadMoreTickets}
             disabled={isLoadingMore}
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+            className="px-6 py-2  bg-[var(--feature-accent-orange)] text-white rounded-lg disabled:opacity-50"
           >
             {isLoadingMore ? "Loading..." : "Load More"}
           </button>

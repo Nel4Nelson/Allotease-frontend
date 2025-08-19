@@ -307,7 +307,7 @@ export function TicketsProfileSidebar() {
           <p>Failed to load profile</p>
           <button
             onClick={() => fetchProfile()}
-            className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="mt-2 px-4 py-2  bg-[var(--feature-accent-orange)] text-white rounded"
           >
             Retry
           </button>
@@ -349,7 +349,7 @@ export function TicketsProfileSidebar() {
             <p>Failed to load organizers</p>
             <button
               onClick={() => fetchAllocators(1, false)}
-              className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              className="mt-2 px-4 py-2  bg-[var(--feature-accent-orange)] text-white rounded hover:bg-blue-600"
             >
               Retry
             </button>
@@ -366,7 +366,7 @@ export function TicketsProfileSidebar() {
               <div ref={loadMoreRef} className="py-4 text-center">
                 {isLoadingMore ? (
                   <div className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-[var(--feature-accent-orange)] rounded-full animate-spin" />
                     <span className="text-sm text-gray-500">Loading more...</span>
                   </div>
                 ) : (

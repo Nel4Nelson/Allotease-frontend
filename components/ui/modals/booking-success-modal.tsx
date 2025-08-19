@@ -27,7 +27,7 @@ const bookingConfigs: Record<BookingType, BookingConfig> = {
     title: "Stay Booked!",
     message: "You have successfully booked your stay",
     buttonText: "View Your Ticket",
-    ticketUrl: "/tickets?stays",
+    ticketUrl: "/tickets?type=stays",
     toastMessage: "Stay booking completed successfully!",
   },
   events: {

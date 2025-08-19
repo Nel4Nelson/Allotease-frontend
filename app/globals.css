@@ -420,7 +420,6 @@
 .autocomplete-fix:-webkit-autofill:hover,
 .autocomplete-fix:-webkit-autofill:focus,
 .autocomplete-fix:-webkit-autofill:active {
-  /* Remove the blue background */
   -webkit-box-shadow: 0 0 0 30px white inset !important;
   /* Keep your text color */
   -webkit-text-fill-color: inherit !important;
