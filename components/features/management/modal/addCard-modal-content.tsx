@@ -1,4 +1,3 @@
-// components/modal/addCard-modal-content.tsx
 "use client";
 import {
   BankDetailsFormData,

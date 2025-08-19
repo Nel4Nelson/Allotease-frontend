@@ -1,7 +1,11 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { User, TokenPayload, UserRole } from '@/types/auth';
-import { setAuthCookie, clearAuthCookie, getAuthCookie } from '@/lib/auth-cookies';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { User, TokenPayload, UserRole } from "@/types/auth";
+import {
+  setAuthCookie,
+  clearAuthCookie,
+  getAuthCookie,
+} from "@/lib/auth-cookies";
 
 // Add a new action to set loading state
 interface AuthState {
@@ -11,7 +15,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   isMobileDevice: boolean;
-  
+
   // Actions
   setUser: (user: User) => void;
   setToken: (token: string, remember?: boolean) => void;
@@ -23,7 +27,7 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
   setMobileDevice: (isMobile: boolean) => void;
   initializeFromCookie: () => void;
-  
+
   // Helper methods
   getUserRole: () => UserRole | null;
   isUserVerified: () => boolean;
@@ -34,27 +38,27 @@ interface AuthState {
 // Helper function to decode JWT token
 const decodeToken = (token: string): TokenPayload | null => {
   try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
     const jsonPayload = decodeURIComponent(
       window
         .atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
     );
     return JSON.parse(jsonPayload);
   } catch (error) {
-    console.error('Failed to decode token:', error);
+    console.error("Failed to decode token:", error);
     return null;
   }
 };
 
-// Helper function to check if token is expired
-const isTokenExpired = (token: string): boolean => {
+// Helper function to check if token is completed
+const isTokencompleted = (token: string): boolean => {
   const decoded = decodeToken(token);
   if (!decoded) return true;
-  
+
   const currentTime = Date.now() / 1000;
   return decoded.exp < currentTime;
 };
@@ -63,72 +67,78 @@ const isTokenExpired = (token: string): boolean => {
 const isTokenExpiringSoon = (token: string): boolean => {
   const decoded = decodeToken(token);
   if (!decoded) return true;
-  
+
   const currentTime = Date.now() / 1000;
-  const fiveMinutesFromNow = currentTime + (5 * 60); // 5 minutes in seconds
+  const fiveMinutesFromNow = currentTime + 5 * 60; // 5 minutes in seconds
   return decoded.exp < fiveMinutesFromNow;
 };
 
 // Storage helpers - enhanced for mobile
 const getStoredToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  
+  if (typeof window === "undefined") return null;
+
   // Try cookie first (most reliable)
   const cookieToken = getAuthCookie();
   if (cookieToken) return cookieToken;
-  
+
   // Fallback to storage
-  return localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+  return (
+    localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token")
+  );
 };
 
 const storeToken = (token: string, remember: boolean = true): void => {
-  if (typeof window === 'undefined') return;
-  
+  if (typeof window === "undefined") return;
+
   // Set cookie (for middleware access)
   setAuthCookie(token, remember);
-  
+
   // Also set in storage (for immediate client access)
   if (remember) {
-    localStorage.setItem('auth_token', token);
-    sessionStorage.removeItem('auth_token');
+    localStorage.setItem("auth_token", token);
+    sessionStorage.removeItem("auth_token");
   } else {
-    sessionStorage.setItem('auth_token', token);
-    localStorage.removeItem('auth_token');
+    sessionStorage.setItem("auth_token", token);
+    localStorage.removeItem("auth_token");
   }
 };
 
 const removeStoredToken = (): void => {
-  if (typeof window === 'undefined') return;
-  
+  if (typeof window === "undefined") return;
+
   // Clear cookie
   clearAuthCookie();
-  
+
   // Clear storage
-  localStorage.removeItem('auth_token');
-  sessionStorage.removeItem('auth_token');
+  localStorage.removeItem("auth_token");
+  sessionStorage.removeItem("auth_token");
 };
 
 // Helper to get redirect URL from current page
 const getRedirectUrl = (): string | null => {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
   const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get('redirect');
+  return urlParams.get("redirect");
 };
 
 // Redirect to login helper with preserved redirect param
 const redirectToLogin = (): void => {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     const redirectUrl = getRedirectUrl();
-    const loginUrl = redirectUrl ? `/signin?redirect=${encodeURIComponent(redirectUrl)}` : '/signin';
+    const loginUrl = redirectUrl
+      ? `/signin?redirect=${encodeURIComponent(redirectUrl)}`
+      : "/signin";
     window.location.href = loginUrl;
   }
 };
 
 // Detect if device is mobile
 const detectMobileDevice = (): boolean => {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === "undefined") return false;
   const userAgent = navigator.userAgent;
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    userAgent
+  );
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -148,43 +158,48 @@ export const useAuthStore = create<AuthState>()(
 
       // Set token and optionally persist it
       setToken: (token: string, remember: boolean = true) => {
-        // Check if token is expired
-        if (isTokenExpired(token)) {
-          console.warn('Attempting to set expired token');
+        // Check if token is completed
+        if (isTokencompleted(token)) {
+          console.warn("Attempting to set completed token");
           get().logout();
           return;
         }
 
         // Store token in appropriate storage and cookie
         storeToken(token, remember);
-        
+
         // Try to extract user data from token if no user data exists
         const decoded = decodeToken(token);
         const currentUser = get().user;
-        
-        set({ 
-          token, 
+
+        set({
+          token,
           isAuthenticated: true,
           isLoading: false,
           // Only update user from token if we don't have complete user data
-          ...(decoded && !currentUser && {
-            user: {
-              _id: decoded._id,
-              email: decoded.email,
-              role: decoded.role,
-              firstname: '',
-              lastname: '',
-              isVerified: false
-            } as User
-          })
+          ...(decoded &&
+            !currentUser && {
+              user: {
+                _id: decoded._id,
+                email: decoded.email,
+                role: decoded.role,
+                firstname: "",
+                lastname: "",
+                isVerified: false,
+              } as User,
+            }),
         });
       },
 
       // Set both user and token (most common case)
-      setUserAndToken: (user: User, token: string, remember: boolean = true) => {
-        // Check if token is expired
-        if (isTokenExpired(token)) {
-          console.warn('Attempting to set expired token');
+      setUserAndToken: (
+        user: User,
+        token: string,
+        remember: boolean = true
+      ) => {
+        // Check if token is completed
+        if (isTokencompleted(token)) {
+          console.warn("Attempting to set completed token");
           get().clearAuth();
           redirectToLogin();
           return;
@@ -202,19 +217,19 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // Check if current token is expired and handle accordingly
+      // Check if current token is completed and handle accordingly
       checkTokenExpiry: (): boolean => {
         const { token } = get();
         if (!token) return false;
 
-        if (isTokenExpired(token)) {
-          console.warn('Token has expired');
+        if (isTokencompleted(token)) {
+          console.warn("Token has completed");
           get().logout();
           return false;
         }
 
         if (isTokenExpiringSoon(token)) {
-          console.warn('Token is expiring soon');
+          console.warn("Token is expiring soon");
           // You could implement refresh logic here if you had a refresh endpoint
           // For now, we'll just warn
         }
@@ -232,7 +247,12 @@ export const useAuthStore = create<AuthState>()(
       // Clear auth data without redirect (for internal use)
       clearAuth: () => {
         removeStoredToken();
-        set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          isLoading: false,
+        });
       },
 
       // Set loading state
@@ -248,10 +268,10 @@ export const useAuthStore = create<AuthState>()(
       // Initialize from cookie (useful for mobile)
       initializeFromCookie: () => {
         const cookieToken = getAuthCookie();
-        if (cookieToken && !isTokenExpired(cookieToken)) {
+        if (cookieToken && !isTokencompleted(cookieToken)) {
           const currentToken = get().token;
           if (!currentToken) {
-            console.log('[Auth Store] Initializing from cookie on mobile');
+            console.log("[Auth Store] Initializing from cookie on mobile");
             get().setToken(cookieToken);
           }
         }
@@ -270,20 +290,20 @@ export const useAuthStore = create<AuthState>()(
 
       hasBusinessInfo: (): boolean => {
         const { user } = get();
-        return !!(user?.business);
+        return !!user?.business;
       },
 
       getFullName: (): string => {
         const { user } = get();
-        if (!user) return '';
+        if (!user) return "";
         return `${user.firstname} ${user.lastname}`.trim();
       },
     }),
     {
-      name: 'auth-storage',
-      partialize: (state) => ({ 
+      name: "auth-storage",
+      partialize: (state) => ({
         user: state.user,
-        isAuthenticated: state.isAuthenticated 
+        isAuthenticated: state.isAuthenticated,
       }), // Only persist user and auth status, not token
       onRehydrateStorage: () => (state) => {
         return new Promise<void>((resolve) => {
@@ -298,37 +318,43 @@ export const useAuthStore = create<AuthState>()(
 
           // Enhanced delay for mobile devices
           const delay = isMobile ? 200 : 100;
-          
+
           setTimeout(() => {
             const storedToken = getStoredToken();
-            
-            if (storedToken && !isTokenExpired(storedToken)) {
-              const isOnAuthPage = typeof window !== 'undefined' && 
-                (window.location.pathname.includes('/signin') || 
-                 window.location.pathname.includes('/signup') || 
-                 window.location.pathname.includes('/login'));
-              
-              const hasRedirectParam = typeof window !== 'undefined' && 
-                new URLSearchParams(window.location.search).has('redirect');
-              
+
+            if (storedToken && !isTokencompleted(storedToken)) {
+              const isOnAuthPage =
+                typeof window !== "undefined" &&
+                (window.location.pathname.includes("/signin") ||
+                  window.location.pathname.includes("/signup") ||
+                  window.location.pathname.includes("/login"));
+
+              const hasRedirectParam =
+                typeof window !== "undefined" &&
+                new URLSearchParams(window.location.search).has("redirect");
+
               if (isOnAuthPage && hasRedirectParam) {
-                console.log('🔄 On auth page with redirect, deferring to auth components');
+                console.log(
+                  "🔄 On auth page with redirect, deferring to auth components"
+                );
                 state.setLoading(false);
               } else {
                 // Normal token restoration
-                console.log(`🔄 Restoring token on ${isMobile ? 'mobile' : 'desktop'}`);
+                console.log(
+                  `🔄 Restoring token on ${isMobile ? "mobile" : "desktop"}`
+                );
                 state.setToken(storedToken);
               }
             } else if (storedToken) {
-              // Token exists but is expired
-              console.log('🔄 Token expired, clearing auth');
+              // Token exists but is completed
+              console.log("🔄 Token completed, clearing auth");
               state.clearAuth();
             } else {
               // No token found
-              console.log('🔄 No token found');
+              console.log("🔄 No token found");
               state.setLoading(false);
             }
-            
+
             resolve();
           }, delay);
         });
@@ -338,7 +364,7 @@ export const useAuthStore = create<AuthState>()(
 );
 
 // Initialize token check on store creation with mobile awareness
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   // Set up periodic token expiry check (every 5 minutes)
   setInterval(() => {
     const store = useAuthStore.getState();

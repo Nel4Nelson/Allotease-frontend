@@ -13,13 +13,13 @@ export function decodeToken(token: string): TokenPayload | null {
   try {
     const parts = token.split(".");
     if (parts.length !== 3) return null;
-    
+
     const base64Url = parts[1];
     if (!base64Url) return null;
 
     // Edge Runtime compatible base64 decoding
     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    
+
     // Use atob instead of Buffer (Edge Runtime compatible)
     const jsonPayload = decodeURIComponent(
       atob(base64)
@@ -27,7 +27,7 @@ export function decodeToken(token: string): TokenPayload | null {
         .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
         .join("")
     );
-    
+
     return JSON.parse(jsonPayload);
   } catch (error) {
     console.error("Failed to decode token:", error);
@@ -35,8 +35,8 @@ export function decodeToken(token: string): TokenPayload | null {
   }
 }
 
-// Helper function to check if token is expired
-export function isTokenExpired(token: string): boolean {
+// Helper function to check if token is completed
+export function isTokencompleted(token: string): boolean {
   const decoded = decodeToken(token);
   if (!decoded) return true;
 
@@ -63,8 +63,9 @@ export function getTokenFromRequest(request: NextRequest): string | null {
 
 // Check if the request is from a mobile device
 export function isMobileDevice(request: NextRequest): boolean {
-  const userAgent = request.headers.get('user-agent') || '';
-  const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+  const userAgent = request.headers.get("user-agent") || "";
+  const mobileRegex =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
   return mobileRegex.test(userAgent);
 }
 
@@ -79,57 +80,59 @@ export function isAuthenticated(request: NextRequest): {
   const isMobile = isMobileDevice(request);
 
   if (!token) {
-    return { 
-      isAuth: false, 
-      user: null, 
-      isMobile,
-      shouldBypassMiddleware: false 
-    };
-  }
-
-  if (isTokenExpired(token)) {
-    // On mobile, only suggest bypass if we have auth indicators AND it's a protected route
-    const hasAuthIndicators = !!(
-      request.cookies.get('auth_token') || 
-      request.headers.get('authorization')
-    );
-    
-    // Only bypass for routes that actually need auth protection
-    const needsAuthProtection = request.nextUrl.pathname.includes('/allocation-admin/') ||
-                               request.nextUrl.pathname.includes('/dashboard/') ||
-                               request.nextUrl.pathname.includes('/profile/') ||
-                               request.nextUrl.pathname.includes('/settings/');
-    
-    return { 
-      isAuth: false, 
-      user: null, 
-      isMobile,
-      shouldBypassMiddleware: isMobile && hasAuthIndicators && needsAuthProtection
-    };
-  }
-
-  const user = decodeToken(token);
-  
-  // Additional mobile check - if we can't decode but have token, bypass only for protected routes
-  if (!user && isMobile && token) {
-    const needsAuthProtection = request.nextUrl.pathname.includes('/allocation-admin/') ||
-                               request.nextUrl.pathname.includes('/dashboard/') ||
-                               request.nextUrl.pathname.includes('/profile/') ||
-                               request.nextUrl.pathname.includes('/settings/');
-    
     return {
       isAuth: false,
       user: null,
       isMobile,
-      shouldBypassMiddleware: needsAuthProtection
+      shouldBypassMiddleware: false,
     };
   }
-  
-  return { 
-    isAuth: !!user, 
-    user, 
+
+  if (isTokencompleted(token)) {
+    // On mobile, only suggest bypass if we have auth indicators AND it's a protected route
+    const hasAuthIndicators = !!(
+      request.cookies.get("auth_token") || request.headers.get("authorization")
+    );
+
+    // Only bypass for routes that actually need auth protection
+    const needsAuthProtection =
+      request.nextUrl.pathname.includes("/allocation-admin/") ||
+      request.nextUrl.pathname.includes("/dashboard/") ||
+      request.nextUrl.pathname.includes("/profile/") ||
+      request.nextUrl.pathname.includes("/settings/");
+
+    return {
+      isAuth: false,
+      user: null,
+      isMobile,
+      shouldBypassMiddleware:
+        isMobile && hasAuthIndicators && needsAuthProtection,
+    };
+  }
+
+  const user = decodeToken(token);
+
+  // Additional mobile check - if we can't decode but have token, bypass only for protected routes
+  if (!user && isMobile && token) {
+    const needsAuthProtection =
+      request.nextUrl.pathname.includes("/allocation-admin/") ||
+      request.nextUrl.pathname.includes("/dashboard/") ||
+      request.nextUrl.pathname.includes("/profile/") ||
+      request.nextUrl.pathname.includes("/settings/");
+
+    return {
+      isAuth: false,
+      user: null,
+      isMobile,
+      shouldBypassMiddleware: needsAuthProtection,
+    };
+  }
+
+  return {
+    isAuth: !!user,
+    user,
     isMobile,
-    shouldBypassMiddleware: false 
+    shouldBypassMiddleware: false,
   };
 }
 
@@ -150,23 +153,24 @@ export function createRedirectUrl(
 ): string {
   try {
     let redirectUrl = redirectTo;
-    
+
     // Only preserve destination for non-public routes and non-auth routes
-    const shouldPreserve = originalUrl !== "/" && 
-                          !originalUrl.startsWith("/signin") && 
-                          !originalUrl.startsWith("/signup") &&
-                          !originalUrl.startsWith("/login") &&
-                          !originalUrl.startsWith("/about") &&
-                          !originalUrl.startsWith("/upgrade") &&
-                          !originalUrl.startsWith("/email-verification");
-    
+    const shouldPreserve =
+      originalUrl !== "/" &&
+      !originalUrl.startsWith("/signin") &&
+      !originalUrl.startsWith("/signup") &&
+      !originalUrl.startsWith("/login") &&
+      !originalUrl.startsWith("/about") &&
+      !originalUrl.startsWith("/upgrade") &&
+      !originalUrl.startsWith("/email-verification");
+
     if (shouldPreserve) {
       // Simple query parameter append
-      const separator = redirectTo.includes('?') ? '&' : '?';
+      const separator = redirectTo.includes("?") ? "&" : "?";
       const encodedOriginalUrl = encodeURIComponent(originalUrl);
       redirectUrl = `${redirectTo}${separator}redirect=${encodedOriginalUrl}`;
     }
-    
+
     return redirectUrl;
   } catch (error) {
     console.error("Error creating redirect URL:", error);

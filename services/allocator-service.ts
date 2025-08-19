@@ -12,7 +12,7 @@ export interface Allocator {
   avatar: string;
   followingCount: number;
   followersCount: number;
-  isFollowing?: boolean; 
+  isFollowing?: boolean;
 }
 
 // Followed user interface from the follow endpoint
@@ -101,11 +101,11 @@ export class AllocatorService {
     } catch (error: any) {
       // Handle 401 specifically without logging as error
       if (error?.response?.status === 401) {
-        console.log("User session expired, clearing auth");
+        console.log("User session completed, clearing auth");
         useAuthStore.getState().clearAuth();
         return [];
       }
-      
+
       console.error("Failed to fetch followed users:", error);
       return [];
     }
@@ -153,8 +153,10 @@ export class AllocatorService {
         return allocatorsResponse;
       } else {
         // User not authenticated, just fetch allocators without follow status
-        const allocatorsResponse = await apiClient.get<GetAllocatorsResponse>(url);
-        
+        const allocatorsResponse = await apiClient.get<GetAllocatorsResponse>(
+          url
+        );
+
         if (allocatorsResponse.status === "success") {
           // Ensure all allocators have isFollowing: false for unauthenticated users
           allocatorsResponse.data.items = allocatorsResponse.data.items.map(
@@ -245,7 +247,10 @@ export class AllocatorService {
   /**
    * Toggle follow status for a user
    */
-  static async toggleFollowUser(userId: string, currentlyFollowing: boolean): Promise<FollowResponse> {
+  static async toggleFollowUser(
+    userId: string,
+    currentlyFollowing: boolean
+  ): Promise<FollowResponse> {
     if (currentlyFollowing) {
       return this.unfollowUser(userId);
     } else {

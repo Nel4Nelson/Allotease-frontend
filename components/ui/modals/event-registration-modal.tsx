@@ -69,7 +69,7 @@ export function EventRegistrationModal({
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [timeoutInSeconds, setTimeoutInSeconds] = useState<number>(0);
   const [showTimerModal, setShowTimerModal] = useState(false);
-  const [timerExpired, setTimerExpired] = useState(false);
+  const [timercompleted, setTimercompleted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { bookingData, getEventBookingPayload } = useEventBookingStore();
 
@@ -146,7 +146,7 @@ export function EventRegistrationModal({
           // For paid events, show timer modal
           setPaymentUrl(response.data);
           setTimeoutInSeconds(response.timeoutInSeconds || 600);
-          setTimerExpired(false);
+          setTimercompleted(false);
 
           setShowTimerModal(true);
           toast.success("Booking created! Complete payment within 10 minutes.");
@@ -194,11 +194,11 @@ export function EventRegistrationModal({
   };
 
   // Handle timer expiry
-  const handleTimerExpired = () => {
+  const handleTimercompleted = () => {
     setShowTimerModal(false);
-    setTimerExpired(true);
+    setTimercompleted(true);
     setPaymentUrl(null);
-    toast.error("Payment time expired. Please try again.");
+    toast.error("Payment time completed. Please try again.");
   };
 
   const handleClose = () => {
@@ -207,7 +207,7 @@ export function EventRegistrationModal({
       reset();
       setPaymentUrl(null);
       setShowTimerModal(false);
-      setTimerExpired(false);
+      setTimercompleted(false);
       setTimeoutInSeconds(0);
       setError(null);
     }
@@ -219,14 +219,14 @@ export function EventRegistrationModal({
       // Reset all payment-related states when modal opens
       setPaymentUrl(null);
       setShowTimerModal(false);
-      setTimerExpired(false);
+      setTimercompleted(false);
       setTimeoutInSeconds(0);
       setError(null);
     }
   }, [isOpen]);
 
   const handleRetryRegistration = () => {
-    setTimerExpired(false);
+    setTimercompleted(false);
     setPaymentUrl(null);
     setShowTimerModal(false);
     setTimeoutInSeconds(0);
@@ -240,8 +240,8 @@ export function EventRegistrationModal({
 
   if (!isOpen) return null;
 
-  // Timer expired state (only for paid events)
-  if (timerExpired && !isFreeEvent) {
+  // Timer completed state (only for paid events)
+  if (timercompleted && !isFreeEvent) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/20" onClick={handleClose} />
@@ -263,10 +263,10 @@ export function EventRegistrationModal({
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Payment Time Expired
+              Payment Time completed
             </h3>
             <p className="text-gray-600 mb-6 text-sm sm:text-base">
-              Your registration session has expired. Please re-initiate your
+              Your registration session has completed. Please re-initiate your
               registration to continue.
             </p>
           </div>
@@ -517,7 +517,6 @@ export function EventRegistrationModal({
                   type="submit"
                   variant="signup-primary"
                   size="allotease-md"
-                
                   loading={isLoading}
                   disabled={isLoading || !isValid}
                   style={{
@@ -588,7 +587,7 @@ export function EventRegistrationModal({
           onCancel={handleTimerCancel}
           onProceed={handleTimerProceed}
           timeoutInSeconds={timeoutInSeconds}
-          onTimeExpired={handleTimerExpired}
+          onTimecompleted={handleTimercompleted}
         />
       )}
     </>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { apiClient } from "./api-client";
 import type { UnitData } from "@/stores/stay-form-store";
 

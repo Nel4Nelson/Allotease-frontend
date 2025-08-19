@@ -61,7 +61,7 @@ export interface ManagementStats {
 
 export interface ReservationItem {
   id?: string;
-  type?: "event" | "stay" | "car-park" ;
+  type?: "event" | "stay" | "car-park";
   guestName?: string;
   serviceName?: string;
   roomType?: string;

@@ -9,7 +9,7 @@ interface PaymentTimerModalProps {
   onCancel: () => void;
   onProceed: () => void;
   timeoutInSeconds: number;
-  onTimeExpired: () => void;
+  onTimecompleted: () => void;
   className?: string;
 }
 
@@ -18,7 +18,7 @@ export function PaymentTimerModal({
   onCancel,
   onProceed,
   timeoutInSeconds,
-  onTimeExpired,
+  onTimecompleted,
   className = "",
 }: PaymentTimerModalProps) {
   const [timeLeft, setTimeLeft] = useState<number>(timeoutInSeconds);
@@ -29,7 +29,7 @@ export function PaymentTimerModal({
       const timer = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
-            onTimeExpired();
+            onTimecompleted();
             return 0;
           }
           return prev - 1;
@@ -38,7 +38,7 @@ export function PaymentTimerModal({
 
       return () => clearInterval(timer);
     }
-  }, [isOpen, timeLeft, onTimeExpired]);
+  }, [isOpen, timeLeft, onTimecompleted]);
 
   // Reset timer when modal opens
   useEffect(() => {

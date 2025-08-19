@@ -6,7 +6,7 @@ export interface EventTicketBooking {
   _id: string;
   ownerId: string;
   clientId: string;
-  status: "active" | "cancelled" | "completed";
+  status: "active" | "cancelled" | "expired";
   totalPrice: number;
   type: "event";
   eventId: string;
@@ -35,7 +35,7 @@ interface GetEventTicketsResponse {
 
 // Query parameters for getting event tickets
 export interface GetEventTicketsParams {
-  status?: "all" | "active" | "cancelled" | "completed";
+  status?: "all" | "active" | "expired";
   page?: number;
   limit?: number;
   eventId?: string;
@@ -124,10 +124,8 @@ export class EventTicketService {
     switch (status) {
       case "active":
         return eventStart > now ? "Upcoming" : "Active";
-      case "completed":
-        return "Completed";
-      case "cancelled":
-        return "Cancelled";
+      case "expired":
+        return "expired";
       default:
         return "Unknown";
     }
@@ -149,7 +147,7 @@ export class EventTicketService {
     const stats = {
       total: tickets.length,
       active: 0,
-      completed: 0,
+      expired: 0,
       cancelled: 0,
       upcoming: 0,
       past: 0,

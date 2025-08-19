@@ -70,7 +70,7 @@ export function StayBookingModal({
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [timeoutInSeconds, setTimeoutInSeconds] = useState<number>(0);
   const [showTimerModal, setShowTimerModal] = useState(false);
-  const [timerExpired, setTimerExpired] = useState(false);
+  const [timercompleted, setTimercompleted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { bookingData, getBookingPayload } = useBookingStore();
 
@@ -161,7 +161,7 @@ export function StayBookingModal({
         // Show timer modal for payment
         setPaymentUrl(response.data);
         setTimeoutInSeconds(response.timeoutInSeconds || 600);
-        setTimerExpired(false);
+        setTimercompleted(false);
 
         setShowTimerModal(true);
         toast.success("Booking created! Complete payment within 10 minutes.");
@@ -208,11 +208,11 @@ export function StayBookingModal({
   };
 
   // Handle timer expiry
-  const handleTimerExpired = () => {
+  const handleTimercompleted = () => {
     setShowTimerModal(false);
-    setTimerExpired(true);
+    setTimercompleted(true);
     setPaymentUrl(null);
-    toast.error("Payment time expired. Please try again.");
+    toast.error("Payment time completed. Please try again.");
   };
 
   const handleClose = () => {
@@ -221,7 +221,7 @@ export function StayBookingModal({
       reset();
       setPaymentUrl(null);
       setShowTimerModal(false);
-      setTimerExpired(false);
+      setTimercompleted(false);
       setTimeoutInSeconds(0);
       setError(null);
     }
@@ -233,14 +233,14 @@ export function StayBookingModal({
       // Reset all payment-related states when modal opens
       setPaymentUrl(null);
       setShowTimerModal(false);
-      setTimerExpired(false);
+      setTimercompleted(false);
       setTimeoutInSeconds(0);
       setError(null);
     }
   }, [isOpen]);
 
   const handleRetryBooking = () => {
-    setTimerExpired(false);
+    setTimercompleted(false);
     setPaymentUrl(null);
     setShowTimerModal(false);
     setTimeoutInSeconds(0);
@@ -249,8 +249,8 @@ export function StayBookingModal({
 
   if (!isOpen) return null;
 
-  // Timer expired state
-  if (timerExpired) {
+  // Timer completed state
+  if (timercompleted) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/20" onClick={handleClose} />
@@ -272,10 +272,10 @@ export function StayBookingModal({
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Payment Time Expired
+              Payment Time completed
             </h3>
             <p className="text-gray-600 mb-6 text-sm sm:text-base">
-              Your booking session has expired. Please re-initiate your
+              Your booking session has completed. Please re-initiate your
               booking to continue.
             </p>
           </div>
@@ -615,7 +615,7 @@ export function StayBookingModal({
         onCancel={handleTimerCancel}
         onProceed={handleTimerProceed}
         timeoutInSeconds={timeoutInSeconds}
-        onTimeExpired={handleTimerExpired}
+        onTimecompleted={handleTimercompleted}
       />
     </>
   );

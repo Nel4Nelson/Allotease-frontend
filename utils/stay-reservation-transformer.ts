@@ -63,7 +63,7 @@ export function capitalizeStatus(
     pending: "Pending" as const,
     confirmed: "Confirmed" as const,
     cancelled: "Cancelled" as const,
-    // completed: "Completed" as const,
+    // expired: "expired" as const,
   };
 
   return statusMap[status] || "Pending";

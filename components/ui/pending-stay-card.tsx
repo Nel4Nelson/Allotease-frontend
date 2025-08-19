@@ -12,6 +12,7 @@ interface PendingStayCardProps {
   expiresAt: string; // ISO date string
   onAccept: (id: string) => void;
   onRefund: (id: string) => void;
+  disabled?: boolean; // Add this optional prop
 }
 
 export function PendingStayCard({
@@ -24,6 +25,7 @@ export function PendingStayCard({
   expiresAt,
   onAccept,
   onRefund,
+  disabled = false, // Default to false
 }: PendingStayCardProps) {
   const [timeLeft, setTimeLeft] = useState<string>("");
 
@@ -41,8 +43,12 @@ export function PendingStayCard({
 
       if (difference > 0) {
         const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+        const hours = Math.floor(
+          (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+        );
+        const minutes = Math.floor(
+          (difference % (1000 * 60 * 60)) / (1000 * 60)
+        );
 
         if (days > 0) {
           setTimeLeft(`${days}d ${hours}h ${minutes}m left`);
@@ -52,7 +58,7 @@ export function PendingStayCard({
           setTimeLeft(`${minutes}m left`);
         }
       } else {
-        setTimeLeft("Expired");
+        setTimeLeft("completed");
       }
     };
 
@@ -123,7 +129,8 @@ export function PendingStayCard({
             <div
               style={{
                 borderRadius: "4px",
-                background: "var(--Outline-on-System-Teal, rgba(138, 174, 164, 0.20))",
+                background:
+                  "var(--Outline-on-System-Teal, rgba(138, 174, 164, 0.20))",
                 display: "flex",
                 padding: "2px 8px",
                 justifyContent: "center",
@@ -183,10 +190,13 @@ export function PendingStayCard({
           {/* Accept/Confirm Button */}
           <button
             onClick={() => onAccept(id)}
+            disabled={disabled}
             style={{
               borderRadius: "51px",
               border: "1px solid var(--Uplift-400, #15BA6B)",
-              background: "rgba(21, 186, 107, 0.11)",
+              background: disabled 
+                ? "rgba(21, 186, 107, 0.05)" 
+                : "rgba(21, 186, 107, 0.11)",
               backdropFilter: "blur(21px)",
               display: "flex",
               padding: "8px 16px",
@@ -194,20 +204,27 @@ export function PendingStayCard({
               alignItems: "center",
               gap: "15px",
               flex: "1 0 0",
-              color: "var(--Uplift-400, #15BA6B)",
+              color: disabled 
+                ? "rgba(21, 186, 107, 0.5)" 
+                : "var(--Uplift-400, #15BA6B)",
               fontFamily: "var(--font-source-sans), sans-serif",
               fontSize: "16px",
               fontStyle: "normal",
               fontWeight: 600,
               lineHeight: "normal",
-              cursor: "pointer",
+              cursor: disabled ? "not-allowed" : "pointer",
               transition: "all 0.2s ease",
+              opacity: disabled ? 0.6 : 1,
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(21, 186, 107, 0.2)";
+              if (!disabled) {
+                e.currentTarget.style.background = "rgba(21, 186, 107, 0.2)";
+              }
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(21, 186, 107, 0.11)";
+              if (!disabled) {
+                e.currentTarget.style.background = "rgba(21, 186, 107, 0.11)";
+              }
             }}
           >
             Accept
@@ -216,10 +233,13 @@ export function PendingStayCard({
           {/* Refund Button */}
           <button
             onClick={() => onRefund(id)}
+            disabled={disabled}
             style={{
               borderRadius: "51px",
               border: "1px solid #FF0004",
-              background: "rgba(255, 0, 4, 0.11)",
+              background: disabled 
+                ? "rgba(255, 0, 4, 0.05)" 
+                : "rgba(255, 0, 4, 0.11)",
               backdropFilter: "blur(21px)",
               display: "flex",
               padding: "8px 16px",
@@ -227,20 +247,25 @@ export function PendingStayCard({
               alignItems: "center",
               gap: "15px",
               flex: "1 0 0",
-              color: "#FF0004",
+              color: disabled ? "rgba(255, 0, 4, 0.5)" : "#FF0004",
               fontFamily: "var(--font-source-sans), sans-serif",
               fontSize: "16px",
               fontStyle: "normal",
               fontWeight: 600,
               lineHeight: "normal",
-              cursor: "pointer",
+              cursor: disabled ? "not-allowed" : "pointer",
               transition: "all 0.2s ease",
+              opacity: disabled ? 0.6 : 1,
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(255, 0, 4, 0.2)";
+              if (!disabled) {
+                e.currentTarget.style.background = "rgba(255, 0, 4, 0.2)";
+              }
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(255, 0, 4, 0.11)";
+              if (!disabled) {
+                e.currentTarget.style.background = "rgba(255, 0, 4, 0.11)";
+              }
             }}
           >
             Refund
