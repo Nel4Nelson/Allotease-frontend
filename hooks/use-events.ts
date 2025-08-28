@@ -44,7 +44,7 @@ export function useEvents(params: GetEventsParams = {}) {
 }
 
 /**
- * Hook for loading more events (pagination)
+ * Hook for loading more events (accumulative pagination)
  */
 export function useLoadMoreEvents() {
   const queryClient = useQueryClient();
@@ -55,28 +55,32 @@ export function useLoadMoreEvents() {
       return { response, params };
     },
     onSuccess: ({ response, params }) => {
-      // Update the cache for the specific page
-      queryClient.setQueryData(eventsKeys.list(params), response);
+      // Get the base params (without page) for the first page
+      const baseParams = { ...params };
+      delete baseParams.page;
+      const firstPageParams = { ...baseParams, page: 1 };
       
-      // If this is page > 1, also update the first page cache to combine data
-      if (params.page && params.page > 1) {
-        const firstPageParams = { ...params, page: 1 };
-        const firstPageData = queryClient.getQueryData<GetEventsResponse>(
-          eventsKeys.list(firstPageParams)
-        );
+      // Get current first page data
+      const firstPageData = queryClient.getQueryData<GetEventsResponse>(
+        eventsKeys.list(firstPageParams)
+      );
+      
+      if (firstPageData && params.page && params.page > 1) {
+        // Create combined data for the first page cache
+        const combinedData: GetEventsResponse = {
+          ...response,
+          data: {
+            ...response.data,
+            items: [...firstPageData.data.items, ...response.data.items],
+            page: 1, // Keep as page 1 for UI consistency
+          }
+        };
         
-        if (firstPageData) {
-          // Create combined data for the first page cache
-          const combinedData: GetEventsResponse = {
-            ...response,
-            data: {
-              ...response.data,
-              items: [...firstPageData.data.items, ...response.data.items],
-              page: 1, // Keep as page 1 for UI consistency
-            }
-          };
-          queryClient.setQueryData(eventsKeys.list(firstPageParams), combinedData);
-        }
+        // Update the first page cache with accumulated data
+        queryClient.setQueryData(eventsKeys.list(firstPageParams), combinedData);
+      } else {
+        // Set the current page cache
+        queryClient.setQueryData(eventsKeys.list(params), response);
       }
     },
     onError: (error: any) => {

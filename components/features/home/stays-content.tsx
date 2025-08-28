@@ -1,4 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// Todo: Clean code - the duplicated variants make that implementation cleaner
+// Todo: Extract filter components to reduce duplication between desktop/mobile variants
+// Todo: Consider memoizing expensive operations like StaysService formatters
+// Todo: Add proper TypeScript interfaces for queryClient.getQueryData instead of using 'any'
+// Todo: Implement virtualization for large lists to improve performance
+// Todo: Add accessibility attributes for screen readers
+// Todo: Extracting business logic into custom hooks for better testability
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -7,7 +14,7 @@ import { SectionTitle } from "@/components/ui/section-title";
 import { VariantSelect } from "@/components/ui/variant-select";
 import { StayCard } from "@/components/ui/stays-card";
 import { Button } from "@/components/ui/button";
-import { StaysService, Stay } from "@/services/stays-service";
+import { StaysService } from "@/services/stays-service";
 import { StaysGridSkeleton } from "@/components/ui/loading-skeletons/stay-card-skeleton";
 import {
   NetworkError,
@@ -32,15 +39,13 @@ export function StaysContent({ className = "" }: StaysContentProps) {
   const isOnline = useIsOnline();
   const queryClient = useQueryClient();
   const { removeQueries } = useInvalidateStays();
-
   const [selectedLocation, setSelectedLocation] = useState("awka-anambra");
   const [selectedType, setSelectedType] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [allStays, setAllStays] = useState<Stay[]>([]);
 
   // Build query params
   const queryParams = {
-    page: currentPage,
+    page: 1, // Always use page 1 for the main query
     limit: 6,
     ...(selectedType &&
       selectedType !== "all" && { accommodationType: selectedType }),
@@ -52,18 +57,10 @@ export function StaysContent({ className = "" }: StaysContentProps) {
   // Use load more mutation for pagination
   const loadMoreMutation = useLoadMoreStays();
 
-  // Update local state when data changes
-  useEffect(() => {
-    if (data?.data?.items) {
-      setAllStays(data.data.items);
-    }
-  }, [data]);
-
-  // Handle filter changes - this will trigger loading skeleton
+  // Handle filter changes
   const handleFilterChange = () => {
     // Reset pagination when filters change
     setCurrentPage(1);
-    setAllStays([]); // Clear current data to show loading
 
     // Remove old cached data for smooth transition
     removeQueries();
@@ -106,21 +103,36 @@ export function StaysContent({ className = "" }: StaysContentProps) {
     }
   };
 
-  // Collapse back to first 6
+  // Collapse back to previous page
   const handleCollapse = () => {
-    setCurrentPage(1);
+    if (currentPage > 1) {
+      const newPage = currentPage - 1;
+      const itemsPerPage = queryParams.limit || 6;
 
-    // Remove multi-page cache and keep only first page
-    removeQueries((query: any) => {
-      const params = query.queryKey[2] as any;
-      return params?.page > 1;
-    });
+      // Get current first page data
+      const firstPageData = queryClient.getQueryData<any>(
+        staysKeys.list(queryParams)
+      );
 
-    // Refetch first page
-    const firstPageParams = { ...queryParams, page: 1 };
-    queryClient.invalidateQueries({
-      queryKey: staysKeys.list(firstPageParams),
-    });
+      if (firstPageData) {
+        // Calculate how many items to keep
+        const itemsToKeep = newPage * itemsPerPage;
+        const newItems = firstPageData.data.items.slice(0, itemsToKeep);
+
+        // Update the cache with reduced items
+        const updatedData = {
+          ...firstPageData,
+          data: {
+            ...firstPageData.data,
+            items: newItems,
+            hasNextPage: newPage < firstPageData.data.totalPages,
+          },
+        };
+
+        queryClient.setQueryData(staysKeys.list(queryParams), updatedData);
+        setCurrentPage(newPage);
+      }
+    }
   };
 
   // Handle stay card click
@@ -140,6 +152,9 @@ export function StaysContent({ className = "" }: StaysContentProps) {
     handleFilterChange();
   };
 
+  // Get all stays from data
+  const allStays = data?.data?.items || [];
+
   // Loading state - show skeleton on initial load OR when filters change
   const isLoadingData = isLoading || (allStays.length === 0 && !isError);
 
@@ -149,8 +164,13 @@ export function StaysContent({ className = "" }: StaysContentProps) {
     !isLoading &&
     !isError &&
     !loadMoreMutation.isPending;
+
   const showCollapseButton =
     currentPage > 1 && !isLoading && !isError && !loadMoreMutation.isPending;
+
+  // Current info for display
+  const itemsPerPage = queryParams.limit || 6;
+  const totalPages = data?.data?.totalPages || 1;
 
   // Render loading skeleton for initial load OR filter changes
   if (isLoadingData && isOnline) {
@@ -679,6 +699,16 @@ export function StaysContent({ className = "" }: StaysContentProps) {
             </svg>
             <span>Loading more accommodations...</span>
           </div>
+        </div>
+      )}
+
+      {/* Status info - showing current page/total info */}
+      {allStays.length > itemsPerPage && (
+        <div className="flex justify-center text-sm text-gray-500">
+          <span>
+            Showing {allStays.length} of {data?.data?.totalCount || 0}{" "}
+            accommodations ({currentPage} of {totalPages} pages loaded)
+          </span>
         </div>
       )}
 

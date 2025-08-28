@@ -32,11 +32,6 @@ interface StayDetailsState {
   error: string | null;
 }
 
-interface DateRange {
-  from: Date | undefined;
-  to: Date | undefined;
-}
-
 export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
   const searchParams = useSearchParams();
   const { clearBookingData } = useBookingStore();
@@ -51,12 +46,6 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
     loading: true,
     reviewsLoading: false,
     error: null,
-  });
-
-  // Shared date range state - lifted up from child components
-  const [sharedDateRange, setSharedDateRange] = useState<DateRange>({
-    from: undefined,
-    to: undefined,
   });
 
   // Clean URL parameters by removing booking-related query params
@@ -216,11 +205,6 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
 
   const { stay, stayFacilities, stayUnits } = state.stayData.data;
 
-  // Shared date range change handler
-  const handleSharedDateRangeChange = (range: DateRange) => {
-    setSharedDateRange(range);
-  };
-
   // Helper function to render rating section
   const renderRatingSection = () => {
     if (state.reviewsLoading) {
@@ -279,8 +263,6 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
             <StayDetailsReservationCard 
               stay={stay} 
               stayUnits={stayUnits}
-              dateRange={sharedDateRange}
-              onDateRangeChange={handleSharedDateRangeChange}
             />
           </div>
 
@@ -297,8 +279,6 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
           <StayDetailsAvailability
             units={stayUnits}
             facilitiesData={stayFacilities}
-            dateRange={sharedDateRange}
-            onDateRangeChange={handleSharedDateRangeChange}
           />
 
           {/* Follow card Section */}
@@ -346,8 +326,6 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
                 <StayDetailsAvailability
                   units={stayUnits}
                   facilitiesData={stayFacilities}
-                  dateRange={sharedDateRange}
-                  onDateRangeChange={handleSharedDateRangeChange}
                 />
               </div>
 
@@ -364,8 +342,6 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
                 <StayDetailsReservationCard 
                   stay={stay} 
                   stayUnits={stayUnits}
-                  dateRange={sharedDateRange}
-                  onDateRangeChange={handleSharedDateRangeChange}
                 />
               </div>
             </div>

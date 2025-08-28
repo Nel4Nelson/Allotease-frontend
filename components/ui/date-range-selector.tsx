@@ -57,8 +57,9 @@ export const DateRangeSelector = forwardRef<HTMLDivElement, DateRangeSelectorPro
   ) => {
     const generatedId = useId();
 
+    // null check for value and its properties
     const ariaValue: RangeValue<DateValue> | null = 
-      value.from && value.to 
+      value && value.from && value.to 
         ? {
             start: new CalendarDate(
               value.from.getFullYear(),

@@ -4,26 +4,16 @@ import Image from "next/image";
 import type { StayUnit, StayFacility } from "@/services/stays-service";
 import { useBookingStore } from "@/stores/booking-store";
 import { CheckIcon, PlusIcon } from "@/components/icons";
-import { DateRangeSelector } from "@/components/ui/date-range-selector";
-
-interface DateRange {
-  from: Date | undefined;
-  to: Date | undefined;
-}
 
 interface StayDetailsAvailabilityProps {
   units: StayUnit[];
   facilitiesData: StayFacility[];
-  dateRange: DateRange;
-  onDateRangeChange: (range: DateRange) => void;
   className?: string;
 }
 
 export function StayDetailsAvailability({
   units,
   facilitiesData,
-  dateRange,
-  onDateRangeChange,
   className = "",
 }: StayDetailsAvailabilityProps) {
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
@@ -35,11 +25,11 @@ export function StayDetailsAvailability({
   };
 
   // Handle unit selection
-  const handleUnitToggle = (unitId: string) => {
+  const handleUnitToggle = (unitId: string, frequency: string) => {
     if (isUnitSelected(unitId)) {
       removeUnit(unitId);
     } else {
-      addUnit(unitId);
+      addUnit(unitId, frequency);
     }
   };
 
@@ -66,15 +56,11 @@ export function StayDetailsAvailability({
         Availability
       </h3>
 
-      {/* Synchronized Date Range Selector */}
+      {/* Info Text */}
       <div className="mb-6">
-        <div className="space-y-2 lg:w-[220px]">
-          <DateRangeSelector
-            value={dateRange}
-            onChange={onDateRangeChange}
-            placeholder="check-in and check-out"
-          />
-        </div>
+        <p className="text-[var(--Body,#71727A)] font-source-sans-pro text-sm font-normal">
+          Select room types below. Each room will have its own booking dates and duration settings in the reservation card.
+        </p>
       </div>
 
       {/* Units List */}
@@ -104,7 +90,7 @@ export function StayDetailsAvailability({
                 cursor: "pointer",
                 transition: "all 0.2s ease",
               }}
-              onClick={() => handleUnitToggle(unit._id)}
+              onClick={() => handleUnitToggle(unit._id, unit.frequency)}
             >
               {/* Header with Title and Selection Button */}
               <div className="flex items-center justify-between w-full">
@@ -147,7 +133,7 @@ export function StayDetailsAvailability({
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleUnitToggle(unit._id);
+                    handleUnitToggle(unit._id, unit.frequency);
                   }}
                 >
                   {isSelected ? <CheckIcon /> : <PlusIcon />}
@@ -236,6 +222,15 @@ export function StayDetailsAvailability({
                       </span>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Selection Indicator Text */}
+              {isSelected && (
+                <div className="mt-2">
+                  <p className="text-[#15BA6B] font-source-sans-pro text-sm font-medium">
+                    ✓ Selected - Configure dates and duration in the reservation card
+                  </p>
                 </div>
               )}
             </div>

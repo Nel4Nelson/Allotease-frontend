@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+//Todo: cache this with tanstack
 import { create } from 'zustand';
 import { ProfileData, ProfileService } from '@/services/profile-service';
 
@@ -16,12 +18,22 @@ interface ProfileState {
   clearProfile: () => void;
   updateProfile: (updates: Partial<ProfileData>) => void;
   
-  // Helper methods
+  // Helper methods (backward compatible)
   getFullName: () => string;
   getFollowersCount: () => number;
   getFollowingCount: () => number;
   getAvatarUrl: () => string;
   shouldRefetch: () => boolean;
+  
+  // New helper methods for extended data
+  isBankVerified: () => boolean;
+  getUserRole: () => string;
+  isUserVerified: () => boolean;
+  getUserId: () => string;
+  getEmail: () => string;
+  
+  // Generic getter for any profile field (for future extensibility)
+  getProfileField: (fieldPath: string) => any;
 }
 
 // Cache duration: 5 minutes
@@ -34,7 +46,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   error: null,
   lastFetched: null,
 
-  // Set profile data
+  // Set profile data - now captures ALL response data
   setProfile: (profile: ProfileData) => {
     set({ 
       profile, 
@@ -54,7 +66,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     set({ error, isLoading: false });
   },
 
-  // Fetch profile from API
+  // Fetch profile from API - captures complete response data
   fetchProfile: async () => {
     const { isLoading, shouldRefetch } = get();
     
@@ -69,6 +81,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       const response = await ProfileService.getProfile();
       
       if (response.data?.user) {
+        // Store the complete user object, including any additional fields
         get().setProfile(response.data.user);
       } else {
         get().setError("Invalid profile response");
@@ -100,7 +113,6 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     }
   },
 
-  // Helper methods
   getFullName: (): string => {
     const { profile } = get();
     return profile ? ProfileService.getFullName(profile) : '';
@@ -119,6 +131,43 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   getAvatarUrl: (): string => {
     const { profile } = get();
     return profile ? ProfileService.getAvatarUrl(profile) : "/icons/encircle-star-green-avatar.svg";
+  },
+
+  // New helper methods for extended data
+  isBankVerified: (): boolean => {
+    const { profile } = get();
+    return profile ? ProfileService.isBankVerified(profile) : false;
+  },
+
+  getUserRole: (): string => {
+    const { profile } = get();
+    return profile ? ProfileService.getUserRole(profile) : '';
+  },
+
+  isUserVerified: (): boolean => {
+    const { profile } = get();
+    return profile ? ProfileService.isUserVerified(profile) : false;
+  },
+
+  getUserId: (): string => {
+    const { profile } = get();
+    return profile?._id || '';
+  },
+
+  getEmail: (): string => {
+    const { profile } = get();
+    return profile?.email || '';
+  },
+
+  // Generic getter for any profile field using dot notation
+  // Examples: getProfileField('bankInfo.verified'), getProfileField('firstname')
+  getProfileField: (fieldPath: string): any => {
+    const { profile } = get();
+    if (!profile) return null;
+
+    return fieldPath.split('.').reduce((obj, key) => {
+      return obj && obj[key] !== undefined ? obj[key] : null;
+    }, profile);
   },
 
   // Check if we should refetch data (if no data or data is stale)

@@ -1,17 +1,39 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-// Booking interfaces
+// booking interfaces
 export interface SelectedUnit {
   unitId: string;
   numberOfUnits: number;
+  checkInDate: string | null;   
+  checkOutDate: string | null;  // Individual checkout date
+  frequencyCount: number;       // Duration counter (1, 2, 3, etc.)
 }
 
 export interface BookingData {
   stayId: string | null;
   units: SelectedUnit[];
-  checkInDate: string | null;
-  checkOutDate: string | null;
+}
+
+// booking payload interfaces
+export interface BookingPayloadUnit {
+  unitId: string;
+  numberOfUnits: number;
+}
+
+export interface BookingPayloadItem {
+  stayId: string;
+  units: BookingPayloadUnit[];
+  checkInDate: string;
+  checkOutDate: string;
+}
+
+export interface BookingPayload {
+  bookings: BookingPayloadItem[];
+  callbackURL: string;
+  email: string;
+  phoneNumber: string;
+  fullName: string;
 }
 
 interface BookingState {
@@ -19,25 +41,79 @@ interface BookingState {
 
   // Actions
   setStayId: (stayId: string) => void;
-  addUnit: (unitId: string) => void;
+  addUnit: (unitId: string, frequency: string) => void;
   removeUnit: (unitId: string) => void;
   updateUnitQuantity: (unitId: string, numberOfUnits: number) => void;
-  setDateRange: (checkInDate: Date, checkOutDate: Date) => void;
+  updateUnitDateRange: (unitId: string, checkInDate: Date, checkOutDate: Date, frequency: string) => void;
+  updateUnitFrequencyCount: (unitId: string, frequencyCount: number, frequency: string) => void;
   clearBookingData: () => void;
 
   // Computed values
   getTotalUnits: () => number;
   isUnitSelected: (unitId: string) => boolean;
   getUnitQuantity: (unitId: string) => number;
-  getBookingPayload: () => BookingData & { callbackURL: string };
+  getUnitData: (unitId: string) => SelectedUnit | null;
+  getBookingPayload: (userInfo: { email: string; phoneNumber: string; fullName: string }) => BookingPayload;
 }
+
+// Helper function to calculate checkout date based on frequency
+const calculateCheckoutDate = (checkInDate: Date, frequencyCount: number, frequency: string): Date => {
+  const checkout = new Date(checkInDate);
+  
+  switch (frequency) {
+    case 'daily':
+      checkout.setDate(checkout.getDate() + frequencyCount);
+      break;
+    case 'weekly':
+      checkout.setDate(checkout.getDate() + (frequencyCount * 7));
+      break;
+    case 'monthly':
+      checkout.setMonth(checkout.getMonth() + frequencyCount);
+      break;
+    case 'yearly':
+      checkout.setFullYear(checkout.getFullYear() + frequencyCount);
+      break;
+    default:
+      checkout.setDate(checkout.getDate() + frequencyCount);
+  }
+  
+  return checkout;
+};
+
+// Helper function to calculate frequency count from date range
+const calculateFrequencyCount = (checkInDate: Date, checkOutDate: Date, frequency: string): number => {
+  const diffTime = checkOutDate.getTime() - checkInDate.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  switch (frequency) {
+    case 'daily':
+      return Math.max(1, diffDays);
+    case 'weekly':
+      return Math.max(1, Math.ceil(diffDays / 7));
+    case 'monthly':
+      return Math.max(1, Math.ceil(diffDays / 30));
+    case 'yearly':
+      return Math.max(1, Math.ceil(diffDays / 365));
+    default:
+      return Math.max(1, diffDays);
+  }
+};
+
+// Helper function to ensure date is not in the past
+const ensureFutureDate = (date: Date): Date => {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0); // Start of today
+  
+  if (date < now) {
+    return now;
+  }
+  return date;
+};
 
 // Initial state
 const initialBookingData: BookingData = {
   stayId: null,
   units: [],
-  checkInDate: null,
-  checkOutDate: null,
 };
 
 export const useBookingStore = create<BookingState>()(
@@ -54,8 +130,6 @@ export const useBookingStore = create<BookingState>()(
               bookingData: {
                 stayId,
                 units: [],
-                checkInDate: null,
-                checkOutDate: null,
               },
             };
           }
@@ -70,8 +144,8 @@ export const useBookingStore = create<BookingState>()(
         });
       },
 
-      // Add a unit to selection
-      addUnit: (unitId: string) => {
+      // Add a unit to selection with initial date setup
+      addUnit: (unitId: string, frequency: string) => {
         set((state) => {
           const existingUnit = state.bookingData.units.find(
             (u) => u.unitId === unitId
@@ -82,10 +156,23 @@ export const useBookingStore = create<BookingState>()(
             return state;
           }
 
+          // Set initial dates - checkin today, checkout based on 1 frequency unit
+          const checkInDate = new Date();
+          checkInDate.setHours(0, 0, 0, 0); // Start of today
+          const checkOutDate = calculateCheckoutDate(checkInDate, 1, frequency);
+
+          const newUnit: SelectedUnit = {
+            unitId,
+            numberOfUnits: 1,
+            checkInDate: checkInDate.toISOString(),
+            checkOutDate: checkOutDate.toISOString(),
+            frequencyCount: 1,
+          };
+
           return {
             bookingData: {
               ...state.bookingData,
-              units: [...state.bookingData.units, { unitId, numberOfUnits: 1 }],
+              units: [...state.bookingData.units, newUnit],
             },
           };
         });
@@ -119,15 +206,67 @@ export const useBookingStore = create<BookingState>()(
         }));
       },
 
-      // Set check-in and check-out dates
-      setDateRange: (checkInDate: Date, checkOutDate: Date) => {
-        set((state) => ({
-          bookingData: {
-            ...state.bookingData,
-            checkInDate: checkInDate.toISOString(),
-            checkOutDate: checkOutDate.toISOString(),
-          },
-        }));
+      // Update date range for a specific unit and recalculate frequency count
+      updateUnitDateRange: (unitId: string, checkInDate: Date, checkOutDate: Date, frequency: string) => {
+        set((state) => {
+          const unit = state.bookingData.units.find((u) => u.unitId === unitId);
+          if (!unit) return state;
+
+          // Ensure checkin is not in the past
+          const safeCheckInDate = ensureFutureDate(checkInDate);
+          
+          // Ensure checkout is after checkin
+          let safeCheckOutDate = new Date(checkOutDate);
+          if (safeCheckOutDate <= safeCheckInDate) {
+            safeCheckOutDate = new Date(safeCheckInDate);
+            safeCheckOutDate.setDate(safeCheckOutDate.getDate() + 1);
+          }
+
+          // Calculate frequency count from the date range
+          const newFrequencyCount = calculateFrequencyCount(safeCheckInDate, safeCheckOutDate, frequency);
+
+          return {
+            bookingData: {
+              ...state.bookingData,
+              units: state.bookingData.units.map((u) =>
+                u.unitId === unitId
+                  ? {
+                      ...u,
+                      checkInDate: safeCheckInDate.toISOString(),
+                      checkOutDate: safeCheckOutDate.toISOString(),
+                      frequencyCount: newFrequencyCount,
+                    }
+                  : u
+              ),
+            },
+          };
+        });
+      },
+
+      // Update frequency count for a specific unit and recalculate checkout date
+      updateUnitFrequencyCount: (unitId: string, frequencyCount: number, frequency: string) => {
+        set((state) => {
+          const unit = state.bookingData.units.find((u) => u.unitId === unitId);
+          if (!unit || !unit.checkInDate) return state;
+
+          const checkInDate = new Date(unit.checkInDate);
+          const newCheckOutDate = calculateCheckoutDate(checkInDate, frequencyCount, frequency);
+
+          return {
+            bookingData: {
+              ...state.bookingData,
+              units: state.bookingData.units.map((u) =>
+                u.unitId === unitId
+                  ? {
+                      ...u,
+                      frequencyCount,
+                      checkOutDate: newCheckOutDate.toISOString(),
+                    }
+                  : u
+              ),
+            },
+          };
+        });
       },
 
       // Clear all booking data
@@ -157,18 +296,34 @@ export const useBookingStore = create<BookingState>()(
         return unit ? unit.numberOfUnits : 0;
       },
 
+      // Get full unit data for a specific unit
+      getUnitData: (unitId: string) => {
+        const { bookingData } = get();
+        return bookingData.units.find((u) => u.unitId === unitId) || null;
+      },
+
       // Get the complete booking payload ready for API
-      getBookingPayload: () => {
+      getBookingPayload: (userInfo: { email: string; phoneNumber: string; fullName: string }) => {
         const { bookingData } = get();
         const currentStayId = bookingData.stayId || "";
         
+        // Transform each selected unit into a separate booking
+        const bookings: BookingPayloadItem[] = bookingData.units
+          .filter(unit => unit.checkInDate && unit.checkOutDate) // Only include units with dates
+          .map(unit => ({
+            stayId: currentStayId,
+            units: [{
+              unitId: unit.unitId,
+              numberOfUnits: unit.numberOfUnits,
+            }],
+            checkInDate: unit.checkInDate!,
+            checkOutDate: unit.checkOutDate!,
+          }));
+        
         return {
-          stayId: currentStayId,
-          units: bookingData.units,
-          // Use the actual selected dates, not current time
-          checkInDate: bookingData.checkInDate || new Date().toISOString(),
-          checkOutDate: bookingData.checkOutDate || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          bookings,
           callbackURL: `${window.location.origin}/${currentStayId}?type=stays`,
+          ...userInfo,
         };
       },
     }),

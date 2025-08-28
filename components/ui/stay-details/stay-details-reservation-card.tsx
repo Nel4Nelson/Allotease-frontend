@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import React, { useState, useEffect } from "react";
 import type { Stay, StayUnit } from "@/services/stays-service";
@@ -16,36 +17,26 @@ interface DateRange {
 interface StayDetailsReservationCardProps {
   stay: Stay;
   stayUnits: StayUnit[];
-  dateRange: DateRange;
-  onDateRangeChange: (range: DateRange) => void;
   className?: string;
 }
 
 export function StayDetailsReservationCard({
   stay,
   stayUnits,
-  dateRange,
-  onDateRangeChange,
   className = "",
 }: StayDetailsReservationCardProps) {
   const {
     bookingData,
     setStayId,
     updateUnitQuantity,
-    setDateRange,
+    updateUnitDateRange,
+    updateUnitFrequencyCount,
+    getUnitData,
     clearBookingData,
   } = useBookingStore();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  
-  // Independent counters for each frequency
-  const [frequencyCounters, setFrequencyCounters] = useState<Record<string, number>>({
-    daily: 1,
-    weekly: 1,
-    monthly: 1,
-    yearly: 1,
-  });
 
   // Set stay ID when component mounts
   useEffect(() => {
@@ -60,87 +51,20 @@ export function StayDetailsReservationCard({
       const trxref = urlParams.get("trxref");
       const reference = urlParams.get("reference");
 
-      // Check if this is a successful payment callback from Paystack
-      // Paystack returns trxref and reference parameters on successful payment
       if (type === "stays" && (trxref || reference)) {
-        // Close booking modal and show success modal
         setIsModalOpen(false);
         setShowSuccessModal(true);
         clearBookingData();
       }
     };
 
-    // Check on component mount
     handleCallback();
-
-    // Listen for popstate events (back/forward navigation)
     window.addEventListener("popstate", handleCallback);
 
     return () => {
       window.removeEventListener("popstate", handleCallback);
     };
   }, [clearBookingData]);
-
-  // Update store with dates when date range changes (optional)
-  useEffect(() => {
-    if (dateRange.from && dateRange.to) {
-      setDateRange(dateRange.from, dateRange.to);
-    }
-  }, [dateRange, setDateRange]);
-
-  // Get unique frequencies from selected units
-  const getSelectedFrequencies = () => {
-    const frequencies = new Set<string>();
-    selectedUnitsWithDetails.forEach(unit => {
-      if (unit.details) {
-        frequencies.add(unit.details.frequency);
-      }
-    });
-    return Array.from(frequencies).sort((a, b) => {
-      const order = { 'daily': 1, 'weekly': 2, 'monthly': 3, 'yearly': 4 };
-      return (order[a as keyof typeof order] || 5) - (order[b as keyof typeof order] || 5);
-    });
-  };
-
-  // Get counter value for a specific frequency
-  const getCounterValue = (frequency: string) => {
-    return frequencyCounters[frequency] || 1;
-  };
-
-  // Set counter value for a specific frequency (independent)
-  const setCounterValue = (frequency: string, value: number) => {
-    setFrequencyCounters(prev => ({
-      ...prev,
-      [frequency]: Math.max(1, value)
-    }));
-  };
-
-  // Get display label for frequency
-  const getFrequencyLabel = (frequency: string) => {
-    const labels = {
-      'daily': 'Days',
-      'weekly': 'Weeks',
-      'monthly': 'Months',
-      'yearly': 'Years'
-    };
-    return labels[frequency as keyof typeof labels] || frequency;
-  };
-
-  // Get day equivalent text for non-daily frequencies
-  const getDayEquivalent = (frequency: string, value: number) => {
-    if (frequency === 'daily') return '';
-    
-    const totalDays = (() => {
-      switch (frequency) {
-        case 'weekly': return value * 7;
-        case 'monthly': return value * 30;
-        case 'yearly': return value * 365;
-        default: return value;
-      }
-    })();
-    
-    return `(${totalDays} day${totalDays !== 1 ? 's' : ''})`;
-  };
 
   // Get selected units with their details
   const selectedUnitsWithDetails = bookingData.units
@@ -153,15 +77,23 @@ export function StayDetailsReservationCard({
         details: unitDetails,
       };
     })
-    .filter((unit) => unit.details); // Filter out units that couldn't be found
+    .filter((unit) => unit.details);
 
-  // Calculate total price with independent frequency pricing
+  // Calculate total price
   const calculateTotalPrice = () => {
     return selectedUnitsWithDetails.reduce((total, unit) => {
       if (unit.details) {
-        const frequency = unit.details.frequency;
-        const counterValue = getCounterValue(frequency);
-        return total + unit.details.price * unit.numberOfUnits * counterValue;
+        const frequencyCount = unit.frequencyCount || 1; // Fallback to 1 if undefined
+        const numberOfUnits = unit.numberOfUnits || 1; // Fallback to 1 if undefined
+        const price = unit.details.price || 0; // Fallback to 0 if undefined
+
+        if (
+          typeof frequencyCount === "number" &&
+          !isNaN(frequencyCount) &&
+          frequencyCount > 0
+        ) {
+          return total + price * numberOfUnits * frequencyCount;
+        }
       }
       return total;
     }, 0);
@@ -176,6 +108,37 @@ export function StayDetailsReservationCard({
     return formatter.format(price);
   };
 
+  // Get display label for frequency
+  const getFrequencyLabel = (frequency: string, count: number) => {
+    const labels = {
+      daily: count === 1 ? "Day" : "Days",
+      weekly: count === 1 ? "Week" : "Weeks",
+      monthly: count === 1 ? "Month" : "Months",
+      yearly: count === 1 ? "Year" : "Years",
+    };
+    return labels[frequency as keyof typeof labels] || frequency;
+  };
+
+  // Get day equivalent text for non-daily frequencies
+  const getDayEquivalent = (frequency: string, count: number) => {
+    if (frequency === "daily") return "";
+
+    const totalDays = (() => {
+      switch (frequency) {
+        case "weekly":
+          return count * 7;
+        case "monthly":
+          return count * 30;
+        case "yearly":
+          return count * 365;
+        default:
+          return count;
+      }
+    })();
+
+    return `(${totalDays} day${totalDays !== 1 ? "s" : ""})`;
+  };
+
   // Handle quantity change
   const handleQuantityChange = (unitId: string, change: number) => {
     const currentUnit = bookingData.units.find((u) => u.unitId === unitId);
@@ -185,11 +148,54 @@ export function StayDetailsReservationCard({
     }
   };
 
-  // Handle counter change for specific frequency (independent)
-  const handleCounterChange = (frequency: string, change: number) => {
-    const currentValue = getCounterValue(frequency);
-    const newValue = Math.max(1, currentValue + change);
-    setCounterValue(frequency, newValue);
+  // Handle frequency counter change for a specific unit
+  const handleFrequencyCountChange = (unitId: string, change: number) => {
+    const unitData = getUnitData(unitId);
+    const unitDetails = stayUnits.find((unit) => unit._id === unitId);
+
+    if (unitData && unitDetails) {
+      const currentCount = unitData.frequencyCount || 1; // Fallback to 1
+      const newCount = Math.max(1, currentCount + change);
+
+      console.log("Frequency change:", {
+        unitId,
+        currentCount,
+        newCount,
+        frequency: unitDetails.frequency,
+        unitData,
+      });
+
+      updateUnitFrequencyCount(unitId, newCount, unitDetails.frequency);
+    } else {
+      console.error("Missing data for frequency change:", {
+        unitId,
+        unitData,
+        unitDetails,
+      });
+    }
+  };
+
+  // Handle date range change for a specific unit
+  const handleUnitDateRangeChange = (unitId: string, range: DateRange) => {
+    if (range.from && range.to) {
+      const unitDetails = stayUnits.find((unit) => unit._id === unitId);
+      if (unitDetails) {
+        updateUnitDateRange(
+          unitId,
+          range.from,
+          range.to,
+          unitDetails.frequency
+        );
+      }
+    }
+  };
+
+  // Convert unit dates to DateRange format
+  const getUnitDateRange = (unit: any): DateRange => {
+    return {
+      from: unit.checkInDate ? new Date(unit.checkInDate) : undefined,
+      to: unit.checkOutDate ? new Date(unit.checkOutDate) : undefined,
+    };
   };
 
   // Handle reservation
@@ -205,8 +211,12 @@ export function StayDetailsReservationCard({
     setShowSuccessModal(false);
   };
 
-  // Check if reservation is possible (only requires selected units now)
-  const canReserve = selectedUnitsWithDetails.length > 0;
+  // Check if reservation is possible
+  const canReserve =
+    selectedUnitsWithDetails.length > 0 &&
+    selectedUnitsWithDetails.every(
+      (unit) => unit.checkInDate && unit.checkOutDate
+    );
 
   return (
     <>
@@ -261,96 +271,231 @@ export function StayDetailsReservationCard({
         >
           {/* Selected Units */}
           {selectedUnitsWithDetails.length > 0 ? (
-            <div className="space-y-4">
-              {selectedUnitsWithDetails.map((unit) => (
-                <div key={unit.unitId} className="space-y-2">
-                  {/* Unit Name and Quantity Controls */}
-                  <div className="flex items-center justify-between">
-                    <div>
+            <div className="space-y-6">
+              {selectedUnitsWithDetails.map((unit, index) => (
+                <div key={unit.unitId}>
+                  {index > 0 && <Divider />}
+
+                  <div className="space-y-4">
+                    {/* Unit Name and Quantity Controls */}
+                    <div className="flex items-center justify-between mt-2">
+                      <div>
+                        <div
+                          style={{
+                            color: "#20232A",
+                            fontFamily: "var(--font-source-sans), sans-serif",
+                            fontSize: "16px",
+                            fontWeight: 600,
+                            lineHeight: "16px",
+                            margin: 0,
+                          }}
+                        >
+                          {unit.details?.title}
+                        </div>
+                        <div
+                          style={{
+                            color: "#71727A",
+                            fontFamily: "var(--font-source-sans), sans-serif",
+                            fontSize: "12px",
+                            fontWeight: 400,
+                            lineHeight: "14px",
+                            marginTop: "2px",
+                          }}
+                        >
+                          {unit.details && formatPrice(unit.details.price)} /{" "}
+                          {unit.details?.frequency}
+                        </div>
+                      </div>
+
+                      {/* Quantity Controls */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleQuantityChange(unit.unitId, -1)}
+                          disabled={unit.numberOfUnits <= 1}
+                          style={{
+                            borderRadius: "50%",
+                            border: "0.778px solid rgba(138, 174, 164, 0.50)",
+                            display: "flex",
+                            width: "28px",
+                            height: "28px",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            background: "transparent",
+                            cursor:
+                              unit.numberOfUnits <= 1
+                                ? "not-allowed"
+                                : "pointer",
+                            opacity: unit.numberOfUnits <= 1 ? 0.5 : 1,
+                            padding: 0,
+                          }}
+                        >
+                          <MinusIcon />
+                        </button>
+
+                        <span
+                          style={{
+                            color: "#20232A",
+                            textAlign: "center",
+                            fontFamily: "var(--font-source-sans), sans-serif",
+                            fontSize: "16px",
+                            fontWeight: 600,
+                            lineHeight: "16px",
+                            minWidth: "20px",
+                          }}
+                        >
+                          {unit.numberOfUnits}
+                        </span>
+
+                        <button
+                          onClick={() => handleQuantityChange(unit.unitId, 1)}
+                          style={{
+                            borderRadius: "50%",
+                            border: "0.778px solid rgba(138, 174, 164, 0.50)",
+                            display: "flex",
+                            width: "28px",
+                            height: "28px",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            background: "transparent",
+                            cursor: "pointer",
+                            padding: 0,
+                          }}
+                        >
+                          <PlusIcon />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Individual Unit Date Range */}
+                    <div className="space-y-2">
                       <div
                         style={{
                           color: "#20232A",
                           fontFamily: "var(--font-source-sans), sans-serif",
-                          fontSize: "16px",
-                          fontWeight: 600,
+                          fontSize: "14px",
+                          fontWeight: 500,
                           lineHeight: "16px",
-                          margin: 0,
                         }}
                       >
-                        {unit.details?.title}
+                        {unit.details?.title} Dates:
                       </div>
-                      <div
-                        style={{
-                          color: "#71727A",
-                          fontFamily: "var(--font-source-sans), sans-serif",
-                          fontSize: "12px",
-                          fontWeight: 400,
-                          lineHeight: "14px",
-                          marginTop: "2px",
-                        }}
-                      >
-                        {unit.details && formatPrice(unit.details.price)} /{" "}
-                        {unit.details?.frequency}
-                      </div>
+                      <DateRangeSelector
+                        value={getUnitDateRange(unit)}
+                        onChange={(range) =>
+                          handleUnitDateRangeChange(unit.unitId, range)
+                        }
+                        placeholder="check-in and check-out dates"
+                      />
                     </div>
 
-                    {/* Quantity Controls */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleQuantityChange(unit.unitId, -1)}
-                        disabled={unit.numberOfUnits <= 1}
-                        style={{
-                          borderRadius: "50%",
-                          border: "0.778px solid rgba(138, 174, 164, 0.50)",
-                          display: "flex",
-                          width: "28px",
-                          height: "28px",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          background: "transparent",
-                          cursor:
-                            unit.numberOfUnits <= 1 ? "not-allowed" : "pointer",
-                          opacity: unit.numberOfUnits <= 1 ? 0.5 : 1,
-                          padding: 0,
-                        }}
-                      >
-                        <MinusIcon />
-                      </button>
+                    {/* Individual Unit Duration Counter */}
+                    {unit.details && (
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span
+                            style={{
+                              color: "#20232A",
+                              fontFamily: "var(--font-source-sans), sans-serif",
+                              fontSize: "16px",
+                              fontWeight: 600,
+                              lineHeight: "16px",
+                              margin: 0,
+                            }}
+                          >
+                            Duration (
+                            {getFrequencyLabel(
+                              unit.details.frequency,
+                              unit.frequencyCount || 1
+                            )}
+                            )
+                          </span>
+                          {getDayEquivalent(
+                            unit.details.frequency,
+                            unit.frequencyCount || 1
+                          ) && (
+                            <div
+                              style={{
+                                color: "#71727A",
+                                fontFamily:
+                                  "var(--font-source-sans), sans-serif",
+                                fontSize: "12px",
+                                fontWeight: 400,
+                                lineHeight: "14px",
+                                marginTop: "2px",
+                              }}
+                            >
+                              {getDayEquivalent(
+                                unit.details.frequency,
+                                unit.frequencyCount || 1
+                              )}
+                            </div>
+                          )}
+                        </div>
 
-                      <span
-                        style={{
-                          color: "#20232A",
-                          textAlign: "center",
-                          fontFamily: "var(--font-source-sans), sans-serif",
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          lineHeight: "16px",
-                          minWidth: "20px",
-                        }}
-                      >
-                        {unit.numberOfUnits}
-                      </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() =>
+                              handleFrequencyCountChange(unit.unitId, -1)
+                            }
+                            disabled={(unit.frequencyCount || 1) <= 1}
+                            style={{
+                              borderRadius: "50%",
+                              border: "0.778px solid rgba(138, 174, 164, 0.50)",
+                              display: "flex",
+                              width: "28px",
+                              height: "28px",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              background: "transparent",
+                              cursor:
+                                (unit.frequencyCount || 1) <= 1
+                                  ? "not-allowed"
+                                  : "pointer",
+                              opacity:
+                                (unit.frequencyCount || 1) <= 1 ? 0.5 : 1,
+                              padding: 0,
+                            }}
+                          >
+                            <MinusIcon />
+                          </button>
 
-                      <button
-                        onClick={() => handleQuantityChange(unit.unitId, 1)}
-                        style={{
-                          borderRadius: "50%",
-                          border: "0.778px solid rgba(138, 174, 164, 0.50)",
-                          display: "flex",
-                          width: "28px",
-                          height: "28px",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          background: "transparent",
-                          cursor: "pointer",
-                          padding: 0,
-                        }}
-                      >
-                        <PlusIcon />
-                      </button>
-                    </div>
+                          <span
+                            style={{
+                              color: "#20232A",
+                              textAlign: "center",
+                              fontFamily: "var(--font-source-sans), sans-serif",
+                              fontSize: "16px",
+                              fontWeight: 600,
+                              lineHeight: "16px",
+                              minWidth: "20px",
+                            }}
+                          >
+                            {unit.frequencyCount || 1}
+                          </span>
+
+                          <button
+                            onClick={() =>
+                              handleFrequencyCountChange(unit.unitId, 1)
+                            }
+                            style={{
+                              borderRadius: "50%",
+                              border: "0.778px solid rgba(138, 174, 164, 0.50)",
+                              display: "flex",
+                              width: "28px",
+                              height: "28px",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              background: "transparent",
+                              cursor: "pointer",
+                              padding: 0,
+                            }}
+                          >
+                            <PlusIcon />
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <Divider />
                 </div>
               ))}
             </div>
@@ -369,126 +514,6 @@ export function StayDetailsReservationCard({
               </p>
             </div>
           )}
-
-          {/* Optional Date Range Selector */}
-          <div className="space-y-2">
-            <DateRangeSelector
-              value={dateRange}
-              onChange={onDateRangeChange}
-              placeholder="check-in and check-out (optional)"
-            />
-          </div>
-
-          {/* Independent Frequency Duration Counters */}
-          {(() => {
-            const selectedFrequencies = getSelectedFrequencies();
-            
-            if (selectedFrequencies.length === 0) {
-              return null;
-            }
-
-            return (
-              <div className="space-y-3">
-                {selectedFrequencies.map((frequency, index) => {
-                  const value = getCounterValue(frequency);
-                  const label = getFrequencyLabel(frequency);
-                  const dayEquivalent = getDayEquivalent(frequency, value);
-                  const isOnlyDaily = selectedFrequencies.length === 1 && frequency === 'daily';
-
-                  return (
-                    <div key={frequency}>
-                      {index > 0 && <Divider />}
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span
-                            style={{
-                              color: "#20232A",
-                              fontFamily: "var(--font-source-sans), sans-serif",
-                              fontSize: "16px",
-                              fontWeight: 600,
-                              lineHeight: "16px",
-                              margin: 0,
-                            }}
-                          >
-                            {isOnlyDaily ? "Duration" : label}
-                          </span>
-                          {dayEquivalent && (
-                            <div
-                              style={{
-                                color: "#71727A",
-                                fontFamily: "var(--font-source-sans), sans-serif",
-                                fontSize: "12px",
-                                fontWeight: 400,
-                                lineHeight: "14px",
-                                marginTop: "2px",
-                              }}
-                            >
-                              {dayEquivalent}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleCounterChange(frequency, -1)}
-                            disabled={value <= 1}
-                            style={{
-                              borderRadius: "50%",
-                              border: "0.778px solid rgba(138, 174, 164, 0.50)",
-                              display: "flex",
-                              width: "28px",
-                              height: "28px",
-                              justifyContent: "center",
-                              alignItems: "center",
-                              background: "transparent",
-                              cursor: value <= 1 ? "not-allowed" : "pointer",
-                              opacity: value <= 1 ? 0.5 : 1,
-                              padding: 0,
-                            }}
-                          >
-                            <MinusIcon />
-                          </button>
-
-                          <span
-                            style={{
-                              color: "#20232A",
-                              textAlign: "center",
-                              fontFamily: "var(--font-source-sans), sans-serif",
-                              fontSize: "16px",
-                              fontWeight: 600,
-                              lineHeight: "16px",
-                              minWidth: "20px",
-                            }}
-                          >
-                            {value}
-                          </span>
-
-                          <button
-                            onClick={() => handleCounterChange(frequency, 1)}
-                            style={{
-                              borderRadius: "50%",
-                              border: "0.778px solid rgba(138, 174, 164, 0.50)",
-                              display: "flex",
-                              width: "28px",
-                              height: "28px",
-                              justifyContent: "center",
-                              alignItems: "center",
-                              background: "transparent",
-                              cursor: "pointer",
-                              padding: 0,
-                            }}
-                          >
-                            <PlusIcon />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
 
           {/* Total Price */}
           {selectedUnitsWithDetails.length > 0 && (
