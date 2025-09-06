@@ -49,27 +49,39 @@ export function AllocationAdminCarousel({
 
   const scrollNext = useCallback(() => {
     if (emblaApi) {
-      emblaApi.scrollNext();
+      // If we can scroll within current items, just scroll
+      if (emblaApi.canScrollNext()) {
+        emblaApi.scrollNext();
+      } 
+      // If we can't scroll but there's more data, load more
+      else if (hasMore && !isLoadingMore && onLoadMore) {
+        onLoadMore();
+      }
       
-      // Check if we're near the end and need to load more
-      if (hasMore && !isLoadingMore && onLoadMore) {
-        const slidesInView = emblaApi.slidesInView();
-        const slideNodes = emblaApi.slideNodes();
-        const lastSlideIndex = slideNodes.length - 1;
-        const isNearEnd = slidesInView.includes(lastSlideIndex - 1) || slidesInView.includes(lastSlideIndex);
-        
-        if (isNearEnd) {
-          onLoadMore();
-        }
+      // Check if we need to load more data when scrolling
+      const slidesInView = emblaApi.slidesInView();
+      const slideNodes = emblaApi.slideNodes();
+      const lastSlideIndex = slideNodes.length - 1;
+      const isNearEnd = slidesInView.includes(lastSlideIndex - 1) || slidesInView.includes(lastSlideIndex);
+      
+      if (isNearEnd && hasMore && !isLoadingMore && onLoadMore) {
+        onLoadMore();
       }
     }
   }, [emblaApi, hasMore, isLoadingMore, onLoadMore]);
 
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
+    
     setCanScrollPrev(emblaApi.canScrollPrev());
-    setCanScrollNext(emblaApi.canScrollNext());
-  }, [emblaApi]);
+    
+    // Can scroll next if:
+    // 1. Embla can scroll within current items, OR
+    // 2. There's more data available to load
+    const emblaCanScrollNext = emblaApi.canScrollNext();
+    const hasMoreData = Boolean(hasMore && !isLoadingMore);
+    setCanScrollNext(emblaCanScrollNext || hasMoreData);
+  }, [emblaApi, hasMore, isLoadingMore]);
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -77,6 +89,11 @@ export function AllocationAdminCarousel({
     emblaApi.on('select', onSelect);
     emblaApi.on('reInit', onSelect);
   }, [emblaApi, onSelect]);
+
+  // Update navigation state when hasMore or isLoadingMore changes
+  useEffect(() => {
+    onSelect();
+  }, [hasMore, isLoadingMore, onSelect]);
 
   return (
     <div className={`relative ${className}`} style={{ }}>
@@ -115,6 +132,17 @@ export function AllocationAdminCarousel({
               />
             </div>
           ))}
+          
+          {/* Loading indicator for when more items are being loaded */}
+          {isLoadingMore && (
+            <div className="flex-none" style={{ width: '222px' }}>
+              <div className="flex flex-col justify-center items-center h-[290px] animate-pulse">
+                <div className="w-20 h-20 bg-gray-200 rounded-full mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-16"></div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

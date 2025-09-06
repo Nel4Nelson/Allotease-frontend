@@ -7,6 +7,7 @@ import {
   GetAllocatorsResponse,
 } from "@/services/allocator-service";
 import { useAuthStore } from "@/stores/auth-store";
+import { useProfileStore } from "@/stores/profile-store";
 import toast from "react-hot-toast";
 
 // Query keys
@@ -49,11 +50,47 @@ export function useFollowedUsers() {
 }
 
 /**
- * Hook to follow/unfollow users with optimistic updates
+ * Extract error message from API response
+ */
+function extractErrorMessage(error: any): string {
+  // Check if it's the specific self-follow error from backend
+  if (error?.response?.data?.message) {
+    return error.response.data.message;
+  }
+  
+  // Check if it's a validation error with details
+  if (error?.response?.data?.error) {
+    return error.response.data.error;
+  }
+  
+  // Check for status-based errors
+  if (error?.response?.status === 400 && error?.response?.data?.message) {
+    return error.response.data.message;
+  }
+  
+  if (error?.response?.status === 401) {
+    return "Please log in to follow users";
+  }
+  
+  if (error?.response?.status === 429) {
+    return "Too many requests. Please try again later";
+  }
+  
+  if (error?.response?.status >= 500) {
+    return "Server error. Please try again later";
+  }
+  
+  // Fallback to generic message or error message
+  return error?.message || "Failed to update follow status. Please try again.";
+}
+
+/**
+ * Hook to follow/unfollow users with optimistic updates and improved error handling
  */
 export function useFollowToggle() {
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuthStore();
+  const { getUserId } = useProfileStore();
 
   return useMutation({
     mutationFn: async ({
@@ -66,6 +103,13 @@ export function useFollowToggle() {
       if (!isAuthenticated) {
         throw new Error("User must be authenticated");
       }
+      
+      // Prevent self-follow on the frontend as an extra safety check
+      const currentUserId = getUserId();
+      if (currentUserId === userId) {
+        throw new Error("You cannot follow yourself");
+      }
+      
       return AllocatorService.toggleFollowUser(userId, isFollowing);
     },
     onMutate: async ({ userId, isFollowing }) => {
@@ -136,13 +180,17 @@ export function useFollowToggle() {
         );
       }
 
-      // Show error message
-      if (err.message === "User must be authenticated") {
+      // Extract and show specific error message
+      const errorMessage = extractErrorMessage(err);
+      
+      // Handle authentication errors differently
+      if (err.message === "User must be authenticated" || errorMessage.includes("log in")) {
         // This will be handled by the component to show auth modal
         return;
       }
 
-      toast.error("Failed to update follow status. Please try again.");
+      // Show the extracted error message
+      toast.error(errorMessage);
     },
     onSuccess: (data, { isFollowing }) => {
       const action = isFollowing ? "unfollowed" : "followed";
@@ -150,9 +198,7 @@ export function useFollowToggle() {
     },
     onSettled: () => {
       // Refetch after mutation regardless of error or success
-      queryClient.invalidateQueries({ queryKey: allocatorKeys.followed() });
-      // Optionally invalidate allocators to ensure consistency
-      // queryClient.invalidateQueries({ queryKey: allocatorKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: allocatorKeys.followed() });  
     },
   });
 }

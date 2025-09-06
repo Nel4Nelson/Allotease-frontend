@@ -1,7 +1,6 @@
-/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import {
   Tooltip,
   TooltipContent,
@@ -9,45 +8,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { FallbackImage } from "@/components/ui/fallback-image";
-import { apiClient } from "@/services/api-client";
+import { AuthModal } from "@/components/ui/modals/auth-modal";
 import { useAuthStore } from "@/stores/auth-store";
 import { useProfileStore } from "@/stores/profile-store";
-
-interface Organizer {
-  _id: string;
-  firstname: string;
-  lastname: string;
-  avatar?: string;
-  followersCount?: number;
-  followingCount?: number;
-}
-
-interface OrganizerResponse {
-  status: string;
-  message?: string;
-  data: {
-    items: Organizer[];
-    hasNextPage: boolean;
-    hasPrevPage: boolean;
-    totalPages: number;
-    totalCount: number;
-    limit: number;
-    page: number;
-  };
-}
-
-interface FollowStatusResponse {
-  status: string;
-  message?: string;
-  data: Array<{
-    _id: string;
-    email: string;
-    firstname: string;
-    lastname: string;
-    followersCount: number;
-    avatar?: string;
-  }>;
-}
+import { useAllocators, useFollowToggle } from "@/hooks/use-allocators";
+import { AllocatorService, Allocator } from "@/services/allocator-service";
+import { toast } from "react-hot-toast";
+import { useIsOnline } from "@/hooks/use-network-status";
 
 interface EventDetailsOrganizerProps {
   ownerId?: string;
@@ -60,148 +27,129 @@ export function EventDetailsOrganizer({
   ownerId,
   className = "",
   showTitle = true,
-  title = "Organizer", // Default title
+  title = "Organizer",
 }: EventDetailsOrganizerProps) {
-  const router = useRouter();
-  const {
-    isAuthenticated,
-    isLoading: authLoading,
-    checkTokenExpiry,
-  } = useAuthStore();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [organizer, setOrganizer] = useState<Allocator | null>(null);
 
+  const { isAuthenticated } = useAuthStore();
   const { profile } = useProfileStore();
+  const isOnline = useIsOnline();
 
-  const [organizer, setOrganizer] = useState<Organizer | null>(null);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [followLoading, setFollowLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Fetch organizer data using the centralized hook
+  const { data, isLoading, isError, refetch } = useAllocators({
+    allocatorId: ownerId,
+    limit: 1,
+  });
 
-  // Fetch organizer data
-  const fetchOrganizer = async () => {
-    if (!ownerId) {
-      setLoading(false);
-      return;
-    }
+  // Use the centralized follow toggle mutation
+  const followToggleMutation = useFollowToggle();
 
-    try {
-      const response = await apiClient.get<OrganizerResponse>(
-        `/users/allocators/?allocatorId=${ownerId}`
-      );
-
-      if (response.status === "success") {
-        if (response.data.items.length > 0) {
-          setOrganizer(response.data.items[0]);
-        } else {
-          // Handle empty array case - not an error, just no organizer found
-          setOrganizer(null);
-          setError(null); // Don't set error for empty results
-        }
-      } else {
-        setError("Failed to load organizer information");
-      }
-    } catch (error) {
-      console.error("Error fetching organizer:", error);
-      setError("Failed to load organizer information");
-    }
-  };
-
-  // Check follow status
-  const checkFollowStatus = async () => {
-    if (!isAuthenticated || !ownerId) return;
-
-    if (!checkTokenExpiry()) {
-      return;
-    }
-
-    try {
-      const response = await apiClient.get<FollowStatusResponse>(
-        "/users/follow/"
-      );
-
-      if (response.status === "success" && Array.isArray(response.data)) {
-        const isFollowingUser = response.data.some(
-          (user) => user._id === ownerId
-        );
-        setIsFollowing(isFollowingUser);
-      }
-    } catch (error) {
-      console.error("Error checking follow status:", error);
-      setIsFollowing(false);
-    }
-  };
-
-  // Handle follow/unfollow
-  const handleFollowToggle = async () => {
-    if (!isAuthenticated) {
-      router.push("/signin");
-      return;
-    }
-
-    if (!checkTokenExpiry()) {
-      router.push("/signin");
-      return;
-    }
-
-    if (!organizer || followLoading) return;
-
-    setFollowLoading(true);
-    try {
-      if (isFollowing) {
-        await apiClient.delete(`/users/follow/${organizer._id}`);
-        setIsFollowing(false);
-        setOrganizer((prev) =>
-          prev
-            ? {
-                ...prev,
-                followersCount:
-                  (prev.followersCount || 0) > 0
-                    ? (prev.followersCount || 0) - 1
-                    : 0,
-              }
-            : null
-        );
-      } else {
-        await apiClient.post(`/users/follow/${organizer._id}`);
-        setIsFollowing(true);
-        setOrganizer((prev) =>
-          prev
-            ? {
-                ...prev,
-                followersCount: (prev.followersCount || 0) + 1,
-              }
-            : null
-        );
-      }
-    } catch (error) {
-      console.error("Error toggling follow status:", error);
-      setIsFollowing(!isFollowing);
-    } finally {
-      setFollowLoading(false);
-    }
-  };
-
+  // Update local organizer state when data changes
   useEffect(() => {
-    const loadData = async () => {
-      if (authLoading) {
-        return;
+    if (data?.data?.items && data.data.items.length > 0) {
+      setOrganizer(data.data.items[0]);
+    } else {
+      setOrganizer(null);
+    }
+  }, [data]);
+
+  // Handle follow/unfollow using the centralized pattern
+  const handleFollowToggle = async () => {
+    // Check authentication first
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    // Don't allow follow actions when offline
+    if (!isOnline) {
+      toast.error("You're offline. Please check your connection.");
+      return;
+    }
+
+    // Check if user is trying to follow themselves
+    if (profile?._id === organizer?._id) {
+      toast.error("You can't follow yourself");
+      return;
+    }
+
+    if (!organizer) return;
+
+    // Update local state optimistically BEFORE the mutation
+    const previousFollowStatus = organizer.isFollowing;
+    const previousFollowersCount = organizer.followersCount;
+
+    setOrganizer((prev) =>
+      prev
+        ? {
+            ...prev,
+            isFollowing: !prev.isFollowing,
+            followersCount: prev.isFollowing
+              ? prev.followersCount - 1
+              : prev.followersCount + 1,
+          }
+        : null
+    );
+
+    try {
+      await followToggleMutation.mutateAsync({
+        userId: organizer._id,
+        isFollowing: previousFollowStatus || false,
+      });
+    } catch (error: any) {
+      // Revert the optimistic update on error
+      setOrganizer((prev) =>
+        prev
+          ? {
+              ...prev,
+              isFollowing: previousFollowStatus,
+              followersCount: previousFollowersCount,
+            }
+          : null
+      );
+
+      // If it's an auth error, show the modal
+      if (
+        error.message === "User must be authenticated" ||
+        error?.response?.status === 401
+      ) {
+        setShowAuthModal(true);
       }
+    }
+  };
 
-      setLoading(true);
-      await fetchOrganizer();
+  // Format follower count using the centralized service
+  const formatFollowerCount = (count?: number): string => {
+    return AllocatorService.formatFollowerCount(count || 0);
+  };
 
-      if (isAuthenticated) {
-        await checkFollowStatus();
-      }
+  // Get display name using the centralized service
+  const getDisplayName = (): string => {
+    if (!organizer) return "";
+    return AllocatorService.formatAllocatorName(organizer);
+  };
 
-      setLoading(false);
-    };
+  // Get button text and tooltip
+  const getButtonText = () => {
+    if (followToggleMutation.isPending) return "...";
+    return organizer?.isFollowing ? "Following" : "Follow";
+  };
 
-    loadData();
-  }, [ownerId, isAuthenticated, authLoading]);
+  const getTooltipText = () => {
+    if (isOwnProfile()) return "You can't follow yourself";
+    if (!isAuthenticated) return "Sign in to follow";
+    if (organizer?.isFollowing) return "Click to unfollow";
+    return "Click to follow";
+  };
 
-  // Show loading while auth is still loading or component data is loading
-  if (authLoading || loading) {
+  // Check if the organizer is the current user
+  const isOwnProfile = (): boolean => {
+    return profile?._id === organizer?._id;
+  };
+
+  // Show loading state
+  if (isLoading) {
     return (
       <div className={className}>
         {showTitle && (
@@ -209,6 +157,7 @@ export function EventDetailsOrganizer({
             {title}
           </h3>
         )}
+
         {/* Desktop Loading Skeleton */}
         <div className="hidden lg:flex w-full p-5 justify-center items-center gap-7 rounded-2xl border animate-pulse">
           <div className="flex items-center gap-4">
@@ -233,8 +182,8 @@ export function EventDetailsOrganizer({
     );
   }
 
-  // Handle API error (not empty results)
-  if (error) {
+  // Handle error state
+  if (isError) {
     return (
       <div className={className}>
         {showTitle && (
@@ -243,15 +192,21 @@ export function EventDetailsOrganizer({
           </h3>
         )}
         <div className="text-center py-6">
-          <p className="text-[var(--body-text,#6B7280)] font-source-sans-pro text-base font-normal leading-[142.745%] tracking-[-0.32px]">
-            {error}
+          <p className="text-[var(--body-text,#6B7280)] font-source-sans-pro text-base font-normal leading-[142.745%] tracking-[-0.32px] mb-4">
+            Failed to load organizer information
           </p>
+          <button
+            onClick={() => refetch()}
+            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
   }
 
-  // Handle no organizer found (empty array from API)
+  // Handle no organizer found
   if (!organizer) {
     return (
       <div className={className}>
@@ -269,38 +224,6 @@ export function EventDetailsOrganizer({
     );
   }
 
-  // Format follower count
-  const formatFollowerCount = (count?: number): string => {
-    if (!count || count === 0) return "0 followers";
-    if (count === 1) return "1 follower";
-    if (count < 1000) return `${count} followers`;
-    if (count < 1000000) return `${(count / 1000).toFixed(1)}k followers`;
-    return `${(count / 1000000).toFixed(1)}m followers`;
-  };
-
-  // Get display name
-  const getDisplayName = (organizer: Organizer): string => {
-    return `${organizer.firstname} ${organizer.lastname}`.trim();
-  };
-
-  // Get button text and tooltip
-  const getButtonText = () => {
-    if (followLoading) return "...";
-    return isFollowing ? "Following" : "Follow";
-  };
-
-  const getTooltipText = () => {
-    if (isOwnProfile()) return "You can't follow yourself";
-    if (!isAuthenticated) return "Sign in to follow";
-    if (isFollowing) return "Click to unfollow";
-    return "Click to follow";
-  };
-
-  // Check if the organizer is the current user
-  const isOwnProfile = (): boolean => {
-    return profile?._id === organizer?._id;
-  };
-
   return (
     <div className={className}>
       {showTitle && (
@@ -310,6 +233,7 @@ export function EventDetailsOrganizer({
       )}
 
       <TooltipProvider>
+        {/* Desktop Layout */}
         <div
           className="hidden lg:flex w-full p-5 justify-center items-center gap-7 rounded-2xl border border-outline-on-system-teal bg-card-background backdrop-blur-[21px]"
           style={{
@@ -322,12 +246,10 @@ export function EventDetailsOrganizer({
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full overflow-hidden">
               <FallbackImage
-                src={
-                  organizer.avatar || "/icons/encircle-star-orange-avatar.svg"
-                }
+                src={AllocatorService.getAllocatorAvatar(organizer)}
                 fallbackSrc="/icons/encircle-star-orange-avatar.svg"
-                alt={`${getDisplayName(organizer)} avatar`}
-                fallbackAlt={`${getDisplayName(organizer)} default avatar`}
+                alt={`${getDisplayName()} avatar`}
+                fallbackAlt={`${getDisplayName()} default avatar`}
                 width={48}
                 height={48}
                 className="w-full h-full object-cover"
@@ -345,7 +267,7 @@ export function EventDetailsOrganizer({
                 letterSpacing: "-0.36px",
               }}
             >
-              {getDisplayName(organizer)}
+              {getDisplayName()}
             </h4>
           </div>
 
@@ -373,31 +295,35 @@ export function EventDetailsOrganizer({
               <TooltipTrigger asChild>
                 <button
                   onClick={handleFollowToggle}
-                  disabled={followLoading}
+                  disabled={followToggleMutation.isPending || !isOnline}
                   className={`flex px-3 py-1.5 justify-center items-center gap-[15px] rounded-[51px] border transition-colors ${
-                    isFollowing
+                    organizer.isFollowing
                       ? "border-gray-400 bg-gray-100"
                       : "border-orange-red"
                   } ${
-                    followLoading
+                    followToggleMutation.isPending || !isOnline
                       ? "opacity-50 cursor-not-allowed"
-                      : "cursor-pointer"
+                      : "cursor-pointer hover:opacity-80"
                   }`}
                   style={{
                     borderRadius: "51px",
-                    border: isFollowing
+                    border: organizer.isFollowing
                       ? "1px solid #9CA3AF"
                       : "1px solid #FF5B00",
                     padding: "6px 12px",
-                    backgroundColor: isFollowing ? "#F3F4F6" : "transparent",
+                    backgroundColor: organizer.isFollowing
+                      ? "#F3F4F6"
+                      : "transparent",
                   }}
                 >
                   <span
                     className={`font-source-sans-pro text-lg font-semibold leading-normal ${
-                      isFollowing ? "text-gray-600" : "text-orange-red"
+                      organizer.isFollowing
+                        ? "text-gray-600"
+                        : "text-orange-red"
                     }`}
                     style={{
-                      color: isFollowing ? "#4B5563" : "#FF5B00",
+                      color: organizer.isFollowing ? "#4B5563" : "#FF5B00",
                       fontFamily: "var(--font-source-sans), sans-serif",
                       fontSize: "18px",
                       fontWeight: 600,
@@ -415,7 +341,7 @@ export function EventDetailsOrganizer({
           )}
         </div>
 
-        {/* Mobile Layout - Avatar left, content vertically centered right */}
+        {/* Mobile Layout */}
         <div
           className="lg:hidden w-full p-5 flex items-center gap-4 rounded-2xl border border-outline-on-system-teal bg-card-background backdrop-blur-[21px]"
           style={{
@@ -427,10 +353,10 @@ export function EventDetailsOrganizer({
           {/* Avatar - Left side */}
           <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
             <FallbackImage
-              src={organizer.avatar || "/icons/encircle-star-orange-avatar.svg"}
+              src={AllocatorService.getAllocatorAvatar(organizer)}
               fallbackSrc="/icons/encircle-star-orange-avatar.svg"
-              alt={`${getDisplayName(organizer)} avatar`}
-              fallbackAlt={`${getDisplayName(organizer)} default avatar`}
+              alt={`${getDisplayName()} avatar`}
+              fallbackAlt={`${getDisplayName()} default avatar`}
               width={48}
               height={48}
               className="w-full h-full object-cover"
@@ -451,7 +377,7 @@ export function EventDetailsOrganizer({
                 letterSpacing: "-0.36px",
               }}
             >
-              {getDisplayName(organizer)}
+              {getDisplayName()}
             </h4>
 
             {/* Followers count */}
@@ -475,31 +401,35 @@ export function EventDetailsOrganizer({
                 <TooltipTrigger asChild>
                   <button
                     onClick={handleFollowToggle}
-                    disabled={followLoading}
+                    disabled={followToggleMutation.isPending || !isOnline}
                     className={`flex px-3 py-1.5 justify-center items-center gap-[15px] rounded-[51px] border transition-colors w-fit ${
-                      isFollowing
+                      organizer.isFollowing
                         ? "border-gray-400 bg-gray-100"
                         : "border-orange-red"
                     } ${
-                      followLoading
+                      followToggleMutation.isPending || !isOnline
                         ? "opacity-50 cursor-not-allowed"
-                        : "cursor-pointer"
+                        : "cursor-pointer hover:opacity-80"
                     }`}
                     style={{
                       borderRadius: "51px",
-                      border: isFollowing
+                      border: organizer.isFollowing
                         ? "1px solid #9CA3AF"
                         : "1px solid #FF5B00",
                       padding: "6px 12px",
-                      backgroundColor: isFollowing ? "#F3F4F6" : "transparent",
+                      backgroundColor: organizer.isFollowing
+                        ? "#F3F4F6"
+                        : "transparent",
                     }}
                   >
                     <span
                       className={`font-source-sans-pro text-lg font-semibold leading-normal ${
-                        isFollowing ? "text-gray-600" : "text-orange-red"
+                        organizer.isFollowing
+                          ? "text-gray-600"
+                          : "text-orange-red"
                       }`}
                       style={{
-                        color: isFollowing ? "#4B5563" : "#FF5B00",
+                        color: organizer.isFollowing ? "#4B5563" : "#FF5B00",
                         fontFamily: "var(--font-source-sans), sans-serif",
                         fontSize: "18px",
                         fontWeight: 600,
@@ -518,6 +448,15 @@ export function EventDetailsOrganizer({
           </div>
         </div>
       </TooltipProvider>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        redirectUrl={
+          typeof window !== "undefined" ? window.location.pathname : "/"
+        }
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { AllocatorService, Allocator } from "@/services/allocator-service";
 import { LoadingSkeleton } from "@/components/ui/follow-card-skeleton";
 import { AllocationAdminCarousel } from "@/components/ui/allocation-admin-carousel";
@@ -25,6 +25,9 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [allAllocators, setAllAllocators] = useState<Allocator[]>([]);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMoreData, setHasMoreData] = useState(true);
+  const loadingMoreRef = useRef(false); // Prevent duplicate requests
 
   // Get auth state from store
   const { isAuthenticated } = useAuthStore();
@@ -40,20 +43,29 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
   // Use the follow toggle mutation
   const followToggleMutation = useFollowToggle();
 
-  // Update local state when data changes
+  // Handle initial load and subsequent loads
   useEffect(() => {
     if (data?.data?.items) {
       if (currentPage === 1) {
         setAllAllocators(data.data.items);
       } else {
-        // Append new items for pagination
         setAllAllocators((prev) => {
           const existingIds = new Set(prev.map((a) => a._id));
           const newItems = data.data.items.filter(
             (item) => !existingIds.has(item._id)
           );
+
           return [...prev, ...newItems];
         });
+      }
+
+      // Update hasMoreData based on API response
+      setHasMoreData(data.data.hasNextPage);
+
+      // Reset loading state
+      if (currentPage > 1) {
+        setIsLoadingMore(false);
+        loadingMoreRef.current = false;
       }
     }
   }, [data, currentPage]);
@@ -133,10 +145,30 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
   };
 
   // Load more when carousel reaches end
-  const handleLoadMore = () => {
-    if (data?.data?.hasNextPage && !isLoading && isOnline) {
-      setCurrentPage((prev) => prev + 1);
+  const handleLoadMore = async () => {
+    // Prevent duplicate requests
+    if (loadingMoreRef.current || isLoadingMore || !hasMoreData || !isOnline) {
+      return;
     }
+
+    // Set loading states
+    loadingMoreRef.current = true;
+    setIsLoadingMore(true);
+
+    // Increment page which will trigger the useEffect to fetch new data
+    setCurrentPage((prev) => {
+      const nextPage = prev + 1;
+      return nextPage;
+    });
+  };
+
+  // Reset states when starting fresh
+  const handleReset = () => {
+    setCurrentPage(1);
+    setAllAllocators([]);
+    setIsLoadingMore(false);
+    setHasMoreData(true);
+    loadingMoreRef.current = false;
   };
 
   // Render loading skeleton for initial load
@@ -274,7 +306,10 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
 
           <NetworkError
             message="Unable to load featured allocators"
-            onRetry={() => refetch()}
+            onRetry={() => {
+              handleReset();
+              refetch();
+            }}
           />
         </div>
       </section>
@@ -388,8 +423,8 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
           )}
           onFollowClick={handleFollowClick}
           onLoadMore={handleLoadMore}
-          hasMore={data?.data?.hasNextPage || false}
-          isLoadingMore={isLoading && currentPage > 1}
+          hasMore={hasMoreData}
+          isLoadingMore={isLoadingMore}
         />
       </div>
 

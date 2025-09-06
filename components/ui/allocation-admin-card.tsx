@@ -1,6 +1,7 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import { useProfileStore } from "@/stores/profile-store";
 
 interface AllocationAdminCardProps {
   id: string;
@@ -24,7 +25,26 @@ export function AllocationAdminCard({
   const [showTooltip, setShowTooltip] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Get current user's profile to check if they're trying to follow themselves
+  const { getUserId, profile, fetchProfile } = useProfileStore();
+  const currentUserId = getUserId();
+
+  // Fetch profile if it doesn't exist and we haven't tried yet
+  useEffect(() => {
+    if (!profile && !currentUserId) {
+      fetchProfile();
+    }
+  }, [profile, currentUserId, fetchProfile]);
+
+  // Check if this is the current user's own profile
+  const isOwnProfile = currentUserId && currentUserId === id;
+
   const handleFollowClick = async () => {
+    // Prevent self-follow - don't make API call
+    if (isOwnProfile) {
+      return;
+    }
+
     if (onFollowClick && !isLoading) {
       setIsLoading(true);
       try {
@@ -36,7 +56,8 @@ export function AllocationAdminCard({
   };
 
   const handleMouseEnter = () => {
-    if (isFollowing && !isLoading) {
+    // Show tooltip for own profile or when hovering over follow/unfollow button
+    if (isOwnProfile || !isLoading) {
       setShowTooltip(true);
     }
   };
@@ -48,12 +69,62 @@ export function AllocationAdminCard({
   // Determine button text
   const getButtonText = () => {
     if (isLoading) return "...";
+    if (isOwnProfile) return "You";
     if (isFollowing) return "Unfollow";
     return "Follow";
   };
 
-  // Determine if button should be disabled
-  const isButtonDisabled = isLoading;
+  // Determine tooltip text
+  const getTooltipText = () => {
+    if (isOwnProfile) return "You can't follow yourself";
+    if (isFollowing) return `Click to unfollow ${name}`;
+    return `Click to follow ${name}`;
+  };
+
+  // Determine button style based on state
+  const getButtonStyle = () => {
+    const baseStyle = {
+      borderRadius: "51px",
+      display: "flex",
+      padding: "6px 12px",
+      justifyContent: "center",
+      alignItems: "center",
+      gap: "15px",
+      transition: "all 0.2s ease",
+    };
+
+    if (isOwnProfile) {
+      return {
+        ...baseStyle,
+        border: "1px solid #D1D5DB",
+        background: "#F9FAFB",
+        cursor: "not-allowed",
+      };
+    }
+
+    if (isLoading) {
+      return {
+        ...baseStyle,
+        border: "1px solid var(--Orange-Red, #FF5B00)",
+        background: "transparent",
+        cursor: "wait",
+        opacity: 0.6,
+      };
+    }
+
+    return {
+      ...baseStyle,
+      border: "1px solid var(--Orange-Red, #FF5B00)",
+      background: "transparent",
+      cursor: "pointer",
+    };
+  };
+
+  // Determine text color
+  const getTextColor = () => {
+    if (isOwnProfile) return "#9CA3AF";
+    return "var(--Orange-Red, #FF5B00)";
+  };
 
   return (
     <div
@@ -123,38 +194,19 @@ export function AllocationAdminCard({
           onClick={handleFollowClick}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          disabled={isButtonDisabled}
+          disabled={isLoading}
           className={`transition-all ${
-            isButtonDisabled
-              ? "cursor-not-allowed opacity-60"
-              : isFollowing
-              ? "hover:bg-red-50 cursor-pointer"
-              : "hover:bg-orange-50 cursor-pointer"
+            !isOwnProfile && !isLoading
+              ? isFollowing
+                ? "hover:bg-red-50"
+                : "hover:bg-orange-50"
+              : ""
           }`}
-          style={{
-            borderRadius: "51px",
-            border: `1px solid ${
-              isButtonDisabled
-                ? "#B0B0B0"
-                : isFollowing
-                ? "var(--Orange-Red, #FF5B00)"
-                : "var(--Orange-Red, #FF5B00)"
-            }`,
-            display: "flex",
-            padding: "6px 12px",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: "15px",
-            background: isButtonDisabled 
-              ? "#F5F5F5" 
-              : "transparent",
-          }}
+          style={getButtonStyle()}
         >
           <span
             style={{
-              color: isButtonDisabled
-                ? "#B0B0B0"
-                : "var(--Orange-Red, #FF5B00)",
+              color: getTextColor(),
               fontFamily: "var(--font-source-sans), sans-serif",
               fontSize: "18px",
               fontStyle: "normal",
@@ -167,7 +219,7 @@ export function AllocationAdminCard({
         </button>
 
         {/* Tooltip */}
-        {showTooltip && isFollowing && !isLoading && (
+        {showTooltip && (
           <div
             className="absolute z-10 px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-sm"
             style={{
@@ -180,7 +232,7 @@ export function AllocationAdminCard({
               fontWeight: 500,
             }}
           >
-            Click to unfollow {name}
+            {getTooltipText()}
             {/* Tooltip Arrow */}
             <div
               className="absolute top-full left-1/2 transform -translate-x-1/2"

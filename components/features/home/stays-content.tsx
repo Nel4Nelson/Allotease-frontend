@@ -1,17 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// Todo: Clean code - the duplicated variants make that implementation cleaner
-// Todo: Extract filter components to reduce duplication between desktop/mobile variants
-// Todo: Consider memoizing expensive operations like StaysService formatters
-// Todo: Add proper TypeScript interfaces for queryClient.getQueryData instead of using 'any'
-// Todo: Implement virtualization for large lists to improve performance
 // Todo: Add accessibility attributes for screen readers
-// Todo: Extracting business logic into custom hooks for better testability
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ContentHeader } from "@/components/ui/content-header";
-import { SectionTitle } from "@/components/ui/section-title";
-import { VariantSelect } from "@/components/ui/variant-select";
 import { StayCard } from "@/components/ui/stays-card";
 import { Button } from "@/components/ui/button";
 import { StaysService } from "@/services/stays-service";
@@ -29,6 +20,7 @@ import {
   staysKeys,
 } from "@/hooks/use-stays";
 import { useQueryClient } from "@tanstack/react-query";
+import { StayFilters } from "@/components/ui/filters";
 
 interface StaysContentProps {
   className?: string;
@@ -51,8 +43,8 @@ export function StaysContent({ className = "" }: StaysContentProps) {
       selectedType !== "all" && { accommodationType: selectedType }),
   };
 
-  // Use TanStack Query for fetching stays
-  const { data, isLoading, isError, refetch } = useStays(queryParams);
+  const { data, isLoading, isError, isFetched, refetch } =
+    useStays(queryParams);
 
   // Use load more mutation for pagination
   const loadMoreMutation = useLoadMoreStays();
@@ -155,8 +147,8 @@ export function StaysContent({ className = "" }: StaysContentProps) {
   // Get all stays from data
   const allStays = data?.data?.items || [];
 
-  // Loading state - show skeleton on initial load OR when filters change
-  const isLoadingData = isLoading || (allStays.length === 0 && !isError);
+  // Loading state - only show skeleton on initial load OR when filters change AND not yet fetched
+  const isLoadingData = isLoading || (!isFetched && allStays.length === 0);
 
   // Show different buttons based on state
   const showMoreButton =
@@ -172,98 +164,16 @@ export function StaysContent({ className = "" }: StaysContentProps) {
   const itemsPerPage = queryParams.limit || 6;
   const totalPages = data?.data?.totalPages || 1;
 
-  // Render loading skeleton for initial load OR filter changes
+  // Render loading skeleton for initial load OR filter changes (but only if not yet fetched)
   if (isLoadingData && isOnline) {
     return (
       <div className={`space-y-6 ${className}`}>
-        <div>
-          {/* Desktop: Type in header, Location below */}
-          <div className="hidden md:block">
-            <ContentHeader
-              title={
-                <SectionTitle>Available accommodation near you</SectionTitle>
-              }
-              action={
-                <VariantSelect
-                  variant="glass"
-                  placeholder="Type"
-                  value={selectedType}
-                  onValueChange={handleTypeChange}
-                  options={[
-                    { value: "all", label: "All Types" },
-                    { value: "hotel & lodging", label: "Hotels & Lodging" },
-                    { value: "appartments", label: "Apartments" },
-                    { value: "hostels", label: "Hostels" },
-                  ]}
-                />
-              }
-            />
-
-            <VariantSelect
-              variant="ghost"
-              icon="/icons/location.svg"
-              iconAlt="Location"
-              value={selectedLocation}
-              onValueChange={handleLocationChange}
-              options={[
-                { value: "awka-anambra", label: "Awka, Anambra" },
-                { value: "lagos-lagos", label: "Lagos, Lagos" },
-                { value: "abuja-fct", label: "Abuja, FCT" },
-                {
-                  value: "port-harcourt-rivers",
-                  label: "Port Harcourt, Rivers",
-                },
-                { value: "kano-kano", label: "Kano, Kano" },
-                { value: "ibadan-oyo", label: "Ibadan, Oyo" },
-              ]}
-            />
-          </div>
-
-          {/* Mobile: Title and both selects in same row */}
-          <div className="block md:hidden">
-            <div className="mb-4">
-              <SectionTitle>Available Stays near you</SectionTitle>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <VariantSelect
-                  variant="ghost"
-                  icon="/icons/location.svg"
-                  iconAlt="Location"
-                  value={selectedLocation}
-                  onValueChange={handleLocationChange}
-                  options={[
-                    { value: "awka-anambra", label: "Awka, Anambra" },
-                    { value: "lagos-lagos", label: "Lagos, Lagos" },
-                    { value: "abuja-fct", label: "Abuja, FCT" },
-                    {
-                      value: "port-harcourt-rivers",
-                      label: "Port Harcourt, Rivers",
-                    },
-                    { value: "kano-kano", label: "Kano, Kano" },
-                    { value: "ibadan-oyo", label: "Ibadan, Oyo" },
-                  ]}
-                />
-              </div>
-
-              <div className="flex-1">
-                <VariantSelect
-                  variant="glass"
-                  placeholder="Type"
-                  value={selectedType}
-                  onValueChange={handleTypeChange}
-                  options={[
-                    { value: "all", label: "All Types" },
-                    { value: "hotel & lodging", label: "Hotels & Lodging" },
-                    { value: "appartments", label: "Apartments" },
-                    { value: "hostels", label: "Hostels" },
-                  ]}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+        <StayFilters
+          selectedLocation={selectedLocation}
+          selectedType={selectedType}
+          onLocationChange={handleLocationChange}
+          onTypeChange={handleTypeChange}
+        />
 
         {/* Loading skeleton - shown during filter changes */}
         <StaysGridSkeleton count={6} />
@@ -275,93 +185,12 @@ export function StaysContent({ className = "" }: StaysContentProps) {
   if (!isOnline && allStays.length === 0) {
     return (
       <div className={`space-y-6 ${className}`}>
-        <div>
-          {/* Filters remain interactive even offline */}
-          <div className="hidden md:block">
-            <ContentHeader
-              title={
-                <SectionTitle>Available accommodation near you</SectionTitle>
-              }
-              action={
-                <VariantSelect
-                  variant="glass"
-                  placeholder="Type"
-                  value={selectedType}
-                  onValueChange={handleTypeChange}
-                  options={[
-                    { value: "all", label: "All Types" },
-                    { value: "hotel & lodging", label: "Hotels & Lodging" },
-                    { value: "appartments", label: "Apartments" },
-                    { value: "hostels", label: "Hostels" },
-                  ]}
-                />
-              }
-            />
-
-            <VariantSelect
-              variant="ghost"
-              icon="/icons/location.svg"
-              iconAlt="Location"
-              value={selectedLocation}
-              onValueChange={handleLocationChange}
-              options={[
-                { value: "awka-anambra", label: "Awka, Anambra" },
-                { value: "lagos-lagos", label: "Lagos, Lagos" },
-                { value: "abuja-fct", label: "Abuja, FCT" },
-                {
-                  value: "port-harcourt-rivers",
-                  label: "Port Harcourt, Rivers",
-                },
-                { value: "kano-kano", label: "Kano, Kano" },
-                { value: "ibadan-oyo", label: "Ibadan, Oyo" },
-              ]}
-            />
-          </div>
-
-          <div className="block md:hidden">
-            <div className="mb-4">
-              <SectionTitle>Available Stays near you</SectionTitle>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <VariantSelect
-                  variant="ghost"
-                  icon="/icons/location.svg"
-                  iconAlt="Location"
-                  value={selectedLocation}
-                  onValueChange={handleLocationChange}
-                  options={[
-                    { value: "awka-anambra", label: "Awka, Anambra" },
-                    { value: "lagos-lagos", label: "Lagos, Lagos" },
-                    { value: "abuja-fct", label: "Abuja, FCT" },
-                    {
-                      value: "port-harcourt-rivers",
-                      label: "Port Harcourt, Rivers",
-                    },
-                    { value: "kano-kano", label: "Kano, Kano" },
-                    { value: "ibadan-oyo", label: "Ibadan, Oyo" },
-                  ]}
-                />
-              </div>
-
-              <div className="flex-1">
-                <VariantSelect
-                  variant="glass"
-                  placeholder="Type"
-                  value={selectedType}
-                  onValueChange={handleTypeChange}
-                  options={[
-                    { value: "all", label: "All Types" },
-                    { value: "hotel & lodging", label: "Hotels & Lodging" },
-                    { value: "appartments", label: "Apartments" },
-                    { value: "hostels", label: "Hostels" },
-                  ]}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+        <StayFilters
+          selectedLocation={selectedLocation}
+          selectedType={selectedType}
+          onLocationChange={handleLocationChange}
+          onTypeChange={handleTypeChange}
+        />
 
         <OfflineState />
       </div>
@@ -372,92 +201,12 @@ export function StaysContent({ className = "" }: StaysContentProps) {
   if (isError && !isLoading && allStays.length === 0) {
     return (
       <div className={`space-y-6 ${className}`}>
-        <div>
-          <div className="hidden md:block">
-            <ContentHeader
-              title={
-                <SectionTitle>Available accommodation near you</SectionTitle>
-              }
-              action={
-                <VariantSelect
-                  variant="glass"
-                  placeholder="Type"
-                  value={selectedType}
-                  onValueChange={handleTypeChange}
-                  options={[
-                    { value: "all", label: "All Types" },
-                    { value: "hotel & lodging", label: "Hotels & Lodging" },
-                    { value: "appartments", label: "Apartments" },
-                    { value: "hostels", label: "Hostels" },
-                  ]}
-                />
-              }
-            />
-
-            <VariantSelect
-              variant="ghost"
-              icon="/icons/location.svg"
-              iconAlt="Location"
-              value={selectedLocation}
-              onValueChange={handleLocationChange}
-              options={[
-                { value: "awka-anambra", label: "Awka, Anambra" },
-                { value: "lagos-lagos", label: "Lagos, Lagos" },
-                { value: "abuja-fct", label: "Abuja, FCT" },
-                {
-                  value: "port-harcourt-rivers",
-                  label: "Port Harcourt, Rivers",
-                },
-                { value: "kano-kano", label: "Kano, Kano" },
-                { value: "ibadan-oyo", label: "Ibadan, Oyo" },
-              ]}
-            />
-          </div>
-
-          <div className="block md:hidden">
-            <div className="mb-4">
-              <SectionTitle>Available Stays near you</SectionTitle>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <VariantSelect
-                  variant="ghost"
-                  icon="/icons/location.svg"
-                  iconAlt="Location"
-                  value={selectedLocation}
-                  onValueChange={handleLocationChange}
-                  options={[
-                    { value: "awka-anambra", label: "Awka, Anambra" },
-                    { value: "lagos-lagos", label: "Lagos, Lagos" },
-                    { value: "abuja-fct", label: "Abuja, FCT" },
-                    {
-                      value: "port-harcourt-rivers",
-                      label: "Port Harcourt, Rivers",
-                    },
-                    { value: "kano-kano", label: "Kano, Kano" },
-                    { value: "ibadan-oyo", label: "Ibadan, Oyo" },
-                  ]}
-                />
-              </div>
-
-              <div className="flex-1">
-                <VariantSelect
-                  variant="glass"
-                  placeholder="Type"
-                  value={selectedType}
-                  onValueChange={handleTypeChange}
-                  options={[
-                    { value: "all", label: "All Types" },
-                    { value: "hotel & lodging", label: "Hotels & Lodging" },
-                    { value: "appartments", label: "Apartments" },
-                    { value: "hostels", label: "Hostels" },
-                  ]}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+        <StayFilters
+          selectedLocation={selectedLocation}
+          selectedType={selectedType}
+          onLocationChange={handleLocationChange}
+          onTypeChange={handleTypeChange}
+        />
 
         <NetworkError
           message="Unable to load accommodations"
@@ -467,96 +216,16 @@ export function StaysContent({ className = "" }: StaysContentProps) {
     );
   }
 
-  // Handle empty state
-  if (!isLoading && !isError && allStays.length === 0) {
+  // Handle empty state - this will properly trigger when data is fetched but empty
+  if (!isLoading && !isError && isFetched && allStays.length === 0) {
     return (
       <div className={`space-y-6 ${className}`}>
-        <div>
-          <div className="hidden md:block">
-            <ContentHeader
-              title={
-                <SectionTitle>Available accommodation near you</SectionTitle>
-              }
-              action={
-                <VariantSelect
-                  variant="glass"
-                  placeholder="Type"
-                  value={selectedType}
-                  onValueChange={handleTypeChange}
-                  options={[
-                    { value: "all", label: "All Types" },
-                    { value: "hotel & lodging", label: "Hotels & Lodging" },
-                    { value: "appartments", label: "Apartments" },
-                    { value: "hostels", label: "Hostels" },
-                  ]}
-                />
-              }
-            />
-
-            <VariantSelect
-              variant="ghost"
-              icon="/icons/location.svg"
-              iconAlt="Location"
-              value={selectedLocation}
-              onValueChange={handleLocationChange}
-              options={[
-                { value: "awka-anambra", label: "Awka, Anambra" },
-                { value: "lagos-lagos", label: "Lagos, Lagos" },
-                { value: "abuja-fct", label: "Abuja, FCT" },
-                {
-                  value: "port-harcourt-rivers",
-                  label: "Port Harcourt, Rivers",
-                },
-                { value: "kano-kano", label: "Kano, Kano" },
-                { value: "ibadan-oyo", label: "Ibadan, Oyo" },
-              ]}
-            />
-          </div>
-
-          <div className="block md:hidden">
-            <div className="mb-4">
-              <SectionTitle>Available Stays near you</SectionTitle>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <VariantSelect
-                  variant="ghost"
-                  icon="/icons/location.svg"
-                  iconAlt="Location"
-                  value={selectedLocation}
-                  onValueChange={handleLocationChange}
-                  options={[
-                    { value: "awka-anambra", label: "Awka, Anambra" },
-                    { value: "lagos-lagos", label: "Lagos, Lagos" },
-                    { value: "abuja-fct", label: "Abuja, FCT" },
-                    {
-                      value: "port-harcourt-rivers",
-                      label: "Port Harcourt, Rivers",
-                    },
-                    { value: "kano-kano", label: "Kano, Kano" },
-                    { value: "ibadan-oyo", label: "Ibadan, Oyo" },
-                  ]}
-                />
-              </div>
-
-              <div className="flex-1">
-                <VariantSelect
-                  variant="glass"
-                  placeholder="Type"
-                  value={selectedType}
-                  onValueChange={handleTypeChange}
-                  options={[
-                    { value: "all", label: "All Types" },
-                    { value: "hotel & lodging", label: "Hotels & Lodging" },
-                    { value: "appartments", label: "Apartments" },
-                    { value: "hostels", label: "Hostels" },
-                  ]}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+        <StayFilters
+          selectedLocation={selectedLocation}
+          selectedType={selectedType}
+          onLocationChange={handleLocationChange}
+          onTypeChange={handleTypeChange}
+        />
 
         <EmptyState
           title="No accommodations found"
@@ -575,91 +244,12 @@ export function StaysContent({ className = "" }: StaysContentProps) {
   // Normal render with data
   return (
     <div className={`space-y-6 ${className}`}>
-      <div>
-        {/* Desktop: Type in header, Location below */}
-        <div className="hidden md:block">
-          <ContentHeader
-            title={
-              <SectionTitle>Available accommodation near you</SectionTitle>
-            }
-            action={
-              <VariantSelect
-                variant="glass"
-                placeholder="Type"
-                value={selectedType}
-                onValueChange={handleTypeChange}
-                options={[
-                  { value: "all", label: "All Types" },
-                  { value: "hotel & lodging", label: "Hotels & Lodging" },
-                  { value: "appartments", label: "Apartments" },
-                  { value: "hostels", label: "Hostels" },
-                ]}
-              />
-            }
-          />
-
-          <VariantSelect
-            variant="ghost"
-            icon="/icons/location.svg"
-            iconAlt="Location"
-            value={selectedLocation}
-            onValueChange={handleLocationChange}
-            options={[
-              { value: "awka-anambra", label: "Awka, Anambra" },
-              { value: "lagos-lagos", label: "Lagos, Lagos" },
-              { value: "abuja-fct", label: "Abuja, FCT" },
-              { value: "port-harcourt-rivers", label: "Port Harcourt, Rivers" },
-              { value: "kano-kano", label: "Kano, Kano" },
-              { value: "ibadan-oyo", label: "Ibadan, Oyo" },
-            ]}
-          />
-        </div>
-
-        {/* Mobile: Title and both selects in same row */}
-        <div className="block md:hidden">
-          <div className="mb-4">
-            <SectionTitle>Available Stays near you</SectionTitle>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex-1">
-              <VariantSelect
-                variant="ghost"
-                icon="/icons/location.svg"
-                iconAlt="Location"
-                value={selectedLocation}
-                onValueChange={handleLocationChange}
-                options={[
-                  { value: "awka-anambra", label: "Awka, Anambra" },
-                  { value: "lagos-lagos", label: "Lagos, Lagos" },
-                  { value: "abuja-fct", label: "Abuja, FCT" },
-                  {
-                    value: "port-harcourt-rivers",
-                    label: "Port Harcourt, Rivers",
-                  },
-                  { value: "kano-kano", label: "Kano, Kano" },
-                  { value: "ibadan-oyo", label: "Ibadan, Oyo" },
-                ]}
-              />
-            </div>
-
-            <div className="flex-1">
-              <VariantSelect
-                variant="glass"
-                placeholder="Type"
-                value={selectedType}
-                onValueChange={handleTypeChange}
-                options={[
-                  { value: "all", label: "All Types" },
-                  { value: "hotel & lodging", label: "Hotels & Lodging" },
-                  { value: "appartments", label: "Apartments" },
-                  { value: "hostels", label: "Hostels" },
-                ]}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <StayFilters
+        selectedLocation={selectedLocation}
+        selectedType={selectedType}
+        onLocationChange={handleLocationChange}
+        onTypeChange={handleTypeChange}
+      />
 
       {/* Stays Grid - Responsive */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">

@@ -11,7 +11,9 @@ import {
 
 interface VariantSelectProps {
   placeholder?: string;
-  options: { value: string; label: string }[];
+  options:
+    | readonly { readonly value: string; readonly label: string }[]
+    | { value: string; label: string }[];
   value?: string;
   onValueChange?: (value: string) => void;
   className?: string;
@@ -53,7 +55,8 @@ export function VariantSelect({
       alignItems: "center",
       gap: "15px",
       borderRadius: "51px",
-      border: "1px solid var(--Outline-on-System-Teal, rgba(138, 174, 164, 0.20))",
+      border:
+        "1px solid var(--Outline-on-System-Teal, rgba(138, 174, 164, 0.20))",
       background: "var(--secondary-background, rgba(242, 244, 247, 0.50))",
       backdropFilter: "blur(10px)",
     };
@@ -62,7 +65,7 @@ export function VariantSelect({
   return (
     <div className={className}>
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger 
+        <SelectTrigger
           className="border-none bg-transparent p-0 h-auto"
           style={getVariantStyles()}
         >
