@@ -11,7 +11,7 @@ export function CreateTabs({ className = "" }: CreateTabsProps) {
   const tabs: TabConfig[] = [
     {
       value: "stays",
-      label: "Stays",
+      label: "Spaces",
       content: <StaysForm />
     },
     {
@@ -19,22 +19,12 @@ export function CreateTabs({ className = "" }: CreateTabsProps) {
       label: "Events",
       content: <EventsForm />
     },
-    {
-      value: "car-parks",
-      label: "Car parks",
-      content: (
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Create New Car Park</h2>
-          <p className="text-gray-600">Car park - coming soon!</p>
-        </div>
-      )
-    }
   ];
 
   return (
     <TabsWithUrlState
       tabs={tabs}
-      defaultTab="events"
+      defaultTab="stays"
       basePath="/allocation-admin/create"
       className={className}
     />

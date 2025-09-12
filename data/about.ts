@@ -5,7 +5,7 @@ export const aboutPageData: AboutPageData = {
     {
       content: [
         {
-          title: "Discover Accommodation Nationwide",
+          title: "Discover Spaces Nationwide",
           description:
             "Search hotels, appartments, and student lodges available across Nigeria, near campuses, city centres, and event venues.",
         },
@@ -174,27 +174,37 @@ export const aboutPageData: AboutPageData = {
     {
       title: "What is Allotease?",
       content:
-        "Allotease is a platform designed to simplify event management by providing tools for managing event tickets, parking spaces, and more.",
+        "Allotease is a smart booking and allocation platform that makes it easy to reserve accommodations, discover events, and purchase tickets — all in one place. Built to grow beyond bookings, its backend engine is designed to automate space and resource allocation across sectors like education, events, logistics, and corporate operations. Whether integrated into existing systems or used on its own, Allotease powers fair, efficient, and scalable management — from event seating to future applications like hostel balloting and parking allocation.",
     },
     {
-      title: "Who can use Allotease?",
+      title: "How do I make a booking?",
       content:
-        "Allotease is designed for both event organizers and attendees. Organizers can create and manage events, while attendees can discover and book events that interest them.",
+        "Search for the stay or event you want, select your dates or tickets, and confirm your booking with our secure payment system.",
     },
     {
-      title: "How do I create an event?",
+      title: "Do I need an account to book?",
       content:
-        "Creating an event is simple! Sign up for an organizer account, click 'Create Event', fill in your event details, set up ticketing options, and publish your event for attendees to discover.",
+        "No, but creating an account helps us save your preferences, booking history, and receipts for easy access anytime.",
     },
     {
-      title: "How do I track ticket sales?",
+      title: "Can I cancel or change my booking?",
       content:
-        "Our dashboard provides real-time analytics on ticket sales, attendee registration, revenue tracking, and detailed reports to help you monitor your event's performance.",
+        "Yes, cancellation and change policies vary by host or organizer. Check the policy on the listing before booking.",
     },
     {
-      title: "How do I know if my ticket is confirmed?",
+      title: "Is my payment secure?",
       content:
-        "Once you complete your booking and payment, you'll receive an instant confirmation email with your ticket details. You can also check your ticket status in your account dashboard.",
+        "Absolutely — we use trusted, encrypted payment providers to protect your transactions.",
+    },
+    {
+      title: "What if I have an issue with my booking?",
+      content:
+        "You can contact the host directly via your booking dashboard or reach our support team for assistance.",
+    },
+    {
+      title: "How do I find events or spaces near me?",
+      content:
+        "Use our location filters to discover listings based on your city, neighborhood, or preferred venue.",
     },
   ],
 };

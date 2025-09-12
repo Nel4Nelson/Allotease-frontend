@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 "use client";
 import Link from "next/link";
 import Image from "next/image";
@@ -17,22 +16,23 @@ export function HeroContent() {
             height={32}
             width={120}
             priority
-            className="transition-transform hover:scale-105 h-6 sm:h-7 md:h-8 w-auto"
+            className="hidden sm:block transition-transform hover:scale-105 h-6 sm:h-7 md:h-8 w-auto"
           />
           <div
             className="hidden sm:block h-full w-px bg-[var(--input-border)] mx-3 md:mx-4"
             aria-hidden="true"
           />
           <p className="text-base  sm:text-lg md:text-xl xl:text-2xl font-source-sans-pro font-semibold text-[var(--hero-subtitle-color)] leading-tight">
-            Nigerian's Favorite Booking solution
+            Book a Space and Secure Your Tickets— All in One Platform
           </p>
         </div>
 
         {/* Main Hero Title */}
-        <h1 className="text-shadow-hero font-space-grotesk text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-[64px] font-bold leading-[110%] tracking-tight sm:tracking-[-0.02em] lg:tracking-[-1.28px] text-white mb-4 sm:mb-5 md:mb-6">
-          <span className="hero-gradient-text">Simplify</span> Accommodation
+        <h1 className="text-shadow-hero font-space-grotesk text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-[110%] tracking-tight sm:tracking-[-0.02em] lg:tracking-[-1.28px] text-white mb-4 sm:mb-5 md:mb-6">
+          <span className="hero-gradient-text">From accommodations</span> to
+          events,
           <br />
-          Allocation Like Never Before
+          Allotease puts every booking tool you need at your fingertips.
         </h1>
 
         {/* CTA Button */}
@@ -47,7 +47,7 @@ export function HeroContent() {
               className="sm:h-auto"
               aria-label="Sign up for a new account"
             >
-              <span className="font-bold">Sign Up Today</span>
+              <span className="font-bold">Sign up today</span>
             </Button>
           </Link>
         </div>

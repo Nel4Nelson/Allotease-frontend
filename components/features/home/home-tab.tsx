@@ -14,7 +14,7 @@ export function HomeTabs({ className = "" }: HomeTabsProps) {
   const tabs: TabConfig[] = [
     {
       value: "stays",
-      label: "Stays",
+      label: "Spaces",
       content: <StaysContent />,
     },
     {
@@ -22,23 +22,12 @@ export function HomeTabs({ className = "" }: HomeTabsProps) {
       label: "Events",
       content: <EventsContent />,
     },
-    {
-      value: "car-parks",
-      label: "Car parks",
-      content: (
-        <div>
-          {/* Available parking options content will go here */}
-          <h2 className="text-xl font-semibold mb-4">Available Parking</h2>
-          <p className="text-gray-600">Car parks content coming soon...</p>
-        </div>
-      ),
-    },
   ];
 
   return (
     <TabsWithUrlState
       tabs={tabs}
-      defaultTab="events"
+      defaultTab="stays"
       basePath="/"
       className={className}
     />

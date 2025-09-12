@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { useProfileStore } from "@/stores/profile-store";
+import { useAuthStore } from "@/stores/auth-store";
 
 interface AllocationAdminCardProps {
   id: string;
@@ -25,16 +26,18 @@ export function AllocationAdminCard({
   const [showTooltip, setShowTooltip] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const { isAuthenticated } = useAuthStore();
+
   // Get current user's profile to check if they're trying to follow themselves
   const { getUserId, profile, fetchProfile } = useProfileStore();
   const currentUserId = getUserId();
 
   // Fetch profile if it doesn't exist and we haven't tried yet
   useEffect(() => {
-    if (!profile && !currentUserId) {
-      fetchProfile();
-    }
-  }, [profile, currentUserId, fetchProfile]);
+  if (isAuthenticated && !profile && !currentUserId) {
+    fetchProfile();
+  }
+}, [isAuthenticated, profile, currentUserId, fetchProfile]);
 
   // Check if this is the current user's own profile
   const isOwnProfile = currentUserId && currentUserId === id;

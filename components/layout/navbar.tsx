@@ -34,7 +34,7 @@ const AnimatedCreateText: React.FC<AnimatedCreateTextProps> = ({
     if (isHovered) return; // Don't animate when hovered
 
     const interval = setInterval(() => {
-      setCurrentText((prev) => (prev === "event" ? "stay" : "event"));
+      setCurrentText((prev) => (prev === "event" ? "space" : "event"));
     }, 2000); // Change every 2 seconds
 
     return () => clearInterval(interval);
@@ -123,11 +123,11 @@ export default function Header() {
             </Link>
 
             {/* Search Bar - Hidden on mobile */}
-            <div className="hidden md:flex items-center gap-3 h-10 max-w-[300px] px-3 flex-1 rounded-full border border-gray-300/20 bg-gray-100/50">
+            <div className="hidden md:flex items-center gap-3 h-10 max-w-[200px] px-3 flex-1 rounded-full border border-gray-300/20 bg-gray-100/50">
               <SearchIcon />
               <input
                 type="text"
-                placeholder="Search by address"
+                placeholder="Search"
                 className="flex-1 bg-transparent border-none outline-none text-gray-600 font-source-sans text-base placeholder:text-gray-500"
                 style={{ color: "#71727A" }}
               />

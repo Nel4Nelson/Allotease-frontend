@@ -202,9 +202,10 @@ function StaysFormContent({}: StaysFormProps) {
             What's the name of your accommodation?
           </h2>
           <p className="text-[#7A7A7A] font-source-sans-pro text-base font-normal leading-[160%] mb-4">
-            This will be your accommodation's title. Your title will be used to
-            help create your accommodation's summary, description, and tags – so
-            be specific!
+            f your space already has a name, we want to know — it’ll help shape
+            your space’s outlook and tags. If not, no worries, you’ll need to
+            give it one. Think something demure, something classy. Guests won't
+            go for a title that seems 'shabby', so be clear and specific.
           </p>
           <FormInput
             label="Accommodation title"
@@ -232,12 +233,11 @@ function StaysFormContent({}: StaysFormProps) {
         {/* Third Question - Image Upload */}
         <div>
           <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-2">
-            Upload accommodation images
+            Add Images To Bring Your Space to Life.
           </h2>
           <p className="text-[#7A7A7A] font-source-sans-pro text-base font-normal leading-[160%] mb-4">
-            These images will be the main visual representation of your
-            accommodation. Choose clear, high-quality photos that best showcase
-            the space to attract users' attention.
+            The eyes <span className="line-through">eat</span> buy first. Choose
+            sharp, well-lit photos that show your space at its best.
           </p>
           <p className="text-[#7A7A7A] font-source-sans-pro text-sm font-normal mb-4">
             Recommended dimensions: 1200 x 800 pixels for optimal display.
@@ -258,7 +258,7 @@ function StaysFormContent({}: StaysFormProps) {
         {/* Location Section */}
         <div>
           <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-4">
-            Where is it located?
+            Where’s your space located?
           </h2>
           <LocationSelector
             mode="stays"
@@ -277,7 +277,7 @@ function StaysFormContent({}: StaysFormProps) {
         {/* Accommodation Type Section */}
         <div>
           <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-4">
-            Select accommodation type
+            What kind of space are you listing?
           </h2>
           <Controller
             name="accommodationType"
@@ -285,7 +285,7 @@ function StaysFormContent({}: StaysFormProps) {
             render={({ field }) => (
               <FormSelect
                 label="Accommodation Type"
-                placeholder="Select accommodation type*"
+                placeholder="Select the type of space you're listing*"
                 options={accommodationTypes}
                 value={field.value}
                 onValueChange={(value) => {
@@ -301,9 +301,13 @@ function StaysFormContent({}: StaysFormProps) {
 
         {/* Facilities Section */}
         <div>
-          <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-4">
-            Fill out general facilities available in your accommodation
+          <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-2">
+            What's in Your Space? We’d love to know!
           </h2>
+          <p className="text-[#7A7A7A] font-source-sans-pro text-base font-normal leading-[160%] mb-4">
+            Because basic is boring. Guests love the little extras. Show off the
+            amazing facilities that make your space stand out.
+          </p>
           <FacilitiesSelector />
         </div>
 

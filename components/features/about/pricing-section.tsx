@@ -153,7 +153,7 @@ const PricingSection = () => {
             className="w-full min-w-[200px] h-12 sm:h-auto"
             aria-label="Sign up for a new account"
           >
-            <span className="font-bold">Sign Up Today</span>
+            <span className="font-bold">Sign up today</span>
           </Button>
         </Link>
       </div>

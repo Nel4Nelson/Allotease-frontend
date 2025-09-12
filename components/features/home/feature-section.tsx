@@ -5,6 +5,7 @@ import { AllocatorService, Allocator } from "@/services/allocator-service";
 import { LoadingSkeleton } from "@/components/ui/follow-card-skeleton";
 import { AllocationAdminCarousel } from "@/components/ui/allocation-admin-carousel";
 import { AuthModal } from "@/components/ui/modals/auth-modal";
+import { FeaturedSectionHeader } from "@/components/ui/featured-section-header";
 import { useAuthStore } from "@/stores/auth-store";
 import { useAllocators, useFollowToggle } from "@/hooks/use-allocators";
 import { useQueryClient } from "@tanstack/react-query";
@@ -175,41 +176,10 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
   if (isLoading && currentPage === 1) {
     return (
       <section className={`${className}`}>
+        <FeaturedSectionHeader />
+        
+        {/* Loading skeleton */}
         <div className="container mx-auto px-4">
-          {/* Header */}
-          <div className="mb-8">
-            <h2
-              style={{
-                color: "var(--System-Teal, #1F3A3A)",
-                fontFamily: "var(--font-space-grotesk), sans-serif",
-                fontSize: "28px",
-                fontStyle: "normal",
-                fontWeight: 700,
-                lineHeight: "110%",
-                letterSpacing: "-0.56px",
-                margin: 0,
-                marginBottom: "8px",
-              }}
-            >
-              Featured Hotels & Landlords
-            </h2>
-            <p
-              style={{
-                color: "var(--Body, #71727A)",
-                fontFamily: "var(--font-source-sans), sans-serif",
-                fontSize: "16px",
-                fontStyle: "normal",
-                fontWeight: 400,
-                lineHeight: "142.745%",
-                letterSpacing: "-0.32px",
-                margin: 0,
-              }}
-            >
-              Follow your favorite allocation admins to stay updated
-            </p>
-          </div>
-
-          {/* Loading skeleton */}
           <div className="flex gap-6 overflow-hidden">
             {Array(4)
               .fill(0)
@@ -226,40 +196,9 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
   if (!isOnline && allAllocators.length === 0) {
     return (
       <section className={`py-12 ${className}`}>
+        <FeaturedSectionHeader />
+        
         <div className="container mx-auto px-4">
-          {/* Header */}
-          <div className="mb-8">
-            <h2
-              style={{
-                color: "var(--System-Teal, #1F3A3A)",
-                fontFamily: "var(--font-space-grotesk), sans-serif",
-                fontSize: "28px",
-                fontStyle: "normal",
-                fontWeight: 700,
-                lineHeight: "110%",
-                letterSpacing: "-0.56px",
-                margin: 0,
-                marginBottom: "8px",
-              }}
-            >
-              Featured Hotels & Landlords
-            </h2>
-            <p
-              style={{
-                color: "var(--Body, #71727A)",
-                fontFamily: "var(--font-source-sans), sans-serif",
-                fontSize: "16px",
-                fontStyle: "normal",
-                fontWeight: 400,
-                lineHeight: "142.745%",
-                letterSpacing: "-0.32px",
-                margin: 0,
-              }}
-            >
-              Follow your favorite allocation admins to stay updated
-            </p>
-          </div>
-
           <OfflineState />
         </div>
       </section>
@@ -270,40 +209,9 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
   if (isError && !isLoading && allAllocators.length === 0) {
     return (
       <section className={`py-12 ${className}`}>
+        <FeaturedSectionHeader />
+        
         <div className="container mx-auto px-4">
-          {/* Header */}
-          <div className="mb-8">
-            <h2
-              style={{
-                color: "var(--System-Teal, #1F3A3A)",
-                fontFamily: "var(--font-space-grotesk), sans-serif",
-                fontSize: "28px",
-                fontStyle: "normal",
-                fontWeight: 700,
-                lineHeight: "110%",
-                letterSpacing: "-0.56px",
-                margin: 0,
-                marginBottom: "8px",
-              }}
-            >
-              Featured Hotels & Landlords
-            </h2>
-            <p
-              style={{
-                color: "var(--Body, #71727A)",
-                fontFamily: "var(--font-source-sans), sans-serif",
-                fontSize: "16px",
-                fontStyle: "normal",
-                fontWeight: 400,
-                lineHeight: "142.745%",
-                letterSpacing: "-0.32px",
-                margin: 0,
-              }}
-            >
-              Follow your favorite allocation admins to stay updated
-            </p>
-          </div>
-
           <NetworkError
             message="Unable to load featured allocators"
             onRetry={() => {
@@ -320,40 +228,9 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
   if (!isLoading && !isError && allAllocators.length === 0) {
     return (
       <section className={`py-12 ${className}`}>
+        <FeaturedSectionHeader />
+        
         <div className="container mx-auto px-4">
-          {/* Header */}
-          <div className="mb-8">
-            <h2
-              style={{
-                color: "var(--System-Teal, #1F3A3A)",
-                fontFamily: "var(--font-space-grotesk), sans-serif",
-                fontSize: "28px",
-                fontStyle: "normal",
-                fontWeight: 700,
-                lineHeight: "110%",
-                letterSpacing: "-0.56px",
-                margin: 0,
-                marginBottom: "8px",
-              }}
-            >
-              Featured Hotels & Landlords
-            </h2>
-            <p
-              style={{
-                color: "var(--Body, #71727A)",
-                fontFamily: "var(--font-source-sans), sans-serif",
-                fontSize: "16px",
-                fontStyle: "normal",
-                fontWeight: 400,
-                lineHeight: "142.745%",
-                letterSpacing: "-0.32px",
-                margin: 0,
-              }}
-            >
-              Follow your favorite allocation admins to stay updated
-            </p>
-          </div>
-
           <EmptyState
             title="No allocation admins available"
             message="Check back later for featured hotels and landlords"
@@ -381,41 +258,9 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
   // Normal render with data
   return (
     <section className={`${className}`}>
+      <FeaturedSectionHeader />
+      
       <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="mb-8">
-          <h2
-            style={{
-              color: "var(--System-Teal, #1F3A3A)",
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: "28px",
-              fontStyle: "normal",
-              fontWeight: 700,
-              lineHeight: "110%",
-              letterSpacing: "-0.56px",
-              margin: 0,
-              marginBottom: "8px",
-            }}
-          >
-            Featured Hotels & Landlords
-          </h2>
-
-          <p
-            style={{
-              color: "var(--Body, #71727A)",
-              fontFamily: "var(--font-source-sans), sans-serif",
-              fontSize: "16px",
-              fontStyle: "normal",
-              fontWeight: 400,
-              lineHeight: "142.745%",
-              letterSpacing: "-0.32px",
-              margin: 0,
-            }}
-          >
-            Follow your favorite allocation admins to stay updated
-          </p>
-        </div>
-
         {/* Carousel with real data */}
         <AllocationAdminCarousel
           profiles={allAllocators.map((allocator) =>
