@@ -89,7 +89,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     </>
   );
 
-  // Use a consistent layout structure to avoid hydration mismatches
+  // consistent layout structure to avoid hydration mismatches
   const layoutContent = (
     <>
       {/* GLOBAL: Auth redirect handler for ALL layouts - but only for specific scenarios */}
@@ -107,7 +107,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
         /* Standard layout with header and footer */
         <div className="min-h-screen relative">
           {/* Header */}
-          <header className="w-full bg-white/80 backdrop-blur-sm border-b border-gray-100 relative">
+          <header className="w-full bg-white/80 backdrop-blur-sm relative">
             {/* Background Gradient - positioned in header area */}
             <div className="absolute inset-0 -z-10">
               <div

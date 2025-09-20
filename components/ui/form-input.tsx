@@ -76,11 +76,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
               className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--feature-accent-orange)]/30 focus:ring-offset-1"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? (
-                <EyeClosedIcon width={20} height={21} />
-              ) : (
-                <EyeOpenIcon width={20} height={21} />
-              )}
+              {showPassword ? <EyeClosedIcon /> : <EyeOpenIcon />}
             </button>
           )}
         </div>

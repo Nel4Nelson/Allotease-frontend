@@ -579,79 +579,6 @@ export function RightArrowIcon({ className = "" }: IconProps) {
   );
 }
 
-export function EyeOpenIcon({ width = 20, height = 21, className }: IconProps) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={width}
-      height={height}
-      viewBox="0 0 20 21"
-      fill="none"
-      className={className}
-    >
-      <path
-        d="M10 4.875C3.75 4.875 1.25 10.5 1.25 10.5C1.25 10.5 3.75 16.125 10 16.125C16.25 16.125 18.75 10.5 18.75 10.5C18.75 10.5 16.25 4.875 10 4.875Z"
-        stroke="currentColor"
-        strokeOpacity="0.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M10 13.625C11.7259 13.625 13.125 12.2259 13.125 10.5C13.125 8.77411 11.7259 7.375 10 7.375C8.27411 7.375 6.875 8.77411 6.875 10.5C6.875 12.2259 8.27411 13.625 10 13.625Z"
-        stroke="currentColor"
-        strokeOpacity="0.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-export function EyeClosedIcon({
-  width = 20,
-  height = 21,
-  className,
-}: IconProps) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={width}
-      height={height}
-      viewBox="0 0 20 21"
-      fill="none"
-      className={className}
-    >
-      <path
-        d="M3.125 3.375L16.875 17.125"
-        stroke="currentColor"
-        strokeOpacity="0.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M8.75 8.375C8.4375 8.75 8.25 9.25 8.25 9.75C8.25 11.125 9.375 12.25 10.75 12.25C11.25 12.25 11.75 12.0625 12.125 11.75"
-        stroke="currentColor"
-        strokeOpacity="0.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M6.25 6.25C4.375 7.5 2.5 9.75 2.5 10.5C2.5 10.5 4.375 15.125 10 15.125C11.25 15.125 12.375 14.875 13.375 14.375"
-        stroke="currentColor"
-        strokeOpacity="0.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M15.625 13.125C16.875 11.875 17.5 10.5 17.5 10.5C17.5 10.5 15.625 5.875 10 5.875C9.375 5.875 8.75 6 8.25 6.125"
-        stroke="currentColor"
-        strokeOpacity="0.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 export const PlusIcon = () => (
   <svg
@@ -1253,3 +1180,364 @@ export const AccordionCloseIcon: React.FC<IconProps> = ({ className }) => {
     </svg>
   );
 };
+
+// Browsers Icon (Overview)
+export const BrowsersIcon = ({ size = 20 }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 20 20"
+    fill="none"
+  >
+    <path
+      d="M14.375 6.25H3.125C2.77982 6.25 2.5 6.52982 2.5 6.875V15.625C2.5 15.9702 2.77982 16.25 3.125 16.25H14.375C14.7202 16.25 15 15.9702 15 15.625V6.875C15 6.52982 14.7202 6.25 14.375 6.25Z"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M5 6.25V4.375C5 4.20924 5.06585 4.05027 5.18306 3.93306C5.30027 3.81585 5.45924 3.75 5.625 3.75H16.875C17.0408 3.75 17.1997 3.81585 17.3169 3.93306C17.4342 4.05027 17.5 4.20924 17.5 4.375V13.125C17.5 13.2908 17.4342 13.4497 17.3169 13.5669C17.1997 13.6842 17.0408 13.75 16.875 13.75H15"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M2.5 8.75H15"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+// Brandy Icon (Reservations)
+export const BrandyIcon = ({ size = 20 }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 20 20"
+    fill="none"
+  >
+    <path
+      d="M10 13.75V17.5"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M6.875 17.5H13.125"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M15.7656 3.125C16.4396 4.16271 16.8211 5.36309 16.8697 6.59952C16.9183 7.83595 16.6324 9.06258 16.042 10.15C15.4516 11.2375 14.5786 12.1454 13.5152 12.7781C12.4518 13.4108 11.2374 13.7448 10 13.7448C8.76262 13.7448 7.54817 13.4108 6.48477 12.7781C5.42136 12.1454 4.54842 11.2375 3.95803 10.15C3.36764 9.06258 3.08168 7.83595 3.13031 6.59952C3.17895 5.36309 3.56038 4.16271 4.23438 3.125H15.7656Z"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M3.125 6.875H16.875"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+// Armchair Icon (Withdrawal)
+export const ArmchairIcon = ({ size = 20 }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 20 20"
+    fill="none"
+  >
+    <path
+      d="M6.25 10.625H13.75"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M3.75 7.5V5.625C3.75 4.96196 4.01339 4.32607 4.48223 3.85723C4.95107 3.38839 5.58696 3.125 6.25 3.125H13.75C14.413 3.125 15.0489 3.38839 15.5178 3.85723C15.9866 4.32607 16.25 4.96196 16.25 5.625V7.5"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M6.25 13.125V10C6.25 9.50555 6.10338 9.0222 5.82868 8.61108C5.55397 8.19995 5.16353 7.87952 4.70671 7.6903C4.24989 7.50108 3.74723 7.45157 3.26228 7.54804C2.77732 7.6445 2.33187 7.8826 1.98223 8.23223C1.6326 8.58187 1.3945 9.02732 1.29804 9.51228C1.20157 9.99723 1.25108 10.4999 1.4403 10.9567C1.62952 11.4135 1.94995 11.804 2.36108 12.0787C2.7722 12.3534 3.25555 12.5 3.75 12.5V15.625C3.75 15.7908 3.81585 15.9497 3.93306 16.0669C4.05027 16.1842 4.20924 16.25 4.375 16.25H15.625C15.7908 16.25 15.9497 16.1842 16.0669 16.0669C16.1842 15.9497 16.25 15.7908 16.25 15.625V12.5C16.7445 12.5 17.2278 12.3534 17.6389 12.0787C18.0501 11.804 18.3705 11.4135 18.5597 10.9567C18.7489 10.4999 18.7984 9.99723 18.702 9.51228C18.6055 9.02732 18.3674 8.58187 18.0178 8.23223C17.6681 7.8826 17.2227 7.6445 16.7377 7.54804C16.2528 7.45157 15.7501 7.50108 15.2933 7.6903C14.8365 7.87952 14.446 8.19995 14.1713 8.61108C13.8966 9.0222 13.75 9.50555 13.75 10V13.125"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+// Eye Icon (Open)
+export const EyeOpenIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="21"
+    viewBox="0 0 20 21"
+    fill="none"
+  >
+    <path
+      d="M10 4.875C3.75 4.875 1.25 10.5 1.25 10.5C1.25 10.5 3.75 16.125 10 16.125C16.25 16.125 18.75 10.5 18.75 10.5C18.75 10.5 16.25 4.875 10 4.875Z"
+      stroke="#D5FFEB"
+      strokeOpacity="0.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10 13.625C11.7259 13.625 13.125 12.2259 13.125 10.5C13.125 8.77411 11.7259 7.375 10 7.375C8.27411 7.375 6.875 8.77411 6.875 10.5C6.875 12.2259 8.27411 13.625 10 13.625Z"
+      stroke="#D5FFEB"
+      strokeOpacity="0.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+// Eye Icon (Closed) - Modified from open version
+export const EyeClosedIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="21"
+    viewBox="0 0 20 21"
+    fill="none"
+  >
+    <path
+      d="M3.28 3.78l13.44 13.44"
+      stroke="#D5FFEB"
+      strokeOpacity="0.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10 4.875C3.75 4.875 1.25 10.5 1.25 10.5C1.25 10.5 3.75 16.125 10 16.125C16.25 16.125 18.75 10.5 18.75 10.5C18.75 10.5 16.25 4.875 10 4.875Z"
+      stroke="#D5FFEB"
+      strokeOpacity="0.3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10 13.625C11.7259 13.625 13.125 12.2259 13.125 10.5C13.125 8.77411 11.7259 7.375 10 7.375C8.27411 7.375 6.875 8.77411 6.875 10.5C6.875 12.2259 8.27411 13.625 10 13.625Z"
+      stroke="#D5FFEB"
+      strokeOpacity="0.3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+// Withdrawal History Icon
+export const WithdrawalHistoryIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+  >
+    <path
+      d="M7.5 11.875H12.5"
+      stroke="#D5FFEB"
+      strokeOpacity="0.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M7.5 9.375H12.5"
+      stroke="#D5FFEB"
+      strokeOpacity="0.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M12.5 3.125H15.625C15.7908 3.125 15.9497 3.19085 16.0669 3.30806C16.1842 3.42527 16.25 3.58424 16.25 3.75V16.875C16.25 17.0408 16.1842 17.1997 16.0669 17.3169C15.9497 17.4342 15.7908 17.5 15.625 17.5H4.375C4.20924 17.5 4.05027 17.4342 3.93306 17.3169C3.81585 17.1997 3.75 17.0408 3.75 16.875V3.75C3.75 3.58424 3.81585 3.42527 3.93306 3.30806C4.05027 3.19085 4.20924 3.125 4.375 3.125H7.5"
+      stroke="#D5FFEB"
+      strokeOpacity="0.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M6.875 5.625V5C6.875 4.1712 7.20424 3.37634 7.79029 2.79029C8.37634 2.20424 9.1712 1.875 10 1.875C10.8288 1.875 11.6237 2.20424 12.2097 2.79029C12.7958 3.37634 13.125 4.1712 13.125 5V5.625H6.875Z"
+      stroke="#D5FFEB"
+      strokeOpacity="0.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+// Status Icons
+export const PendingIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="21"
+    height="20"
+    viewBox="0 0 21 20"
+    fill="none"
+  >
+    <path
+      d="M10.095 17.5C14.2371 17.5 17.595 14.1421 17.595 10C17.595 5.85786 14.2371 2.5 10.095 2.5C5.95287 2.5 2.595 5.85786 2.595 10C2.595 14.1421 5.95287 17.5 10.095 17.5Z"
+      stroke="#F07C29"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10.095 2.5V17.5"
+      stroke="#F07C29"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M15.095 4.41406V15.5859"
+      stroke="#F07C29"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M12.595 2.92969V17.0703"
+      stroke="#F07C29"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const CancelledIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="21"
+    height="20"
+    viewBox="0 0 21 20"
+    fill="none"
+  >
+    <path
+      d="M2.85297 8.05469C3.19448 6.78496 3.86246 5.62678 4.79047 4.69531"
+      stroke="#EB4244"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M4.79047 15.3047C3.85922 14.3726 3.19083 13.211 2.85297 11.9375"
+      stroke="#EB4244"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M12.0402 17.2422C10.7692 17.5898 9.42828 17.5898 8.15735 17.2422"
+      stroke="#EB4244"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M17.3373 11.9453C16.9958 13.215 16.3278 14.3732 15.3998 15.3047"
+      stroke="#EB4244"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M15.3998 4.69531C16.331 5.62738 16.9994 6.78899 17.3373 8.0625"
+      stroke="#EB4244"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M8.1496 2.75874C9.42053 2.41115 10.7615 2.41115 12.0324 2.75874"
+      stroke="#EB4244"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const ConfirmedIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="21"
+    height="20"
+    viewBox="0 0 21 20"
+    fill="none"
+  >
+    <path
+      d="M13.5325 8.125L8.94656 12.5L6.6575 10.3125"
+      stroke="#0A9355"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10.095 17.5C14.2371 17.5 17.595 14.1421 17.595 10C17.595 5.85786 14.2371 2.5 10.095 2.5C5.95287 2.5 2.595 5.85786 2.595 10C2.595 14.1421 5.95287 17.5 10.095 17.5Z"
+      stroke="#0A9355"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+// Ticket Icon
+export const TicketIconGreen = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="25"
+    height="24"
+    viewBox="0 0 25 24"
+    fill="none"
+  >
+    <path
+      d="M9.90503 5.25V18.75"
+      stroke="#0A9355"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M3.15504 15.675C3.15409 15.5023 3.21353 15.3346 3.3231 15.2011C3.43266 15.0676 3.58545 14.9765 3.75504 14.9437C4.42959 14.8005 5.03449 14.43 5.46852 13.8941C5.90255 13.3583 6.13938 12.6896 6.13938 12C6.13938 11.3104 5.90255 10.6417 5.46852 10.1059C5.03449 9.57002 4.42959 9.19948 3.75504 9.05625C3.58545 9.02346 3.43266 8.93242 3.3231 8.79889C3.21353 8.66535 3.15409 8.49773 3.15504 8.325V6C3.15504 5.80109 3.23406 5.61032 3.37471 5.46967C3.51536 5.32902 3.70613 5.25 3.90504 5.25H21.905C22.104 5.25 22.2947 5.32902 22.4354 5.46967C22.576 5.61032 22.655 5.80109 22.655 6V8.325C22.656 8.49773 22.5965 8.66535 22.487 8.79889C22.3774 8.93242 22.2246 9.02346 22.055 9.05625C21.3805 9.19948 20.7756 9.57002 20.3416 10.1059C19.9075 10.6417 19.6707 11.3104 19.6707 12C19.6707 12.6896 19.9075 13.3583 20.3416 13.8941C20.7756 14.43 21.3805 14.8005 22.055 14.9437C22.2246 14.9765 22.3774 15.0676 22.487 15.2011C22.5965 15.3346 22.656 15.5023 22.655 15.675V18C22.655 18.1989 22.576 18.3897 22.4354 18.5303C22.2947 18.671 22.104 18.75 21.905 18.75H3.90504C3.70613 18.75 3.51536 18.671 3.37471 18.5303C3.23406 18.3897 3.15504 18.1989 3.15504 18V15.675Z"
+      stroke="#0A9355"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+// Plus Icon Component
+export const PlusIconOrange = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+  >
+    <path
+      d="M3.75 12H20.25"
+      stroke="#FF5B00"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M12 20.25V3.75"
+      stroke="#FF5B00"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
