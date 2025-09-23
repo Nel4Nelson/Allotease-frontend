@@ -390,7 +390,7 @@ export default function Header() {
                       {/* Manage my resources - Only show if user is allocation-admin */}
                       {isAllocationAdmin && (
                         <Link
-                          href="/allocation-admin/dashboard"
+                          href="/allocation-admin/dashboard/overview"
                           className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
                           style={{
                             padding: "16px 20px",

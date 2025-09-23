@@ -1,9 +1,11 @@
 "use client";
 import React from "react";
+import { useRouter } from "next/navigation";
 import { StayDescription } from "@/components/ui/stays-card-description";
 import { Button } from "@/components/ui/button";
 
 interface AdminStayCardProps {
+  id?: string;
   title: string;
   dateTime: string;
   description: string;
@@ -12,12 +14,21 @@ interface AdminStayCardProps {
 }
 
 export function AdminStayCard({
+  id,
   title,
   dateTime,
   description,
   imageUrl = "/images/stay-banner.svg",
   className = "",
 }: AdminStayCardProps) {
+  const router = useRouter();
+
+  const handleManageClick = () => {
+    if (id) {
+      router.push(`/allocation-admin/dashboard/reservations/stays/${id}`);
+    }
+  };
+
   return (
     <div
       className={`flex flex-col cursor-pointer transition-transform hover:scale-[1.02] ${className}`}
@@ -93,9 +104,8 @@ export function AdminStayCard({
       </div>
 
       {/* Manage Button */}
-
       <Button
-        //onClick={onClick}
+        onClick={handleManageClick}
         variant="allotease-blur"
         size="allotease-sm"
         className={`w-full ${className}`}

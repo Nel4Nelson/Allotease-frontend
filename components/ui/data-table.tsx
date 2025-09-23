@@ -1,14 +1,50 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import React from "react";
+
+import React, { useState } from "react";
 import { FallbackImage } from "@/components/ui/fallback-image";
 import { cn } from "@/lib/utils";
+import { SearchIcon } from "@/components/icons";
+
 import {
   CancelledIcon,
   ConfirmedIcon,
   PendingIcon,
   TicketIconGreen,
 } from "../icons";
+import { TimeSortFilter } from "./filters/time-sort-filter";
+
+// Export Icon Component
+const ExportIcon = () => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+  >
+    <path
+      d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <polyline
+      points="7,10 12,15 17,10"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <line
+      x1="12"
+      y1="15"
+      x2="12"
+      y2="3"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </svg>
+);
 
 // Status Badge Component
 interface StatusBadgeProps {
@@ -127,6 +163,12 @@ export interface DataTableProps {
   data: any[];
   variant?: "reservations" | "events" | "withdrawal" | "generic";
   className?: string;
+  // Optional enhancement props
+  showSearch?: boolean;
+  showSort?: boolean;
+  showExport?: boolean;
+  searchPlaceholder?: string;
+  onExport?: () => void;
 }
 
 export function DataTable({
@@ -135,7 +177,37 @@ export function DataTable({
   data,
   variant = "generic",
   className,
+  showSearch = false,
+  showSort = false,
+  showExport = false,
+  searchPlaceholder = "Search by address",
+  onExport,
 }: DataTableProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortValue, setSortValue] = useState("newest");
+
+  // Filter data based on search query (only if search is enabled)
+  const filteredData =
+    showSearch && searchQuery
+      ? data.filter((row) => {
+          return columns.some((column) => {
+            const value = row[column.key];
+            if (typeof value === "string") {
+              return value.toLowerCase().includes(searchQuery.toLowerCase());
+            }
+            return false;
+          });
+        })
+      : data;
+
+  const handleExport = () => {
+    if (onExport) {
+      onExport();
+    } else {
+      console.log("Export table data:", filteredData);
+    }
+  };
+
   const renderCell = (column: ColumnConfig, value: any, row: any) => {
     if (column.render) {
       return column.render(value, row);
@@ -218,6 +290,50 @@ export function DataTable({
         <h3 className="text-[#1F2024] font-space-grotesk text-xl font-bold leading-[140%] tracking-[-0.4px]">
           {title}
         </h3>
+
+        {/* Search, Sort, and Export Row - Only show if any option is enabled */}
+        {(showSearch || showSort || showExport) && (
+          <div className="flex items-center justify-between w-full gap-4">
+            {/* Search Bar */}
+            {showSearch && (
+              <div className="flex items-center gap-3 h-10 max-w-[250px] px-3 flex-1 rounded-full border border-gray-300/20 bg-gray-100/50">
+                <SearchIcon />
+                <input
+                  type="text"
+                  placeholder={searchPlaceholder}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 bg-transparent border-none outline-none text-gray-600 font-source-sans text-base placeholder:text-gray-500"
+                  style={{ color: "#71727A" }}
+                />
+              </div>
+            )}
+
+            {/* Sort and Export Controls */}
+            <div className="flex items-center gap-4">
+              {/* Sort Filter */}
+              {showSort && (
+                <TimeSortFilter
+                  value={sortValue}
+                  onValueChange={setSortValue}
+                />
+              )}
+
+              {/* Export Button */}
+              {showExport && (
+                <button
+                  onClick={handleExport}
+                  className="flex items-center gap-2 px-3 py-2 rounded-full border border-gray-300/20 bg-gray-100/50 hover:bg-gray-200/50 transition-colors"
+                >
+                  <span className="text-[#1F3A3A)] font-source-sans text-base font-semibold">
+                    Export Table
+                  </span>
+                  <ExportIcon />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Column Headers */}
@@ -247,7 +363,7 @@ export function DataTable({
 
       {/* Table Body */}
       <div className="flex flex-col justify-center items-center gap-6 self-stretch px-5">
-        {data.map((row, rowIndex) => (
+        {filteredData.map((row, rowIndex) => (
           <div key={rowIndex} className="flex items-center w-full">
             {columns.map((column, index) => (
               <div
@@ -269,6 +385,15 @@ export function DataTable({
           </div>
         ))}
       </div>
+
+      {/* No results message - only show if search is enabled and no results */}
+      {showSearch && filteredData.length === 0 && searchQuery && (
+        <div className="flex justify-center items-center w-full py-8 px-5">
+          <p className="text-[#71727A] font-source-sans text-base">
+            No results match your search
+          </p>
+        </div>
+      )}
     </div>
   );
 }

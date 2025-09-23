@@ -4,45 +4,45 @@ import { StaysHeader } from "./stays-header";
 import { AdminStayCard } from "./admin-stay-card";
 
 export function ReservationsStaysContent() {
-  // Dummy data for stays
+  // Dummy data for stays with IDs
   const dummyStays = [
     {
-      id: "1",
-      title: "Timely and Adaptive Strategies to Optimize Suicide Prevention...",
+      id: "wintess-garden",
+      title: "Wintess Garden",
       dateTime: "Thursday • 6:00 PM GMT+1",
       description:
         "Experience luxury living in the heart of the city with modern amenities and stunning views.",
     },
     {
-      id: "2",
+      id: "modern-downtown-apartment",
       title: "Modern Downtown Apartment",
       dateTime: "Wednesday • 4:30 PM GMT+1",
       description:
         "Cozy beachfront villa perfect for weekend getaways with private beach access.",
     },
     {
-      id: "3",
+      id: "beachfront-villa-paradise",
       title: "Beachfront Villa Paradise",
       dateTime: "Tuesday • 2:15 PM GMT+1",
       description:
         "Elegant mountain cabin surrounded by nature, ideal for peaceful retreats.",
     },
     {
-      id: "4",
+      id: "mountain-view-cabin",
       title: "Mountain View Cabin",
       dateTime: "Monday • 8:45 AM GMT+1",
       description:
         "Spacious family home with garden and playground, perfect for family vacations.",
     },
     {
-      id: "5",
+      id: "family-garden-house",
       title: "Family Garden House",
       dateTime: "Sunday • 11:20 AM GMT+1",
       description:
         "Historic city center loft with exposed brick walls and modern renovations.",
     },
     {
-      id: "6",
+      id: "historic-loft-space",
       title: "Historic Loft Space",
       dateTime: "Saturday • 7:00 PM GMT+1",
       description:
@@ -60,6 +60,7 @@ export function ReservationsStaysContent() {
         {dummyStays.map((stay) => (
           <AdminStayCard
             key={stay.id}
+            id={stay.id}
             title={stay.title}
             dateTime={stay.dateTime}
             description={stay.description}

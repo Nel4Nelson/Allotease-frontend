@@ -1541,3 +1541,10 @@ export const PlusIconOrange = () => (
     />
   </svg>
 );
+
+export const ViewReservationsIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="21" height="20" viewBox="0 0 21 20" fill="none">
+    <path d="M5.25 15L15.25 5" stroke="#FF5B00" strokeWidth="0.833333" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M7.125 5L15.25 5L15.25 13.125" stroke="#FF5B00" strokeWidth="0.833333" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
