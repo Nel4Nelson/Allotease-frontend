@@ -20,7 +20,6 @@ export function StaysContent() {
     isLoading: isStatsLoading,
     hasError: hasStatsError,
     isPartialError,
-    error: statsError,
     refetchAll: refetchStats,
     isDailySuccess,
     isMonthlySuccess,
@@ -32,7 +31,6 @@ export function StaysContent() {
     pagination,
     isLoading: isReservationsLoading,
     isError: hasReservationsError,
-    error: reservationsError,
     refetch: refetchReservations,
   } = useTransformedReservations({ 
     page: currentPage, 
@@ -49,13 +47,6 @@ export function StaysContent() {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-  };
-
-  const handleRetryAll = async () => {
-    await Promise.all([
-      refetchStats(),
-      refetchReservations()
-    ]);
   };
 
   // Render stats section based on loading/error states

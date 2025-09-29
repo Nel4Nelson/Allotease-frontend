@@ -1,6 +1,5 @@
 "use client";
 import React from "react";
-import { Button } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
 
 interface TicketStayCardProps {
@@ -26,7 +25,6 @@ export function TicketStayCard({
   onAccept,
   onRefund,
   disabled = false,
-  className = "",
 }: TicketStayCardProps) {
   const formatPrice = (price: number, frequency: string) => {
     const formatter = new Intl.NumberFormat("en-NG", {

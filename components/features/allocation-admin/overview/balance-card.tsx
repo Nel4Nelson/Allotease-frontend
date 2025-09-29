@@ -61,7 +61,6 @@ export function BalanceCard({ onWithdrawalHistoryClick }: BalanceCardProps) {
     formattedBalance,
     isLoading,
     isError,
-    error,
     refetch,
   } = useFormattedBalance();
 

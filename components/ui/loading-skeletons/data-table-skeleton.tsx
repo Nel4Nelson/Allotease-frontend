@@ -14,7 +14,6 @@ interface DataTableSkeletonProps {
 }
 
 export function DataTableSkeleton({
-    title = "Recent reservations",
     columns = ["Reservation ID", "Guest", "Room", "Dates", "Status"],
     rowCount = 5,
     showSearch = true,

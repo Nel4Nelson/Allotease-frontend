@@ -70,12 +70,12 @@ function StatusBadge({ status, variant = "reservations" }: StatusBadgeProps) {
         case "awaiting_confirmation":
           return {
             icon: <AwaitingConfirmationIcon />,
-            bgColor: "#FEEDD6", // Same as pending - orange theme
+            bgColor: "#FEEDD6",
             textColor: "#F07C29",
             text: "Awaiting Confirmation",
           };
         case "confirmed":
-        case "active": // Active maps to confirmed UI
+        case "active":
           return {
             icon: <ConfirmedIcon />,
             bgColor: "#ECFDF3",
@@ -99,7 +99,7 @@ function StatusBadge({ status, variant = "reservations" }: StatusBadgeProps) {
         case "timed_out":
           return {
             icon: <TimedOutIcon />,
-            bgColor: "#F3F4F6", // Gray theme
+            bgColor: "#F3F4F6",
             textColor: "#6B7280",
             text: "Timed Out",
           };
@@ -146,7 +146,6 @@ function StatusBadge({ status, variant = "reservations" }: StatusBadgeProps) {
       }
     }
 
-    // Add other variants here (events, etc.)
     return {
       icon: null,
       bgColor: "#F3F4F6",
@@ -176,7 +175,6 @@ function StatusBadge({ status, variant = "reservations" }: StatusBadgeProps) {
 export { StatusBadge };
 
 // Column Configuration Types
-// Column Configuration Types
 export interface ColumnConfig {
   key: string;
   label: string;
@@ -202,6 +200,8 @@ export interface DataTableProps {
   hasError?: boolean;
   onRetry?: () => void;
   onClearSearch?: () => void;
+  // Row click handler
+  onRowClick?: (row: any) => void;
 }
 
 export function DataTable({
@@ -220,6 +220,7 @@ export function DataTable({
   hasError = false,
   onRetry,
   onClearSearch,
+  onRowClick,
 }: DataTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortValue, setSortValue] = useState("newest");
@@ -419,12 +420,12 @@ export function DataTable({
                   className={cn(
                     "text-left",
                     index === 0
-                      ? "flex-[0.8]" // First column - smaller
+                      ? "flex-[0.8]"
                       : index === 1
-                        ? "flex-[1.2]" // Second column - wider (for guest column or wider content)
+                        ? "flex-[1.2]"
                         : index === columns.length - 1
-                          ? "flex-[1] text-center" // Last column (Status) - center aligned
-                          : "flex-1" // Middle columns - equal width
+                          ? "flex-[1] text-center"
+                          : "flex-1"
                   )}
                 >
                   <span className="text-[#20232A] font-space-grotesk text-base font-medium leading-6 tracking-[-0.32px]">
@@ -438,19 +439,26 @@ export function DataTable({
           {/* Table Body */}
           <div className="flex flex-col justify-center items-center gap-6 self-stretch px-5">
             {filteredData.map((row, rowIndex) => (
-              <div key={rowIndex} className="flex items-center w-full">
+              <div 
+                key={rowIndex} 
+                className={cn(
+                  "flex items-center w-full",
+                  onRowClick && "cursor-pointer hover:bg-gray-50/50 rounded-lg transition-colors px-2 -mx-2 py-2"
+                )}
+                onClick={() => onRowClick?.(row)}
+              >
                 {columns.map((column, index) => (
                   <div
                     key={column.key}
                     className={cn(
                       "text-left",
                       index === 0
-                        ? "flex-[0.8]" // First column - smaller
+                        ? "flex-[0.8]"
                         : index === 1
-                          ? "flex-[1.2]" // Second column - wider
+                          ? "flex-[1.2]"
                           : index === columns.length - 1
-                            ? "flex-[1] flex justify-center" // Last column (Status) - center aligned, flex container
-                            : "flex-1" // Middle columns - equal width
+                            ? "flex-[1] flex justify-center"
+                            : "flex-1"
                     )}
                   >
                     {renderCell(column, row[column.key], row)}

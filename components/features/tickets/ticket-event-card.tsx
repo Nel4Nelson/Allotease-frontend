@@ -1,7 +1,6 @@
 "use client";
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { EventBadge } from "@/components/ui/event-badge";
 import { Divider } from "@/components/ui/divider";
 
 interface TicketEventCardProps {
@@ -21,7 +20,6 @@ export function TicketEventCard({
   badgeText,
   onGetTicket,
   disabled = false,
-  className = "",
 }: TicketEventCardProps) {
   return (
     <div
