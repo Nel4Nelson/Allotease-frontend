@@ -1,18 +1,24 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { BalanceCard } from "./balance-card";
 import { WithdrawSection } from "./withdraw-section";
 import { OverviewTabs } from "./overview-tabs";
+import { WithdrawalModal } from "@/components/ui/modals/withdrawal-modal";
 
 export function OverviewContent() {
+  const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
+
   const handleWithdrawalHistoryClick = () => {
     // TODO: Implement withdrawal history modal or navigation
     console.log("Withdrawal history clicked");
   };
 
   const handleWithdrawClick = () => {
-    // TODO: Implement withdrawal modal
-    console.log("Withdraw clicked");
+    setIsWithdrawalModalOpen(true);
+  };
+
+  const handleCloseWithdrawalModal = () => {
+    setIsWithdrawalModalOpen(false);
   };
 
   return (
@@ -21,7 +27,6 @@ export function OverviewContent() {
       <div className="relative">
         {/* Balance Card */}
         <BalanceCard
-          balance="N2,150,500"
           onWithdrawalHistoryClick={handleWithdrawalHistoryClick}
         />
 
@@ -31,6 +36,12 @@ export function OverviewContent() {
 
       {/* Overview Tabs */}
       <OverviewTabs />
+
+      {/* Withdrawal Modal */}
+      <WithdrawalModal
+        isOpen={isWithdrawalModalOpen}
+        onClose={handleCloseWithdrawalModal}
+      />
     </div>
   );
 }

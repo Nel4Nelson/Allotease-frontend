@@ -1548,3 +1548,132 @@ export const ViewReservationsIcon = () => (
     <path d="M7.125 5L15.25 5L15.25 13.125" stroke="#FF5B00" strokeWidth="0.833333" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
+
+
+export const EditIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+  >
+    <path
+      d="M7.5 16.874H3.75C3.58424 16.874 3.42527 16.8081 3.30806 16.6909C3.19085 16.5737 3.125 16.4147 3.125 16.249V12.7568C3.12472 12.6756 3.14044 12.5952 3.17128 12.5201C3.20211 12.445 3.24745 12.3768 3.30469 12.3193L12.6797 2.94427C12.7378 2.88521 12.8072 2.83832 12.8836 2.80631C12.9601 2.7743 13.0421 2.75781 13.125 2.75781C13.2079 2.75781 13.2899 2.7743 13.3664 2.80631C13.4428 2.83832 13.5122 2.88521 13.5703 2.94427L17.0547 6.42864C17.1137 6.4868 17.1606 6.55612 17.1927 6.63257C17.2247 6.70902 17.2411 6.79107 17.2411 6.87395C17.2411 6.95684 17.2247 7.03889 17.1927 7.11534C17.1606 7.19179 17.1137 7.26111 17.0547 7.31927L7.5 16.874Z"
+      stroke="#1F2024"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10.625 5L15 9.375"
+      stroke="#1F2024"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M16.875 16.875H7.5"
+      stroke="#1F2024"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const AddFacilityIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+  >
+    <path
+      d="M10 2.5C14.1421 2.5 17.5 5.85786 17.5 10C17.5 14.1421 14.1421 17.5 10 17.5C5.85786 17.5 2.5 14.1421 2.5 10C2.5 5.85786 5.85786 2.5 10 2.5Z"
+      stroke="#FF5B00"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M6.875 10H13.125"
+      stroke="#FF5B00"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10 13.125V6.875"
+      stroke="#FF5B00"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const AwaitingConfirmationIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="21"
+    height="20"
+    viewBox="0 0 21 20"
+    fill="none"
+  >
+    <path
+      d="M10.0996 2.5V10L14.0996 12"
+      stroke="#F07C29"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10.0996 18.3333C14.8853 18.3333 18.7663 14.4524 18.7663 9.66667C18.7663 4.88095 14.8853 1 10.0996 1C5.31387 1 1.43297 4.88095 1.43297 9.66667C1.43297 14.4524 5.31387 18.3333 10.0996 18.3333Z"
+      stroke="#F07C29"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M7.43297 7.5L10.0996 10L12.7663 7.5"
+      stroke="#F07C29"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const TimedOutIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="21"
+    height="20"
+    viewBox="0 0 21 20"
+    fill="none"
+  >
+    <path
+      d="M10.0996 2.5V10L14.0996 12"
+      stroke="#6B7280"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10.0996 18.3333C14.8853 18.3333 18.7663 14.4524 18.7663 9.66667C18.7663 4.88095 14.8853 1 10.0996 1C5.31387 1 1.43297 4.88095 1.43297 9.66667C1.43297 14.4524 5.31387 18.3333 10.0996 18.3333Z"
+      stroke="#6B7280"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M7.43297 7.16667L12.7663 12.1667M12.7663 7.16667L7.43297 12.1667"
+      stroke="#6B7280"
+      strokeWidth="0.833333"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);

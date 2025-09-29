@@ -10,7 +10,7 @@ import {
 } from "@/components/icons";
 import { TimeSortFilter } from "@/components/ui/filters/time-sort-filter";
 
-// Types for the space data
+// Types for the available space data
 interface SpaceFacility {
   _id: string;
   name: string;
@@ -29,7 +29,7 @@ interface Space {
 
 interface AvailableSpacesSectionProps {
   spaces: Space[];
-  stayId?: string; // Add stayId prop for navigation
+  stayId?: string;
   className?: string;
 }
 

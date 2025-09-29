@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ContentHeader } from "@/components/ui/content-header";
 import { PlusIconOrange } from "@/components/icons";
 
-// Title Component (just the main title)
+// Title Component
 const EventsTitle = () => (
   <h1 className="text-[#1F2024] font-space-grotesk text-2xl font-bold leading-[140%] tracking-[-0.48px]">
     Created Events

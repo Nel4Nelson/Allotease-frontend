@@ -17,7 +17,7 @@ const signInFormSchema = z.object({
     .string()
     .min(8, { message: "Password must be at least 8 characters." })
     .max(100, { message: "Password must not exceed 100 characters." })
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])[A-Za-z\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+$/, {
       message:
         "Password must contain uppercase, lowercase, number, and special character.",
     }),

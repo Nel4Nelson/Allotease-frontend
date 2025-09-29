@@ -4,12 +4,14 @@ import { ContentHeader } from "@/components/ui/content-header";
 
 interface StayDetailsHeaderProps {
   stayTitle: string;
+  type?: "stay" | "event";
   onEditClick?: () => void;
   className?: string;
 }
 
 export function StayDetailsHeader({
   stayTitle,
+  type = "stay",
   onEditClick,
   className = "",
 }: StayDetailsHeaderProps) {
@@ -19,20 +21,24 @@ export function StayDetailsHeader({
     </h1>
   );
 
-  const EditStayButton = () => (
-    <button
-      onClick={onEditClick}
-      className="flex items-center justify-center gap-[15px] px-3 py-1.5 rounded-[51px] border border-[#FF5B00] hover:bg-orange-50 transition-colors"
-    >
-      <span className="text-[#FF5B00] font-source-sans text-lg font-semibold">
-        Edit stay details
-      </span>
-    </button>
-  );
+  const EditButton = () => {
+    const buttonText = type === "stay" ? "Edit stay details" : "Edit event details";
+    
+    return (
+      <button
+        onClick={onEditClick}
+        className="flex items-center justify-center gap-[15px] px-3 py-1.5 rounded-[51px] border border-[#FF5B00] hover:bg-orange-50 transition-colors"
+      >
+        <span className="text-[#FF5B00] font-source-sans text-lg font-semibold">
+          {buttonText}
+        </span>
+      </button>
+    );
+  };
 
   return (
     <div className={className}>
-      <ContentHeader title={<StayTitle />} action={<EditStayButton />} />
+      <ContentHeader title={<StayTitle />} action={<EditButton />} />
     </div>
   );
 }

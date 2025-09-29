@@ -20,6 +20,7 @@ interface FormSelectProps {
   showLabel?: boolean;
   className?: string;
   id?: string;
+  disabled?: boolean;
 }
 
 export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
@@ -35,6 +36,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
       showLabel = false,
       className = "",
       id,
+      disabled = false,
     },
     ref
   ) => {
@@ -57,13 +59,14 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
         )}
 
         <div className="relative">
-          <Select value={value} onValueChange={onValueChange}>
+          <Select value={value} onValueChange={onValueChange} disabled={disabled}>
             <SelectTrigger 
               id={selectId}
               className={`form-input autocomplete-fix ${className}`}
               style={{
                 border: error ? '1px solid #ef4444' : undefined,
               }}
+              disabled={disabled}
             >
               <SelectValue placeholder={placeholder} />
             </SelectTrigger>

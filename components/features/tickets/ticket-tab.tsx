@@ -22,18 +22,6 @@ export function TicketTabs({ className = "" }: TicketTabsProps) {
       label: "Events",
       content: <TicketEventsContent />,
     },
-    {
-      value: "car-parks",
-      label: "Car parks",
-      content: (
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Car Parks</h2>
-          <p className="text-gray-600">
-            Car parks tickets content coming soon...
-          </p>
-        </div>
-      ),
-    },
   ];
 
   return (

@@ -1,16 +1,17 @@
+"use client";
 import React from "react";
+import { Button } from "@/components/ui/button";
+import { EventBadge } from "@/components/ui/event-badge";
+import { Divider } from "@/components/ui/divider";
 
 interface TicketEventCardProps {
   title: string;
   dateTime: string;
   imageUrl: string;
   badgeText: string;
-  ticketCount?: number;
-  totalPrice?: number;
-  status?: string;
+  onGetTicket?: () => void;
+  disabled?: boolean;
   className?: string;
-  onClick?: () => void;
-  onGetTicket?: (event?: React.MouseEvent) => void;
 }
 
 export function TicketEventCard({
@@ -18,197 +19,128 @@ export function TicketEventCard({
   dateTime,
   imageUrl,
   badgeText,
-  ticketCount = 1,
-  totalPrice,
-  //status = "active",
-  className = "",
-  onClick,
   onGetTicket,
+  disabled = false,
+  className = "",
 }: TicketEventCardProps) {
-  // Format price display
-  const formatPrice = (price?: number) => {
-    if (!price || price === 0) return "Free";
-    return `₦${price.toLocaleString()}`;
-  };
-
-  // Handle card click
-  const handleCardClick = () => {
-    if (onClick) {
-      onClick();
-    }
-  };
-
-  // Handle get ticket button click
-  const handleGetTicketClick = (event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent card click
-    if (onGetTicket) {
-      onGetTicket(event);
-    }
-  };
-
   return (
     <div
-      className={`flex cursor-pointer transition-transform hover:scale-[1.02] ${className}`}
-      style={{
-        display: "flex",
-        alignItems: "stretch", // Changed from flex-start to stretch
-        height: "176px", // Fixed height to match image
-        minWidth: "300px",
-        gap: "12px", // Slightly increased gap
-        borderRadius: "12px", // Added border radius to card
-        padding: "0", // Ensure no padding interferes
-        overflow: "hidden", // Prevent content overflow
-      }}
-      onClick={handleCardClick}
+      className="hidden lg:flex items-stretch gap-3 rounded-3xl cursor-pointer"
+      style={{ gap: "12px" }}
     >
       {/* Event Image */}
       <div
         style={{
-          width: "300px", // Reduced width for better proportion
-          height: "176px",
-          borderRadius: "12px", // Only left corners rounded
+          display: 'flex',
+          height: '176px',
+          minWidth: '326px',
+          justifyContent: 'center',
+          alignItems: 'center',
+          alignSelf: 'stretch',
+          borderRadius: '20px',
           backgroundImage: `url(${imageUrl})`,
-          backgroundSize: "cover",
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "center",
-          backgroundColor: "lightgray",
-          flexShrink: 0,
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center',
+          backgroundColor: 'lightgray'
         }}
       />
 
       {/* Content Section */}
-      <div 
-        className="flex-1 flex flex-col justify-between" 
-        style={{
-          padding: "16px 16px 16px 0", // Add padding, but not on left since we have gap
-          height: "100%", // Ensure full height
-        }}
+      <div
+        className="flex flex-col justify-between flex-1"
+        style={{ height: "176px" }}
       >
         {/* Top Content */}
-        <div className="flex flex-col gap-1">
-          {/* Title */}
-          <h3
-            style={{
-              color: "var(--Title, #1F2024)",
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: "18px",
-              fontStyle: "normal",
-              fontWeight: 700,
-              lineHeight: "140%",
-              letterSpacing: "-0.32px",
-              margin: 0,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-            }}
-          >
-            {title}
-          </h3>
+        {/* Event Title */}
+        <h3
+          className="line-clamp-2"
+          style={{
+            color: "var(--Title, #1F2024)",
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: "18px",
+            fontStyle: "normal",
+            fontWeight: 700,
+            lineHeight: "140%", // 25.2px
+            letterSpacing: "-0.36px",
+            margin: 0,
+            overflow: "hidden",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+          }}
+        >
+          {title}
+        </h3>
 
-          {/* Date and Time */}
+        {/* Date and Time */}
+        <div className="space-y-3">
           <p
             style={{
               color: "var(--Body, #71727A)",
               fontFamily: "var(--font-source-sans), sans-serif",
-              fontSize: "14px",
+              fontSize: "16px",
               fontStyle: "normal",
               fontWeight: 400,
-              lineHeight: "142.745%",
-              letterSpacing: "-0.28px",
+              lineHeight: "142.745%", // 22.839px
+              letterSpacing: "-0.32px",
               margin: 0,
             }}
           >
             {dateTime}
           </p>
 
-          {/* Ticket Info */}
-          <div className="flex items-center gap-2 mt-2">
-            {/* Badge */}
+          <Divider />
+
+          {/* Event Badge */}
+          <div
+            style={{
+              display: 'flex',
+              padding: '4px 6px',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '10px',
+              width: 'fit-content',
+              borderRadius: "54px",
+              background: "#F2F4F7",
+            }}
+          >
             <span
               style={{
-                display: "inline-flex",
-                padding: "2px 8px",
-                alignItems: "center",
-                gap: "10px",
-                borderRadius: "51px",
-                background: "var(--Green, #13C962)",
-                color: "white",
-                fontFamily: "var(--font-source-sans), sans-serif",
-                fontSize: "12px",
-                fontWeight: 600,
-                lineHeight: "normal",
+                color: 'var(--System-Teal, #1F3A3A)',
+                fontFamily: '"Source Sans Pro", sans-serif',
+                fontSize: '12px',
+                fontStyle: 'normal',
+                fontWeight: 400,
+                lineHeight: '14px'
               }}
             >
               {badgeText}
             </span>
-
-            {/* Ticket Count */}
-            <span
-              style={{
-                color: "var(--Body, #71727A)",
-                fontFamily: "var(--font-source-sans), sans-serif",
-                fontSize: "12px",
-                fontWeight: 400,
-                lineHeight: "normal",
-              }}
-            >
-              {ticketCount} ticket{ticketCount !== 1 ? "s" : ""}
-            </span>
-
-            {/* Total Price */}
-            {totalPrice && totalPrice > 0 && (
-              <span
-                style={{
-                  color: "var(--Title, #1F2024)",
-                  fontFamily: "var(--font-source-sans), sans-serif",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  lineHeight: "normal",
-                }}
-              >
-                {formatPrice(totalPrice)}
-              </span>
-            )}
           </div>
+
         </div>
 
-        {/* Get Ticket Button - positioned at bottom */}
-        <button
-          onClick={handleGetTicketClick}
+        {/* Bottom Action Button */}
+        <Button
+          onClick={disabled ? undefined : onGetTicket}
+          variant="allotease-blur"
+          size="allotease-sm"
+          disabled={disabled}
+          className="w-full"
           style={{
-            display: "flex",
-            padding: "8px 16px",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: "10px",
             borderRadius: "51px",
-            border: "1px solid #FF5B06",
-            background: "transparent",
-            color: "#FF5B06",
-            fontFamily: "var(--font-source-sans), sans-serif",
-            fontSize: "14px",
-            fontWeight: 600,
-            lineHeight: "normal",
-            cursor: "pointer",
-            transition: "all 0.2s ease",
-            flexShrink: 0,
-            marginTop: "auto", // Push to bottom
-            width: "fit-content", // Don't stretch full width
-            alignSelf: "flex-start", // Align to left
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "#FF5B06";
-            e.currentTarget.style.color = "white";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.color = "#FF5B06";
+            background: disabled 
+              ? "rgba(242, 244, 247, 0.30)" 
+              : "rgba(242, 244, 247, 0.60)",
+            backdropFilter: "blur(21px)",
+            alignSelf: "stretch",
+            opacity: disabled ? 0.5 : 1,
+            cursor: disabled ? "not-allowed" : "pointer",
           }}
         >
           Get another ticket
-        </button>
+        </Button>
       </div>
     </div>
   );
