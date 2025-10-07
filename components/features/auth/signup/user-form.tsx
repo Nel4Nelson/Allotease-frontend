@@ -37,13 +37,10 @@ const userFormSchema = z
       .string()
       .min(8, { message: "Password must be at least 8 characters." })
       .max(100, { message: "Password must not exceed 100 characters." })
-      .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-        {
-          message:
-            "Password must contain uppercase, lowercase, number, and special character.",
-        }
-      ),
+      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])[A-Za-z\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+$/, {
+        message:
+          "Password must contain uppercase, lowercase, number, and special character.",
+      }),
 
     confirmPassword: z
       .string()
@@ -70,7 +67,7 @@ export function UserForm({
   const {
     register,
     handleSubmit,
-    formState: { errors, isValid},
+    formState: { errors, isValid },
     reset,
   } = useForm<UserFormData>({
     resolver: zodResolver(userFormSchema),
@@ -144,18 +141,18 @@ export function UserForm({
         ))}
       </div>
 
-     
+
       <div className="flex justify-center">
-      <Button
-        type="submit"
-        variant="signup-primary" 
-        size="allotease-md"
-        className="w-2/3"
-        loading={isLoading}
-        disabled={isLoading || !isValid}
-      >
-        {submitButtonText}
-      </Button>
+        <Button
+          type="submit"
+          variant="signup-primary"
+          size="allotease-md"
+          className="w-2/3"
+          loading={isLoading}
+          disabled={isLoading || !isValid}
+        >
+          {submitButtonText}
+        </Button>
 
       </div>
     </form>
