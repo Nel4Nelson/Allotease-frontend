@@ -1,7 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,8 +15,14 @@ import {
   ChevronDownIcon,
 } from "@/components/icons";
 import { useAuthStore } from "@/stores/auth-store";
+import { useSearchStore } from "@/stores/search-store";
 import { AuthService } from "@/services/auth-service";
 import { Button } from "../ui/button";
+import { getSearchPlaceholder } from "@/lib/search-helper";
+import { useDebounce } from "@/hooks/use-debounce";
+import { useProfileData } from "@/hooks/use-profile";
+import { FallbackImage } from "@/components/ui/fallback-image";
+
 
 // Animated Create Text Component
 interface AnimatedCreateTextProps {
@@ -55,8 +62,26 @@ const AnimatedCreateText: React.FC<AnimatedCreateTextProps> = ({
 };
 
 export default function Header() {
+  const [localSearchInput, setLocalSearchInput] = useState("");
+
+  // Get current pathname and search params
+  const pathname = usePathname();
+
+  // Define pages where search should show
+  const searchEnabledPages = ["/", "/all-allocation-admins"];
+  const isSearchEnabledPage = searchEnabledPages.includes(pathname);
+
+  const searchParams = useSearchParams();
+  const type = searchParams.get("type");
+
   // Get auth data directly from store
   const { user, isAuthenticated, getUserRole, isLoading } = useAuthStore();
+
+  // Get profile data including avatar
+  const { avatarUrl, isLoading: isProfileLoading } = useProfileData();
+
+  // Get search state from search store
+  const { activeContext, setSearchQuery } = useSearchStore();
 
   // Get user role and email from auth store
   const userRole = getUserRole();
@@ -64,6 +89,24 @@ export default function Header() {
 
   // Check if user is allocation admin (allocator role)
   const isAllocationAdmin = userRole === "allocator";
+
+  // Debounce the search input
+  const debouncedSearchInput = useDebounce(localSearchInput, 300);
+
+  // Update store when debounced value changes
+  useEffect(() => {
+    setSearchQuery(debouncedSearchInput);
+  }, [debouncedSearchInput, setSearchQuery]);
+
+  // Clear local input when context changes (tab switch or page navigation)
+  useEffect(() => {
+    setLocalSearchInput("");
+  }, [activeContext]);
+
+  // Handle local input change
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalSearchInput(e.target.value);
+  }, []);
 
   // Handle logout
   const handleLogout = async () => {
@@ -88,6 +131,10 @@ export default function Header() {
     }
   };
 
+  // Determine if search should be shown based on BOTH activeContext AND current route
+  const showSearch = activeContext !== null && isSearchEnabledPage;
+  const searchPlaceholder = getSearchPlaceholder(activeContext);
+
   return (
     <header
       className="w-full bg-white/80 backdrop-blur-sm relative"
@@ -106,7 +153,7 @@ export default function Header() {
         />
       </div>
 
-      <div className="max-w-[965px] mx-auto px-4 sm:px-6 lg:px-8 h-16">
+      <div className="max-w-[1050px] mx-auto px-4 sm:px-6 lg:px-8 h-16">
         <div className="flex items-center h-full">
           {/* Left Section: Logo + Search (Desktop only) */}
           <div className="flex items-center flex-1 mr-8">
@@ -122,16 +169,20 @@ export default function Header() {
               />
             </Link>
 
-            {/* Search Bar - Hidden on mobile */}
-            <div className="hidden md:flex items-center gap-3 h-10 max-w-[200px] px-3 flex-1 rounded-full border border-gray-300/20 bg-gray-100/50">
-              <SearchIcon />
-              <input
-                type="text"
-                placeholder="Search"
-                className="flex-1 bg-transparent border-none outline-none text-gray-600 font-source-sans text-base placeholder:text-gray-500"
-                style={{ color: "#71727A" }}
-              />
-            </div>
+            {/* Search Bar - Hidden on mobile, shown only when activeContext is set */}
+            {showSearch && (
+              <div className="hidden md:flex items-center gap-3 h-10 max-w-[250px] px-3 flex-1 rounded-full border border-gray-300/20 bg-gray-100/50">
+                <SearchIcon />
+                <input
+                  type="text"
+                  placeholder={searchPlaceholder}
+                  value={localSearchInput}
+                  onChange={handleSearchChange}
+                  className="flex-1 bg-transparent border-none outline-none text-gray-600 font-source-sans text-base placeholder:text-gray-500"
+                  style={{ color: "#71727A" }}
+                />
+              </div>
+            )}
           </div>
 
           {/* Right Section: Action Buttons + User Profile */}
@@ -157,7 +208,7 @@ export default function Header() {
               >
                 <TicketIcon />
                 <span
-                  className="font-source-sans text-base font-semibold"
+                  className="font-source-sans-pro text-base font-semibold"
                   style={{ color: "#1F3A3A" }}
                 >
                   Ticket
@@ -196,14 +247,19 @@ export default function Header() {
                     }}
                   >
                     {/* Avatar */}
-                    <div className="w-8 h-8 rounded-full overflow-hidden">
-                      <Image
-                        src="/icons/encircle-star-green-avatar.svg"
-                        alt="User Avatar"
-                        width={32}
-                        height={32}
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gray-100">
+                      {isProfileLoading ? (
+                        <div className="w-4 h-4 border-2 border-gray-300 border-t-[#1F3A3A] rounded-full animate-spin"></div>
+                      ) : (
+                        <FallbackImage
+                          src={avatarUrl}
+                          fallbackSrc="/icons/encircle-star-green-avatar.svg"
+                          alt="User Avatar"
+                          width={32}
+                          height={32}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
                     </div>
                     {/* Email - Hidden on mobile */}
                     <span
@@ -246,20 +302,25 @@ export default function Header() {
                     {/* User Info Section */}
                     <div className="flex-col gap-2 w-full">
                       <div className="flex justify-center">
-                        <div className="w-8 h-8 rounded-full overflow-hidden">
-                          <Image
-                            src="/icons/encircle-star-green-avatar.svg"
-                            alt="User Avatar"
-                            width={32}
-                            height={32}
-                            className="w-full h-full object-cover"
-                          />
+                        <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gray-100">
+                          {isProfileLoading ? (
+                            <div className="w-4 h-4 border-2 border-gray-300 border-t-white rounded-full animate-spin"></div>
+                          ) : (
+                            <FallbackImage
+                              src={avatarUrl}
+                              fallbackSrc="/icons/encircle-star-green-avatar.svg"
+                              alt="User Avatar"
+                              width={32}
+                              height={32}
+                              className="w-full h-full object-cover"
+                            />
+                          )}
                         </div>
                       </div>
                       <div className="flex justify-center">
                         <span
                           style={{
-                            color: "#1F2024",
+                            color: "#fff",
                             fontFamily: "var(--font-source-sans), sans-serif",
                             fontSize: "16px",
                             fontWeight: 400,
@@ -274,8 +335,8 @@ export default function Header() {
                         <div className="flex font-source-sans justify-center mt-1">
                           <span
                             style={{
-                              color: "#666",
-                              fontSize: "12px",
+                              color: "#fff",
+                              fontSize: "14px",
                               fontWeight: 400,
                               lineHeight: "normal",
                             }}
@@ -288,16 +349,20 @@ export default function Header() {
                       )}
                     </div>
 
-                    {/* Mobile Search Bar - Only show on mobile */}
-                    <div className="flex md:hidden items-center gap-3 h-10 w-full px-3 rounded-full border border-gray-300/20 bg-gray-100/50">
-                      <SearchIcon />
-                      <input
-                        type="text"
-                        placeholder="Search by address"
-                        className="flex-1 bg-transparent border-none outline-none text-gray-600 font-source-sans text-base placeholder:text-gray-500"
-                        style={{ color: "#71727A" }}
-                      />
-                    </div>
+                    {/* Mobile Search Bar - Only show on mobile when activeContext is set */}
+                    {showSearch && (
+                      <div className="flex md:hidden items-center gap-3 h-10 w-full px-3 rounded-full border border-gray-300/20 bg-gray-100/50">
+                        <SearchIcon />
+                        <input
+                          type="text"
+                          placeholder={searchPlaceholder}
+                          value={localSearchInput}
+                          onChange={handleSearchChange}
+                          className="flex-1 bg-transparent border-none outline-none text-gray-600 font-source-sans text-base placeholder:text-gray-500"
+                          style={{ color: "#71727A" }}
+                        />
+                      </div>
+                    )}
 
                     {/* Menu Items Container */}
                     <div
@@ -362,9 +427,7 @@ export default function Header() {
                         className="hidden md:flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
                         style={{
                           padding: "16px 20px",
-                          borderBottom: isAllocationAdmin
-                            ? "1px solid rgba(138, 174, 164, 0.20)"
-                            : "1px solid rgba(138, 174, 164, 0.20)",
+                          borderBottom: "1px solid rgba(138, 174, 164, 0.20)",
                           borderRadius: "16px 16px 0 0",
                         }}
                       >
@@ -416,6 +479,34 @@ export default function Header() {
                           </span>
                         </Link>
                       )}
+
+                      {/* All Allocation Admins - NEW ITEM */}
+                      <Link
+                        href="/all-allocation-admins"
+                        className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
+                        style={{
+                          padding: "16px 20px",
+                          borderBottom: "1px solid rgba(138, 174, 164, 0.20)",
+                        }}
+                      >
+                        <Image
+                          src="/icons/allotease-icon.svg"
+                          alt="All Allocation Admins"
+                          width={16}
+                          height={16}
+                        />
+                        <span
+                          style={{
+                            color: "#1F2024",
+                            fontFamily: "var(--font-source-sans), sans-serif",
+                            fontSize: "16px",
+                            fontWeight: 600,
+                            lineHeight: "normal",
+                          }}
+                        >
+                          All Allocation Admins
+                        </span>
+                      </Link>
 
                       {/* Create new event - Desktop only */}
                       <div
@@ -513,21 +604,11 @@ export default function Header() {
                     variant="signup-primary"
                     size="allotease-sm"
                     aria-label="Sign in to your account"
-                    
+
                   >
                     Sign In
                   </Button>
                 </Link>
-                {/* <Link href="/signup">
-                  <Button
-                    variant="allotease-blur"
-                    size="allotease-sm"
-                    aria-label="Sign in to your account"
-                    className="font-bold border"
-                  >
-                    Sign Up
-                  </Button>
-                </Link> */}
               </div>
             )}
 

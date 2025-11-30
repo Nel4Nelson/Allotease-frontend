@@ -12,6 +12,13 @@ import { useIsOnline } from "@/hooks/use-network-status";
 import { useEvents, useLoadMoreEvents, useInvalidateEvents, eventsKeys } from "@/hooks/use-events";
 import { useQueryClient } from "@tanstack/react-query";
 import { EventFilters } from "@/components/ui/filters";
+import { useSearchStore } from "@/stores/search-store";
+import { buildSearchParams } from "@/lib/search-helper";
+
+interface LocationCoordinates {
+  lat: number;
+  lng: number;
+}
 
 interface EventsContentProps {
   className?: string;
@@ -22,17 +29,46 @@ export function EventsContent({ className = "" }: EventsContentProps) {
   const isOnline = useIsOnline();
   const queryClient = useQueryClient();
   const { removeQueries } = useInvalidateEvents();
-  const [selectedLocation, setSelectedLocation] = useState("awka-anambra");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedLocation, setSelectedLocation] = useState<LocationCoordinates | null>(null);
+  const [selectedLocationName, setSelectedLocationName] = useState<string>("");
+  const [selectedTags, setSelectedTags] = useState("all");
+  const [selectedEventType, setSelectedEventType] = useState("all");
+  const [selectedSortOrder, setSelectedSortOrder] = useState<"asc" | "desc">("desc");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Build query params
-  const queryParams = {
-    page: 1, // Always use page 1 for the main query
+  // Get search state from store
+  const { searchQuery, setActiveContext, clearSearch } = useSearchStore();
+
+  // Register as active context and cleanup on unmount
+  useEffect(() => {
+    setActiveContext("events");
+    return () => {
+      setActiveContext(null);
+      clearSearch();
+    };
+  }, [setActiveContext, clearSearch]);
+
+  // Reset to page 1 when search query changes
+  useEffect(() => {
+    if (searchQuery !== undefined) {
+      setCurrentPage(1);
+    }
+  }, [searchQuery]);
+
+  // Build query params with search - always use page 1 as the cache key base
+  const baseQueryParams = {
+    page: 1,
     limit: 6,
-    ...(selectedCategory &&
-      selectedCategory !== "all" && { query: selectedCategory }),
+    sortOrder: selectedSortOrder,
+    ...(selectedTags && selectedTags !== "all" && { tags: selectedTags }),
+    ...(selectedEventType && selectedEventType !== "all" && { eventType: selectedEventType as "physical" | "remote" }),
+    ...(selectedLocation && {
+      latitude: selectedLocation.lat,
+      longitude: selectedLocation.lng,
+    }),
   };
+
+  const queryParams = buildSearchParams(baseQueryParams, searchQuery, "events");
 
   const { data, isLoading, isError, isFetched, refetch } = useEvents(queryParams);
 
@@ -55,15 +91,28 @@ export function EventsContent({ className = "" }: EventsContentProps) {
     }
   }, [isOnline, isError, refetch]);
 
-  // Handle category change
-  const handleCategoryChange = (newCategory: string) => {
-    setSelectedCategory(newCategory);
+  // Handle tags change
+  const handleTagsChange = (newTags: string) => {
+    setSelectedTags(newTags);
+    handleFilterChange();
+  };
+
+  // Handle event type change
+  const handleEventTypeChange = (newEventType: string) => {
+    setSelectedEventType(newEventType);
+    handleFilterChange();
+  };
+
+  // Handle sort order change
+  const handleSortOrderChange = (newSortOrder: "asc" | "desc") => {
+    setSelectedSortOrder(newSortOrder);
     handleFilterChange();
   };
 
   // Handle location change
-  const handleLocationChange = (newLocation: string) => {
-    setSelectedLocation(newLocation);
+  const handleLocationChange = (coordinates: LocationCoordinates, placeName: string) => {
+    setSelectedLocation(coordinates);
+    setSelectedLocationName(placeName);
     handleFilterChange();
   };
 
@@ -71,10 +120,14 @@ export function EventsContent({ className = "" }: EventsContentProps) {
   const handleShowMore = async () => {
     if (data?.data?.hasNextPage && !loadMoreMutation.isPending && isOnline) {
       const nextPage = currentPage + 1;
-      const nextPageParams = {
-        ...queryParams,
-        page: nextPage,
-      };
+      const nextPageParams = buildSearchParams(
+        {
+          ...baseQueryParams,
+          page: nextPage,
+        },
+        searchQuery,
+        "events"
+      );
 
       try {
         await loadMoreMutation.mutateAsync(nextPageParams);
@@ -89,7 +142,7 @@ export function EventsContent({ className = "" }: EventsContentProps) {
   const handleCollapse = () => {
     if (currentPage > 1) {
       const newPage = currentPage - 1;
-      const itemsPerPage = queryParams.limit || 6;
+      const itemsPerPage = baseQueryParams.limit || 6;
 
       // Get current first page data
       const firstPageData = queryClient.getQueryData<any>(
@@ -129,8 +182,11 @@ export function EventsContent({ className = "" }: EventsContentProps) {
 
   // Clear filters handler
   const handleClearFilters = () => {
-    setSelectedCategory("all");
-    setSelectedLocation("awka-anambra");
+    setSelectedTags("all");
+    setSelectedEventType("all");
+    setSelectedSortOrder("desc");
+    setSelectedLocation(null);
+    setSelectedLocationName("");
     handleFilterChange();
   };
 
@@ -151,7 +207,7 @@ export function EventsContent({ className = "" }: EventsContentProps) {
     currentPage > 1 && !isLoading && !isError && !loadMoreMutation.isPending;
 
   // Current info for display
-  const itemsPerPage = queryParams.limit || 6;
+  const itemsPerPage = baseQueryParams.limit || 6;
   const totalPages = data?.data?.totalPages || 1;
 
   // Render loading skeleton for initial load OR filter changes (but only if not yet fetched)
@@ -160,9 +216,13 @@ export function EventsContent({ className = "" }: EventsContentProps) {
       <div className={`space-y-6 ${className}`}>
         <EventFilters
           selectedLocation={selectedLocation}
-          selectedCategory={selectedCategory}
+          selectedTags={selectedTags}
+          selectedEventType={selectedEventType}
+          selectedSortOrder={selectedSortOrder}
           onLocationChange={handleLocationChange}
-          onCategoryChange={handleCategoryChange}
+          onTagsChange={handleTagsChange}
+          onEventTypeChange={handleEventTypeChange}
+          onSortOrderChange={handleSortOrderChange}
         />
 
         {/* Loading skeleton - shown during filter changes */}
@@ -177,9 +237,13 @@ export function EventsContent({ className = "" }: EventsContentProps) {
       <div className={`space-y-6 ${className}`}>
         <EventFilters
           selectedLocation={selectedLocation}
-          selectedCategory={selectedCategory}
+          selectedTags={selectedTags}
+          selectedEventType={selectedEventType}
+          selectedSortOrder={selectedSortOrder}
           onLocationChange={handleLocationChange}
-          onCategoryChange={handleCategoryChange}
+          onTagsChange={handleTagsChange}
+          onEventTypeChange={handleEventTypeChange}
+          onSortOrderChange={handleSortOrderChange}
         />
 
         <OfflineState />
@@ -193,9 +257,13 @@ export function EventsContent({ className = "" }: EventsContentProps) {
       <div className={`space-y-6 ${className}`}>
         <EventFilters
           selectedLocation={selectedLocation}
-          selectedCategory={selectedCategory}
+          selectedTags={selectedTags}
+          selectedEventType={selectedEventType}
+          selectedSortOrder={selectedSortOrder}
           onLocationChange={handleLocationChange}
-          onCategoryChange={handleCategoryChange}
+          onTagsChange={handleTagsChange}
+          onEventTypeChange={handleEventTypeChange}
+          onSortOrderChange={handleSortOrderChange}
         />
 
         <NetworkError
@@ -208,24 +276,30 @@ export function EventsContent({ className = "" }: EventsContentProps) {
 
   // Handle empty state - this will properly trigger when data is fetched but empty
   if (!isLoading && !isError && isFetched && allEvents.length === 0) {
+    const emptyMessage = searchQuery
+      ? `No events found for "${searchQuery}"`
+      : selectedTags !== "all" || selectedEventType !== "all" || selectedLocation
+      ? "No events match your selected filters. Try adjusting your search criteria."
+      : "No events available.";
+
     return (
       <div className={`space-y-6 ${className}`}>
         <EventFilters
           selectedLocation={selectedLocation}
-          selectedCategory={selectedCategory}
+          selectedTags={selectedTags}
+          selectedEventType={selectedEventType}
+          selectedSortOrder={selectedSortOrder}
           onLocationChange={handleLocationChange}
-          onCategoryChange={handleCategoryChange}
+          onTagsChange={handleTagsChange}
+          onEventTypeChange={handleEventTypeChange}
+          onSortOrderChange={handleSortOrderChange}
         />
 
         <EmptyState
           title="No events found"
-          message={
-            selectedCategory !== "all"
-              ? "No events match your selected filters. Try adjusting your search criteria."
-              : "No events available in this location."
-          }
-          actionLabel={selectedCategory !== "all" ? "Clear Filters" : undefined}
-          onAction={selectedCategory !== "all" ? handleClearFilters : undefined}
+          message={emptyMessage}
+          actionLabel={selectedTags !== "all" || selectedEventType !== "all" || selectedLocation ? "Clear Filters" : undefined}
+          onAction={selectedTags !== "all" || selectedEventType !== "all" || selectedLocation ? handleClearFilters : undefined}
         />
       </div>
     );
@@ -236,10 +310,47 @@ export function EventsContent({ className = "" }: EventsContentProps) {
     <div className={`space-y-6 ${className}`}>
       <EventFilters
         selectedLocation={selectedLocation}
-        selectedCategory={selectedCategory}
+        selectedTags={selectedTags}
+        selectedEventType={selectedEventType}
+        selectedSortOrder={selectedSortOrder}
         onLocationChange={handleLocationChange}
-        onCategoryChange={handleCategoryChange}
+        onTagsChange={handleTagsChange}
+        onEventTypeChange={handleEventTypeChange}
+        onSortOrderChange={handleSortOrderChange}
       />
+
+      {/* Active filters indicator */}
+      {(searchQuery || selectedLocationName || selectedTags !== "all" || selectedEventType !== "all") && (
+        <div className="flex items-center gap-2 text-sm text-gray-600 flex-wrap">
+          {searchQuery && (
+            <span>
+              Search: <strong>&quot;{searchQuery}&quot;</strong>
+            </span>
+          )}
+          {selectedLocationName && (
+            <span>
+              {searchQuery && "•"} Location: <strong>{selectedLocationName}</strong>
+            </span>
+          )}
+          {selectedTags !== "all" && (
+            <span>
+              {(searchQuery || selectedLocationName) && "•"} Tags:{" "}
+              <strong>{selectedTags}</strong>
+            </span>
+          )}
+          {selectedEventType !== "all" && (
+            <span>
+              {(searchQuery || selectedLocationName || selectedTags !== "all") && "•"} Type:{" "}
+              <strong>{selectedEventType === "physical" ? "Physical" : "Remote"}</strong>
+            </span>
+          )}
+          {data?.data?.totalCount !== undefined && (
+            <span className="text-gray-500">
+              ({data.data.totalCount} {data.data.totalCount === 1 ? "result" : "results"})
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Events Grid - Responsive */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
@@ -286,8 +397,8 @@ export function EventsContent({ className = "" }: EventsContentProps) {
       {allEvents.length > itemsPerPage && (
         <div className="flex justify-center text-sm text-gray-500">
           <span>
-            Showing {allEvents.length} of {data?.data?.totalCount || 0}{" "}
-            events ({currentPage} of {totalPages} pages loaded)
+            Showing {allEvents.length} of {data?.data?.totalCount || 0} events ({currentPage}{" "}
+            of {totalPages} pages loaded)
           </span>
         </div>
       )}

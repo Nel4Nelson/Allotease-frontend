@@ -287,9 +287,9 @@ export class AllocatorService {
   /**
    * Get allocator avatar with fallback
    */
-  static getAllocatorAvatar(allocator: Allocator): string {
-    return "/icons/encircle-star-orange-avatar.svg";
-  }
+static getAllocatorAvatar(allocator: Allocator): string {
+  return allocator.avatar || "/icons/encircle-star-orange-avatar.svg";
+}
 
   /**
    * Map API allocator to UI profile format

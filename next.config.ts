@@ -1,10 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-   images: {
-    domains: ['res.cloudinary.com', 'i.postimg.cc',],
-    // Or use the newer remotePatterns (recommended for Next.js 13+)
+  images: {
+    unoptimized: true, // Safe to keep this since Cloudinary handles optimization
+    domains: ['res.cloudinary.com', 'i.postimg.cc'],
     remotePatterns: [
       {
         protocol: 'https',

@@ -5,6 +5,8 @@ import useEmblaCarousel from "embla-carousel-react";
 import { RatingService, Review } from "@/services/rating-service";
 import { ReviewCard } from "@/components/ui/review-card";
 import { LeftArrowIcon, RightArrowIcon } from "@/components/icons";
+import { NetworkError, EmptyState, OfflineState } from "@/components/ui/network-error";
+import { useIsOnline } from "@/hooks/use-network-status";
 
 interface StayDetailsGuestReviewsProps {
   ownerId: string;
@@ -15,9 +17,11 @@ export function StayDetailsGuestReviews({
   ownerId,
   className = "",
 }: StayDetailsGuestReviewsProps) {
+  const isOnline = useIsOnline();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFetched, setIsFetched] = useState(false);
 
   // Embla carousel setup
   const [emblaRef, emblaApi] = useEmblaCarousel({
@@ -84,6 +88,7 @@ export function StayDetailsGuestReviews({
       setError("Failed to load reviews");
     } finally {
       setLoading(false);
+      setIsFetched(true);
     }
   };
 
@@ -94,8 +99,22 @@ export function StayDetailsGuestReviews({
     }
   }, [ownerId]);
 
-  // Don't render if loading or no reviews
-  if (loading) {
+  // Refetch when coming back online
+  useEffect(() => {
+    if (isOnline && error) {
+      loadReviews();
+    }
+  }, [isOnline, error]);
+
+  // Retry handler
+  const handleRetry = () => {
+    loadReviews();
+  };
+
+  // Loading state - only show if we haven't fetched yet and online
+  const isLoadingData = loading || (!isFetched && reviews.length === 0);
+
+  if (isLoadingData && isOnline) {
     return (
       <div className={`my-8 ${className}`}>
         <div className="mb-8">
@@ -174,10 +193,133 @@ export function StayDetailsGuestReviews({
     );
   }
 
-  if (error || reviews.length === 0) {
-    return null; // Don't show section if there are no reviews
+  // Handle offline state
+  if (!isOnline && reviews.length === 0) {
+    return (
+      <section className={`my-10 ${className}`}>
+        <div className="mb-6">
+          <h2
+            style={{
+              color: "#1F2024",
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: "28px",
+              fontStyle: "normal",
+              fontWeight: 700,
+              lineHeight: "110%",
+              letterSpacing: "-0.56px",
+              margin: 0,
+              marginBottom: "8px",
+            }}
+          >
+            Guest Reviews
+          </h2>
+          <p
+            style={{
+              color: "#71727A",
+              fontFamily: "var(--font-source-sans), sans-serif",
+              fontSize: "16px",
+              fontStyle: "normal",
+              fontWeight: 400,
+              lineHeight: "142.745%",
+              letterSpacing: "-0.32px",
+              margin: 0,
+            }}
+          >
+            Hear what others think of the place.
+          </p>
+        </div>
+        <OfflineState />
+      </section>
+    );
   }
 
+  // Handle error state
+  if (error && !loading && reviews.length === 0) {
+    return (
+      <section className={`my-10 ${className}`}>
+        <div className="mb-6">
+          <h2
+            style={{
+              color: "#1F2024",
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: "28px",
+              fontStyle: "normal",
+              fontWeight: 700,
+              lineHeight: "110%",
+              letterSpacing: "-0.56px",
+              margin: 0,
+              marginBottom: "8px",
+            }}
+          >
+            Guest Reviews
+          </h2>
+          <p
+            style={{
+              color: "#71727A",
+              fontFamily: "var(--font-source-sans), sans-serif",
+              fontSize: "16px",
+              fontStyle: "normal",
+              fontWeight: 400,
+              lineHeight: "142.745%",
+              letterSpacing: "-0.32px",
+              margin: 0,
+            }}
+          >
+            Hear what others think of the place.
+          </p>
+        </div>
+        <NetworkError
+          message="Unable to load reviews"
+          onRetry={handleRetry}
+        />
+      </section>
+    );
+  }
+
+  // Handle empty state
+  if (!loading && !error && isFetched && reviews.length === 0) {
+    return (
+      <section className={`my-10 ${className}`}>
+        <div className="mb-6">
+          <h2
+            style={{
+              color: "#1F2024",
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: "28px",
+              fontStyle: "normal",
+              fontWeight: 700,
+              lineHeight: "110%",
+              letterSpacing: "-0.56px",
+              margin: 0,
+              marginBottom: "8px",
+            }}
+          >
+            Guest Reviews
+          </h2>
+          <p
+            style={{
+              color: "#71727A",
+              fontFamily: "var(--font-source-sans), sans-serif",
+              fontSize: "16px",
+              fontStyle: "normal",
+              fontWeight: 400,
+              lineHeight: "142.745%",
+              letterSpacing: "-0.32px",
+              margin: 0,
+            }}
+          >
+            Hear what others think of the place.
+          </p>
+        </div>
+        <EmptyState
+          title="No reviews yet"
+          message="No reviews given to this allocation admin yet."
+        />
+      </section>
+    );
+  }
+
+  // Normal render with data
   return (
     <section className={`my-10 ${className}`}>
       {/* Header */}

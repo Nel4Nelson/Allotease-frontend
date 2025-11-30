@@ -9,20 +9,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface VariantSelectProps {
+interface VariantSelectProps<T extends string> {
   placeholder?: string;
   options:
-    | readonly { readonly value: string; readonly label: string }[]
-    | { value: string; label: string }[];
-  value?: string;
-  onValueChange?: (value: string) => void;
+    | readonly { readonly value: T; readonly label: string }[]
+    | { value: T; label: string }[];
+  value?: T;
+  onValueChange?: (value: T) => void;
   className?: string;
   variant?: "glass" | "ghost";
   icon?: string;
   iconAlt?: string;
 }
 
-export function VariantSelect({
+export function VariantSelect<T extends string>({
   placeholder = "Select an option",
   options,
   value,
@@ -31,7 +31,7 @@ export function VariantSelect({
   variant = "glass",
   icon,
   iconAlt = "Icon",
-}: VariantSelectProps) {
+}: VariantSelectProps<T>) {
   const getVariantStyles = () => {
     if (variant === "ghost") {
       return {

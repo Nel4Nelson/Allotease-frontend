@@ -79,12 +79,18 @@ interface CreateEventResponse {
 }
 
 // Query parameters for getting events
+// Query parameters for getting events
 export interface GetEventsParams {
   page?: number;
   limit?: number;
   query?: string;
+  latitude?: number;
+  longitude?: number;
+  tags?: string;
+  eventType?: "physical" | "remote";
+  sortOrder?: "asc" | "desc";
   allocatorId?: string;
-  [key: string]: any; // Allow additional query params
+  [key: string]: any;
 }
 
 export class EventService {
@@ -112,40 +118,48 @@ export class EventService {
   /**
    * Get all events with pagination and filters
    */
-  static async getAllEvents(
-    params: GetEventsParams = {}
-  ): Promise<GetEventsResponse> {
-    try {
-      const queryParams = new URLSearchParams();
+static async getAllEvents(
+  params: GetEventsParams = {}
+): Promise<GetEventsResponse> {
+  try {
+    const queryParams = new URLSearchParams();
 
-      // Add default params
-      queryParams.append("page", (params.page || 1).toString());
-      queryParams.append("limit", (params.limit || 6).toString());
+    // Add default params
+    queryParams.append("page", (params.page || 1).toString());
+    queryParams.append("limit", (params.limit || 6).toString());
 
-      // Add optional params
-      if (params.query) queryParams.append("query", params.query);
-      if (params.allocatorId)
-        queryParams.append("allocatorId", params.allocatorId);
+    // Add optional params
+    if (params.query) queryParams.append("query", params.query);
+    if (params.allocatorId) queryParams.append("allocatorId", params.allocatorId);
+    if (params.tags) queryParams.append("tags", params.tags);
+    if (params.eventType) queryParams.append("eventType", params.eventType);
+    if (params.sortOrder) queryParams.append("sortOrder", params.sortOrder);
+    
+    // Add location coordinates if provided
+    if (params.latitude !== undefined)
+      queryParams.append("latitude", params.latitude.toString());
+    if (params.longitude !== undefined)
+      queryParams.append("longitude", params.longitude.toString());
 
-      // Add any additional params
-      Object.keys(params).forEach((key) => {
-        if (
-          !["page", "limit", "query", "allocatorId"].includes(key) &&
-          params[key]
-        ) {
-          queryParams.append(key, params[key].toString());
-        }
-      });
+    // Add any additional params
+    Object.keys(params).forEach((key) => {
+      if (
+        !["page", "limit", "query", "allocatorId", "tags", "eventType", "sortOrder", "latitude", "longitude"].includes(key) &&
+        params[key]
+      ) {
+        queryParams.append(key, params[key].toString());
+      }
+    });
 
-      const url = `${this.ENDPOINTS.GET_EVENTS}?${queryParams.toString()}`;
-      const response = await apiClient.get<GetEventsResponse>(url);
+    const url = `${this.ENDPOINTS.GET_EVENTS}?${queryParams.toString()}`;
+    const response = await apiClient.get<GetEventsResponse>(url);
 
-      return response;
-    } catch (error) {
-      console.error("Failed to fetch events:", error);
-      throw error;
-    }
+    return response;
+  } catch (error) {
+    console.error("Failed to fetch events:", error);
+    throw error;
   }
+}
 
   /**
    * Format event date and time for display

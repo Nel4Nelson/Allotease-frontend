@@ -2,56 +2,79 @@
 import { ContentHeader } from "@/components/ui/content-header";
 import { SectionTitle } from "@/components/ui/section-title";
 import { StayTypeFilter } from "./stay-type-filter";
-import { LocationFilter } from "./location-filter";
+
+import { LocationSearch } from "../location-search";
+import { SortOrderFilter } from "./sort-order-filter";
+
+
+interface LocationCoordinates {
+  lat: number;
+  lng: number;
+}
 
 interface StayFiltersProps {
-  selectedLocation: string;
+  selectedLocation: LocationCoordinates | null;
   selectedType: string;
-  onLocationChange: (location: string) => void;
+  selectedSortOrder: "asc" | "desc";
+  onLocationChange: (coordinates: LocationCoordinates, placeName: string) => void;
   onTypeChange: (type: string) => void;
+  onSortOrderChange: (sortOrder: "asc" | "desc") => void;
   className?: string;
 }
 
 export function StayFilters({
   selectedLocation,
   selectedType,
+  selectedSortOrder,
   onLocationChange,
   onTypeChange,
+  onSortOrderChange,
   className = "",
 }: StayFiltersProps) {
   return (
     <div className={className}>
       {/* Desktop */}
-      <div className="hidden md:block">
+      <div className="hidden md:block space-y-4">
         <ContentHeader
           title={<SectionTitle>Available accommodation near you</SectionTitle>}
           action={
-            <StayTypeFilter value={selectedType} onValueChange={onTypeChange} />
+            <div className="flex items-center gap-3">
+              <SortOrderFilter
+                value={selectedSortOrder}
+                onValueChange={onSortOrderChange}
+              />
+              <StayTypeFilter value={selectedType} onValueChange={onTypeChange} />
+            </div>
           }
         />
 
-        <LocationFilter
-          value={selectedLocation}
-          onValueChange={onLocationChange}
+        <LocationSearch
+          onLocationSelect={onLocationChange}
+          placeholder="Search location or city..."
         />
       </div>
 
-      {/* Mobile: Title and both selects in same row */}
-      <div className="block md:hidden">
+      {/* Mobile */}
+      <div className="block md:hidden space-y-4">
         <div className="mb-4">
-          <SectionTitle>Available Stays near you</SectionTitle>
+          <SectionTitle>Available accommodation near you</SectionTitle>
         </div>
+
+        <LocationSearch
+          onLocationSelect={onLocationChange}
+          placeholder="Search location..."
+        />
 
         <div className="flex items-center gap-3">
           <div className="flex-1">
-            <LocationFilter
-              value={selectedLocation}
-              onValueChange={onLocationChange}
-            />
+            <StayTypeFilter value={selectedType} onValueChange={onTypeChange} />
           </div>
 
           <div className="flex-1">
-            <StayTypeFilter value={selectedType} onValueChange={onTypeChange} />
+            <SortOrderFilter
+              value={selectedSortOrder}
+              onValueChange={onSortOrderChange}
+            />
           </div>
         </div>
       </div>

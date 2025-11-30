@@ -17,6 +17,8 @@ import {
   OfflineState,
 } from "@/components/ui/network-error";
 import { toast } from "react-hot-toast";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 interface FeaturedSectionProps {
   className?: string;
@@ -34,6 +36,7 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
   const { isAuthenticated } = useAuthStore();
   const queryClient = useQueryClient();
   const isOnline = useIsOnline();
+  const router = useRouter();
 
   // Use TanStack Query for fetching allocators
   const { data, isLoading, isError, refetch } = useAllocators({
@@ -172,6 +175,11 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
     loadingMoreRef.current = false;
   };
 
+  // Handle view all button click
+  const handleViewAll = () => {
+    router.push("/all-allocation-admins");
+  };
+
   // Render loading skeleton for initial load
   if (isLoading && currentPage === 1) {
     return (
@@ -260,7 +268,7 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
     <section className={`${className}`}>
       <FeaturedSectionHeader />
       
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 space-y-6">
         {/* Carousel with real data */}
         <AllocationAdminCarousel
           profiles={allAllocators.map((allocator) =>
@@ -271,6 +279,17 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
           hasMore={hasMoreData}
           isLoadingMore={isLoadingMore}
         />
+
+        {/* View All Button */}
+        <div className="flex justify-center pt-4">
+          <Button
+            variant="signup-primary"
+            size="allotease-md"
+            onClick={handleViewAll}
+          >
+            View all
+          </Button>
+        </div>
       </div>
 
       {/* Auth Modal */}

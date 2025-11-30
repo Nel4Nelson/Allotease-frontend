@@ -6,7 +6,7 @@ import { CreateTabs } from "@/components/features/create/create-tabs";
 
 function CreateContent() {
   return (
-    <div className="max-w-[965px] mx-auto lg:mx-[190px] px-6 py-8">
+    <div className="max-w-[1050px] mx-auto lg:mx-[180px] px-6 py-8">
       {/* Breadcrumb */}
       <Breadcrumb className="mb-4" />
 

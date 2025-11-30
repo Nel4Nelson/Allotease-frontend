@@ -82,9 +82,13 @@ export interface GetStaysResponse {
 export interface GetStaysParams {
   page?: number;
   limit?: number;
+  query?: string;
+  latitude?: number;
+  longitude?: number;
   accommodationType?: string;
+  sortOrder?: "asc" | "desc";
   allocator?: string;
-  [key: string]: any; // Allow additional query params
+  [key: string]: any;
 }
 
 // Facility search response
@@ -175,11 +179,21 @@ export class StaysService {
       if (params.accommodationType)
         queryParams.append("accommodationType", params.accommodationType);
       if (params.allocator) queryParams.append("allocator", params.allocator);
+      if (params.query) queryParams.append("query", params.query);
+      if (params.sortOrder) queryParams.append("sortOrder", params.sortOrder);
+      
+      // Add location coordinates if provided
+      if (params.latitude !== undefined)
+        queryParams.append("latitude", params.latitude.toString());
+      if (params.longitude !== undefined)
+        queryParams.append("longitude", params.longitude.toString());
 
       // Add any additional params
       Object.keys(params).forEach((key) => {
         if (
-          !["page", "limit", "accommodationType", "allocator"].includes(key) &&
+          !["page", "limit", "accommodationType", "allocator", "query", "sortOrder", "latitude", "longitude"].includes(
+            key
+          ) &&
           params[key]
         ) {
           queryParams.append(key, params[key].toString());
@@ -234,11 +248,17 @@ export class StaysService {
   static formatAccommodationType(type: string): string {
     // Convert from backend format to display format
     const typeMap: Record<string, string> = {
-      "hotel & lodging": "Hotels & Lodging",
-      appartments: "Apartments",
-      guesthouses: "Guest Houses",
-      hostels: "Hostels",
-      resorts: "Resorts",
+      apartment: "Apartment",
+      "shared apartment": "Shared Apartment",
+      house: "House",
+      "student hostel": "Student Hostel",
+      "hotel room": "Hotel Room",
+      "guest house": "Guest House",
+      "shortlet / serviced apartment": "Shortlet / Serviced Apartment",
+      "co-working space": "Co-working Space",
+      "event hall / meeting space": "Event Hall / Meeting Space",
+      "shop / retail space": "Shop / Retail Space",
+      others: "Others",
     };
 
     return typeMap[type.toLowerCase()] || type;
@@ -341,6 +361,7 @@ export class StaysService {
 
   /**
    * Generate coordinates from location data
+   * Note: This is a fallback. Prefer using Google Maps geocoding for accurate coordinates.
    */
   private static generateCoordinatesFromLocation(
     location: StaysFormData["location"]
@@ -350,82 +371,10 @@ export class StaysService {
       return location.coordinates;
     }
 
-    // Fallback coordinates for major Nigerian cities
-    const cityCoordinates: Record<string, [number, number]> = {
-      // Lagos
-      lagos: [3.3792, 6.5244],
-      ikeja: [3.3566, 6.6018],
-      lekki: [3.4716, 6.4698],
-
-      // Abuja
-      abuja: [7.5399, 9.0579],
-      garki: [7.4951, 9.0579],
-
-      // Port Harcourt
-      "port harcourt": [7.0134, 4.8156],
-
-      // Kano
-      kano: [8.5264, 11.9925],
-
-      // Ibadan
-      ibadan: [3.947, 7.3986],
-
-      // Kaduna
-      kaduna: [7.4421, 10.5264],
-
-      // Benin City
-      benin: [5.6037, 6.335],
-      "benin city": [5.6037, 6.335],
-
-      // Enugu
-      enugu: [7.5105, 6.2649],
-
-      // Jos
-      jos: [8.8932, 9.8965],
-
-      // Warri
-      warri: [5.75, 5.5166],
-
-      // Calabar
-      calabar: [8.3275, 4.9517],
-    };
-
-    // Try to match city
-    const cityKey = location.city?.toLowerCase() || "";
-    if (cityCoordinates[cityKey]) {
-      return cityCoordinates[cityKey];
-    }
-
-    // Placeholders: state (approximate center coordinates)
-    const stateCoordinates: Record<string, [number, number]> = {
-      lagos: [3.3792, 6.5244],
-      abuja: [7.5399, 9.0579],
-      rivers: [7.0134, 4.8156],
-      kano: [8.5264, 11.9925],
-      oyo: [3.947, 7.3986],
-      kaduna: [7.4421, 10.5264],
-      edo: [5.6037, 6.335],
-      enugu: [7.5105, 6.2649],
-      plateau: [8.8932, 9.8965],
-      delta: [5.75, 5.5166],
-      "cross river": [8.3275, 4.9517],
-      anambra: [6.9175, 6.2649],
-      imo: [7.0255, 5.4966],
-      abia: [7.5248, 5.4527],
-      "akwa ibom": [7.8249, 4.9059],
-      bayelsa: [6.0699, 4.7719],
-      benue: [8.734, 7.7099],
-      borno: [13.0827, 11.8846],
-      taraba: [9.7799, 7.8637],
-    };
-
-    const stateKey = location.state?.toLowerCase() || "";
-    if (stateCoordinates[stateKey]) {
-      return stateCoordinates[stateKey];
-    }
-
-    // Default to Nigeria center coordinates
-    return [7.4951, 9.0579];
+    // Default to Nigeria center coordinates if no coordinates provided
+    // In production, this should use Google Maps Geocoding API
+    console.warn("Using default coordinates - consider using Google Maps Geocoding API");
+    return [7.4951, 9.0579]; // Nigeria center
   }
 
   /**

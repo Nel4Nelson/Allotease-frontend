@@ -16,7 +16,7 @@ export function AboutPage() {
         <FeatureSection
           headingPrimary="Get a Space or List Yours with Allotease."
           headingAccent="The marketplace for every space."
-          bannerSrc="/images/about/nigeria-events-banner.svg"
+          bannerSrc="/images/about/stay-placeholder.png"
           bannerAlt="Nigerian hands raised with flag and event elements"
           features={connectedEventsFeatures}
           ctaText="Get started"
@@ -29,7 +29,7 @@ export function AboutPage() {
         <FeatureSection
           headingPrimary="Find Events You Love."
           headingAccent="Host Events They’ll Remember."
-          bannerSrc="/images/about/organize-banner.svg"
+          bannerSrc="/images/about/event-placeholder.png"
           bannerAlt="Event organizer with management interface"
           features={organizeEventsFeatures}
           ctaText="Get started"

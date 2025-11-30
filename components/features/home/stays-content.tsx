@@ -21,6 +21,13 @@ import {
 } from "@/hooks/use-stays";
 import { useQueryClient } from "@tanstack/react-query";
 import { StayFilters } from "@/components/ui/filters";
+import { useSearchStore } from "@/stores/search-store";
+import { buildSearchParams } from "@/lib/search-helper";
+
+interface LocationCoordinates {
+  lat: number;
+  lng: number;
+}
 
 interface StaysContentProps {
   className?: string;
@@ -31,20 +38,46 @@ export function StaysContent({ className = "" }: StaysContentProps) {
   const isOnline = useIsOnline();
   const queryClient = useQueryClient();
   const { removeQueries } = useInvalidateStays();
-  const [selectedLocation, setSelectedLocation] = useState("awka-anambra");
+  const [selectedLocation, setSelectedLocation] = useState<LocationCoordinates | null>(null);
+  const [selectedLocationName, setSelectedLocationName] = useState<string>("");
   const [selectedType, setSelectedType] = useState("all");
+  const [selectedSortOrder, setSelectedSortOrder] = useState<"asc" | "desc">("desc");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Build query params
-  const queryParams = {
-    page: 1, // Always use page 1 for the main query
+  // Get search state from store
+  const { searchQuery, setActiveContext, clearSearch } = useSearchStore();
+
+  // Register as active context and cleanup on unmount
+  useEffect(() => {
+    setActiveContext("stays");
+    return () => {
+      setActiveContext(null);
+      clearSearch();
+    };
+  }, [setActiveContext, clearSearch]);
+
+  // Reset to page 1 when search query changes
+  useEffect(() => {
+    if (searchQuery !== undefined) {
+      setCurrentPage(1);
+    }
+  }, [searchQuery]);
+
+  // Build query params with search - always use page 1 as the cache key base
+  const baseQueryParams = {
+    page: 1,
     limit: 6,
-    ...(selectedType &&
-      selectedType !== "all" && { accommodationType: selectedType }),
+    sortOrder: selectedSortOrder,
+    ...(selectedType && selectedType !== "all" && { accommodationType: selectedType }),
+    ...(selectedLocation && {
+      latitude: selectedLocation.lat,
+      longitude: selectedLocation.lng,
+    }),
   };
 
-  const { data, isLoading, isError, isFetched, refetch } =
-    useStays(queryParams);
+  const queryParams = buildSearchParams(baseQueryParams, searchQuery, "stays");
+
+  const { data, isLoading, isError, isFetched, refetch } = useStays(queryParams);
 
   // Use load more mutation for pagination
   const loadMoreMutation = useLoadMoreStays();
@@ -71,9 +104,16 @@ export function StaysContent({ className = "" }: StaysContentProps) {
     handleFilterChange();
   };
 
+  // Handle sort order change
+  const handleSortOrderChange = (newSortOrder: "asc" | "desc") => {
+    setSelectedSortOrder(newSortOrder);
+    handleFilterChange();
+  };
+
   // Handle location change
-  const handleLocationChange = (newLocation: string) => {
-    setSelectedLocation(newLocation);
+  const handleLocationChange = (coordinates: LocationCoordinates, placeName: string) => {
+    setSelectedLocation(coordinates);
+    setSelectedLocationName(placeName);
     handleFilterChange();
   };
 
@@ -81,10 +121,14 @@ export function StaysContent({ className = "" }: StaysContentProps) {
   const handleShowMore = async () => {
     if (data?.data?.hasNextPage && !loadMoreMutation.isPending && isOnline) {
       const nextPage = currentPage + 1;
-      const nextPageParams = {
-        ...queryParams,
-        page: nextPage,
-      };
+      const nextPageParams = buildSearchParams(
+        {
+          ...baseQueryParams,
+          page: nextPage,
+        },
+        searchQuery,
+        "stays"
+      );
 
       try {
         await loadMoreMutation.mutateAsync(nextPageParams);
@@ -99,7 +143,7 @@ export function StaysContent({ className = "" }: StaysContentProps) {
   const handleCollapse = () => {
     if (currentPage > 1) {
       const newPage = currentPage - 1;
-      const itemsPerPage = queryParams.limit || 6;
+      const itemsPerPage = baseQueryParams.limit || 6;
 
       // Get current first page data
       const firstPageData = queryClient.getQueryData<any>(
@@ -140,7 +184,9 @@ export function StaysContent({ className = "" }: StaysContentProps) {
   // Clear filters handler
   const handleClearFilters = () => {
     setSelectedType("all");
-    setSelectedLocation("awka-anambra");
+    setSelectedSortOrder("desc");
+    setSelectedLocation(null);
+    setSelectedLocationName("");
     handleFilterChange();
   };
 
@@ -161,7 +207,7 @@ export function StaysContent({ className = "" }: StaysContentProps) {
     currentPage > 1 && !isLoading && !isError && !loadMoreMutation.isPending;
 
   // Current info for display
-  const itemsPerPage = queryParams.limit || 6;
+  const itemsPerPage = baseQueryParams.limit || 6;
   const totalPages = data?.data?.totalPages || 1;
 
   // Render loading skeleton for initial load OR filter changes (but only if not yet fetched)
@@ -171,8 +217,10 @@ export function StaysContent({ className = "" }: StaysContentProps) {
         <StayFilters
           selectedLocation={selectedLocation}
           selectedType={selectedType}
+          selectedSortOrder={selectedSortOrder}
           onLocationChange={handleLocationChange}
           onTypeChange={handleTypeChange}
+          onSortOrderChange={handleSortOrderChange}
         />
 
         {/* Loading skeleton - shown during filter changes */}
@@ -188,8 +236,10 @@ export function StaysContent({ className = "" }: StaysContentProps) {
         <StayFilters
           selectedLocation={selectedLocation}
           selectedType={selectedType}
+          selectedSortOrder={selectedSortOrder}
           onLocationChange={handleLocationChange}
           onTypeChange={handleTypeChange}
+          onSortOrderChange={handleSortOrderChange}
         />
 
         <OfflineState />
@@ -204,38 +254,41 @@ export function StaysContent({ className = "" }: StaysContentProps) {
         <StayFilters
           selectedLocation={selectedLocation}
           selectedType={selectedType}
+          selectedSortOrder={selectedSortOrder}
           onLocationChange={handleLocationChange}
           onTypeChange={handleTypeChange}
+          onSortOrderChange={handleSortOrderChange}
         />
 
-        <NetworkError
-          message="Unable to load accommodations"
-          onRetry={handleRetry}
-        />
+        <NetworkError message="Unable to load accommodations" onRetry={handleRetry} />
       </div>
     );
   }
 
   // Handle empty state - this will properly trigger when data is fetched but empty
   if (!isLoading && !isError && isFetched && allStays.length === 0) {
+    const emptyMessage = searchQuery
+      ? `No accommodations found for "${searchQuery}"`
+      : selectedType !== "all" || selectedLocation
+      ? "No accommodations match your selected filters. Try adjusting your search criteria."
+      : "No accommodations available.";
+
     return (
       <div className={`space-y-6 ${className}`}>
         <StayFilters
           selectedLocation={selectedLocation}
           selectedType={selectedType}
+          selectedSortOrder={selectedSortOrder}
           onLocationChange={handleLocationChange}
           onTypeChange={handleTypeChange}
+          onSortOrderChange={handleSortOrderChange}
         />
 
         <EmptyState
           title="No accommodations found"
-          message={
-            selectedType !== "all"
-              ? "No accommodations match your selected filters. Try adjusting your search criteria."
-              : "No accommodations available in this location."
-          }
-          actionLabel={selectedType !== "all" ? "Clear Filters" : undefined}
-          onAction={selectedType !== "all" ? handleClearFilters : undefined}
+          message={emptyMessage}
+          actionLabel={selectedType !== "all" || selectedLocation ? "Clear Filters" : undefined}
+          onAction={selectedType !== "all" || selectedLocation ? handleClearFilters : undefined}
         />
       </div>
     );
@@ -247,9 +300,38 @@ export function StaysContent({ className = "" }: StaysContentProps) {
       <StayFilters
         selectedLocation={selectedLocation}
         selectedType={selectedType}
+        selectedSortOrder={selectedSortOrder}
         onLocationChange={handleLocationChange}
         onTypeChange={handleTypeChange}
+        onSortOrderChange={handleSortOrderChange}
       />
+
+      {/* Active filters indicator */}
+      {(searchQuery || selectedLocationName || selectedType !== "all") && (
+        <div className="flex items-center gap-2 text-sm text-gray-600 flex-wrap">
+          {searchQuery && (
+            <span>
+              Search: <strong>&quot;{searchQuery}&quot;</strong>
+            </span>
+          )}
+          {selectedLocationName && (
+            <span>
+              {searchQuery && "•"} Location: <strong>{selectedLocationName}</strong>
+            </span>
+          )}
+          {selectedType !== "all" && (
+            <span>
+              {(searchQuery || selectedLocationName) && "•"} Type:{" "}
+              <strong>{StaysService.formatAccommodationType(selectedType)}</strong>
+            </span>
+          )}
+          {data?.data?.totalCount !== undefined && (
+            <span className="text-gray-500">
+              ({data.data.totalCount} {data.data.totalCount === 1 ? "result" : "results"})
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Stays Grid - Responsive */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
@@ -296,8 +378,8 @@ export function StaysContent({ className = "" }: StaysContentProps) {
       {allStays.length > itemsPerPage && (
         <div className="flex justify-center text-sm text-gray-500">
           <span>
-            Showing {allStays.length} of {data?.data?.totalCount || 0}{" "}
-            accommodations ({currentPage} of {totalPages} pages loaded)
+            Showing {allStays.length} of {data?.data?.totalCount || 0} accommodations ({currentPage}{" "}
+            of {totalPages} pages loaded)
           </span>
         </div>
       )}

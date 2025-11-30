@@ -199,17 +199,17 @@ function StaysFormContent({}: StaysFormProps) {
         {/* First Question */}
         <div>
           <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-2">
-            What's the name of your accommodation?
+            What's the name of your space?
           </h2>
           <p className="text-[#7A7A7A] font-source-sans-pro text-base font-normal leading-[160%] mb-4">
-            f your space already has a name, we want to know — it’ll help shape
+            If your space already has a name, we want to know — it’ll help shape
             your space’s outlook and tags. If not, no worries, you’ll need to
             give it one. Think something demure, something classy. Guests won't
             go for a title that seems 'shabby', so be clear and specific.
           </p>
           <FormInput
             label="Accommodation title"
-            placeholder="Accommodation title*"
+            placeholder="Space title*"
             required={true}
             error={errors.accommodationTitle?.message}
             {...register("accommodationTitle")}
@@ -223,7 +223,7 @@ function StaysFormContent({}: StaysFormProps) {
           </h2>
           <FormTextarea
             label="Accommodation description"
-            placeholder="Accommodation description*"
+            placeholder="Space description*"
             required={true}
             error={errors.accommodationDescription?.message}
             {...register("accommodationDescription")}
@@ -233,7 +233,7 @@ function StaysFormContent({}: StaysFormProps) {
         {/* Third Question - Image Upload */}
         <div>
           <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-2">
-            Add Images To Bring Your Space to Life.
+            Add Images to bring your space to life.
           </h2>
           <p className="text-[#7A7A7A] font-source-sans-pro text-base font-normal leading-[160%] mb-4">
             The eyes <span className="line-through">eat</span> buy first. Choose

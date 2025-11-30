@@ -34,7 +34,7 @@ export function ReviewBadge({ rating, className = "" }: ReviewBadgeProps) {
           letterSpacing: "-0.24px",
         }}
       >
-        {rating.toFixed(1)}
+        {rating.toFixed(2)}
       </span>
     </div>
   );

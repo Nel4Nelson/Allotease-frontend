@@ -33,8 +33,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check for allocation-admin routes
-  const isAllocatorRoute = pathname.includes('allocation-admin');
+  // Check for allocation-admin routes (PROTECTED - for allocators only)
+  // Exclude /all-allocation-admins (public route for viewing all admins)
+  const isAllocatorRoute = pathname.startsWith('/allocation-admin') && 
+                          !pathname.startsWith('/all-allocation-admins');
   
   if (isAllocatorRoute) {
     const authResult = isAuthenticated(request);
@@ -78,6 +80,12 @@ function isPublicRoute(pathname: string): boolean {
   // Auth routes
   if (pathname === '/signin' || pathname === '/signup' || 
       pathname === '/upgrade' || pathname === '/email-verification') {
+    return true;
+  }
+
+  // Public allocation admin routes (viewing all admins and individual profiles)
+  if (pathname === '/all-allocation-admins' || 
+      pathname.startsWith('/all-allocation-admins/')) {
     return true;
   }
 

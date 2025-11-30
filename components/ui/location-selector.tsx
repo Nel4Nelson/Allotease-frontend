@@ -2,13 +2,14 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { FormInput } from "./form-input";
+import { Button } from "@/components/ui/button";
 
 export interface LocationData {
   address: string;
   city: string;
   state: string;
   country: string;
-  coordinates?: [number, number]; // [longitude, latitude] - Added coordinates
+  coordinates?: [number, number]; // [longitude, latitude]
 }
 
 export type EventType = "remote" | "venue";
@@ -18,17 +19,17 @@ interface LocationSelectorProps {
   eventType?: EventType;
   onChange?: (location: LocationData | null) => void;
   onEventTypeChange?: (eventType: EventType) => void;
-  onOnlineEventChange?: (onlineEventDetails: string) => void; // New prop for online event details
-  onlineEventValue?: string; // New prop for online event value
+  onOnlineEventChange?: (onlineEventDetails: string) => void;
+  onlineEventValue?: string;
   error?: string;
-  onlineEventError?: string; // New prop for online event error
+  onlineEventError?: string;
   required?: boolean;
-  mode?: "events" | "stays"; // New prop to determine display mode
+  mode?: "events" | "stays";
 }
 
 export function LocationSelector({
   value,
-  eventType = "venue", // Default to venue for stays
+  eventType = "venue",
   onChange,
   onEventTypeChange,
   onOnlineEventChange,
@@ -36,17 +37,25 @@ export function LocationSelector({
   error,
   onlineEventError,
   required = false,
-  mode = "events", // Default to events mode for backward compatibility
+  mode = "events",
 }: LocationSelectorProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isOnline, setIsOnline] = useState(true);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [mapboxgl, setMapboxgl] = useState<any>(null);
+  const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<any>(null);
-  const markerRef = useRef<any>(null);
+  const mapInstance = useRef<google.maps.Map | null>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
+  const autocompleteService = useRef<google.maps.places.AutocompleteService | null>(null);
+  const placesService = useRef<google.maps.places.PlacesService | null>(null);
+  const geocoder = useRef<google.maps.Geocoder | null>(null);
+  const userLocationMarkerRef = useRef<google.maps.Marker | null>(null);
 
   // For stays mode, always use venue type
   const actualEventType = mode === "stays" ? "venue" : eventType;
@@ -56,20 +65,35 @@ export function LocationSelector({
     setMounted(true);
   }, []);
 
-  // Dynamic import of mapbox-gl
+  // Load Google Maps Script
   useEffect(() => {
     if (!mounted) return;
 
-    const loadMapbox = async () => {
-      try {
-        const mapboxModule = await import("mapbox-gl");
-        setMapboxgl(mapboxModule.default);
-      } catch (error) {
-        console.error("Failed to load mapbox-gl:", error);
+    const loadGoogleMaps = () => {
+      // Check if Google Maps is already loaded
+      if (window.google && window.google.maps) {
+        setIsGoogleLoaded(true);
+        return;
       }
+
+      // Create script element
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+
+      script.onload = () => {
+        setIsGoogleLoaded(true);
+      };
+
+      script.onerror = () => {
+        console.error("Failed to load Google Maps");
+      };
+
+      document.head.appendChild(script);
     };
 
-    loadMapbox();
+    loadGoogleMaps();
   }, [mounted]);
 
   // Check online status
@@ -88,6 +112,154 @@ export function LocationSelector({
     };
   }, [mounted]);
 
+  // Parse Google Places result to LocationData
+  const parseGooglePlaceToLocation = (place: google.maps.places.PlaceResult): LocationData => {
+    let address = "";
+    let city = "";
+    let state = "";
+    let country = "";
+
+    // Extract address components
+    if (place.address_components) {
+      for (const component of place.address_components) {
+        const types = component.types;
+
+        if (types.includes("street_number") || types.includes("route")) {
+          address += component.long_name + " ";
+        }
+        if (types.includes("locality") || types.includes("postal_town")) {
+          city = component.long_name;
+        }
+        if (types.includes("administrative_area_level_1")) {
+          state = component.long_name;
+        }
+        if (types.includes("country")) {
+          country = component.long_name;
+        }
+      }
+    }
+
+    // If address is empty, use formatted address
+    if (!address.trim() && place.formatted_address) {
+      address = place.formatted_address.split(",")[0];
+    }
+
+    const coordinates: [number, number] | undefined = place.geometry?.location
+      ? [place.geometry.location.lng(), place.geometry.location.lat()]
+      : undefined;
+
+    return {
+      address: address.trim() || place.name || "",
+      city,
+      state,
+      country,
+      coordinates,
+    };
+  };
+
+  // Handle getting user's precise location
+  const handleUseMyLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setIsGettingLocation(true);
+    setLocationError(null);
+
+    // Request high accuracy position
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        // Update map center
+        if (mapInstance.current) {
+          mapInstance.current.setCenter({ lat, lng });
+          mapInstance.current.setZoom(18); // Zoom in close for precise location
+
+          // Remove old markers
+          if (markerRef.current) {
+            markerRef.current.setMap(null);
+          }
+          if (userLocationMarkerRef.current) {
+            userLocationMarkerRef.current.setMap(null);
+          }
+
+          // Add a special marker for user location with pulse effect
+          markerRef.current = new google.maps.Marker({
+            position: { lat, lng },
+            map: mapInstance.current,
+            animation: google.maps.Animation.DROP,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 10,
+              fillColor: "#4285F4",
+              fillOpacity: 1,
+              strokeColor: "#ffffff",
+              strokeWeight: 2,
+            },
+          });
+
+          // Reverse geocode to get address
+          if (geocoder.current) {
+            geocoder.current.geocode(
+              { location: { lat, lng } },
+              (results, status) => {
+                if (status === "OK" && results && results[0]) {
+                  const location = parseGooglePlaceToLocation(results[0]);
+                  onChange?.(location);
+                  setSearchQuery(results[0].formatted_address || "");
+                }
+                setIsGettingLocation(false);
+              }
+            );
+          } else {
+            setIsGettingLocation(false);
+          }
+        }
+      },
+      (error) => {
+        setIsGettingLocation(false);
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            setLocationError("Location permission denied. Please enable location access.");
+            break;
+          case error.POSITION_UNAVAILABLE:
+            setLocationError("Location information unavailable.");
+            break;
+          case error.TIMEOUT:
+            setLocationError("Location request timed out.");
+            break;
+          default:
+            setLocationError("An unknown error occurred.");
+        }
+      },
+      {
+        enableHighAccuracy: true, // Request high precision
+        timeout: 10000,
+        maximumAge: 0, // Don't use cached position
+      }
+    );
+  }, [onChange, parseGooglePlaceToLocation]);
+
+  // Handle fullscreen toggle
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen((prev) => !prev);
+    
+    // Trigger map resize after state change
+    setTimeout(() => {
+      if (mapInstance.current) {
+        google.maps.event.trigger(mapInstance.current, "resize");
+        // Re-center map if we have coordinates
+        if (value?.coordinates) {
+          const [lng, lat] = value.coordinates;
+          mapInstance.current.setCenter({ lat, lng });
+        }
+      }
+    }, 100);
+  }, [value]);
+
   // Handle search with debouncing
   const handleSearch = useCallback(
     async (query: string, updateInput: boolean = true) => {
@@ -99,23 +271,30 @@ export function LocationSelector({
         query.length > 2 &&
         isOnline &&
         actualEventType === "venue" &&
-        mapboxgl
+        isGoogleLoaded &&
+        autocompleteService.current
       ) {
         try {
-          const response = await fetch(
-            `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-              query
-            )}.json?access_token=${mapboxgl.accessToken}&country=ng&limit=5`
-          );
-          const data = await response.json();
+          const request: google.maps.places.AutocompletionRequest = {
+            input: query,
+            componentRestrictions: { country: "ng" }, // Restrict to Nigeria
+          };
 
-          if (data.features && data.features.length > 0) {
-            setSuggestions(data.features);
-            setShowSuggestions(true);
-          } else {
-            setSuggestions([]);
-            setShowSuggestions(false);
-          }
+          autocompleteService.current.getPlacePredictions(
+            request,
+            (predictions, status) => {
+              if (
+                status === google.maps.places.PlacesServiceStatus.OK &&
+                predictions
+              ) {
+                setSuggestions(predictions);
+                setShowSuggestions(true);
+              } else {
+                setSuggestions([]);
+                setShowSuggestions(false);
+              }
+            }
+          );
         } catch (error) {
           console.error("Search error:", error);
           setSuggestions([]);
@@ -126,188 +305,172 @@ export function LocationSelector({
         setShowSuggestions(false);
       }
     },
-    [isOnline, actualEventType, mapboxgl]
+    [isOnline, actualEventType, isGoogleLoaded]
   );
 
-  // Initialize Mapbox
+  // Initialize Google Maps
   useEffect(() => {
     if (
       !mounted ||
       !mapRef.current ||
       !isOnline ||
       actualEventType !== "venue" ||
-      !mapboxgl
+      !isGoogleLoaded
     )
       return;
 
     try {
-      mapboxgl.accessToken =
-        process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "your_mapbox_token_here";
-
-      mapInstance.current = new mapboxgl.Map({
-        container: mapRef.current,
-        style: "mapbox://styles/mapbox/streets-v11",
-        center: [7.4951, 9.0579], // Nigeria coordinates
+      // Initialize map centered on Nigeria
+      mapInstance.current = new google.maps.Map(mapRef.current, {
+        center: { lat: 9.0579, lng: 7.4951 }, // Nigeria coordinates
         zoom: 6,
-        attributionControl: false,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
       });
 
-      // Add navigation control
-      mapInstance.current.addControl(
-        new mapboxgl.NavigationControl(),
-        "top-right"
-      );
+      // Initialize services
+      autocompleteService.current = new google.maps.places.AutocompleteService();
+      placesService.current = new google.maps.places.PlacesService(mapInstance.current);
+      geocoder.current = new google.maps.Geocoder();
 
       // Add click handler for map
-      mapInstance.current.on("click", async (e: any) => {
-        const { lng, lat } = e.lngLat;
+      mapInstance.current.addListener("click", async (e: google.maps.MapMouseEvent) => {
+        if (!e.latLng || !geocoder.current) return;
+
+        const lat = e.latLng.lat();
+        const lng = e.latLng.lng();
 
         // Add/update marker
         if (markerRef.current) {
-          markerRef.current.remove();
+          markerRef.current.setMap(null);
         }
 
-        markerRef.current = new mapboxgl.Marker({
-          color: "#FF5722",
-        })
-          .setLngLat([lng, lat])
-          .addTo(mapInstance.current);
+        markerRef.current = new google.maps.Marker({
+          position: { lat, lng },
+          map: mapInstance.current,
+          animation: google.maps.Animation.DROP,
+        });
 
         // Reverse geocoding to get address
         try {
-          const response = await fetch(
-            `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${mapboxgl.accessToken}&country=ng`
+          geocoder.current.geocode(
+            { location: { lat, lng } },
+            (results, status) => {
+              if (status === "OK" && results && results[0]) {
+                const location = parseGooglePlaceToLocation(results[0]);
+                onChange?.(location);
+                setSearchQuery(results[0].formatted_address || "");
+              }
+            }
           );
-          const data = await response.json();
-
-          if (data.features && data.features.length > 0) {
-            const feature = data.features[0];
-            const context = feature.context || [];
-
-            const location: LocationData = {
-              address: feature.place_name.split(",")[0] || "",
-              city:
-                context.find((c: any) => c.id.includes("place"))?.text || "",
-              state:
-                context.find((c: any) => c.id.includes("region"))?.text || "",
-              country:
-                context.find((c: any) => c.id.includes("country"))?.text ||
-                "Nigeria",
-              coordinates: [lng, lat], // Include coordinates from map click
-            };
-
-            onChange?.(location);
-            setSearchQuery(feature.place_name);
-          }
         } catch (error) {
           console.error("Geocoding error:", error);
         }
       });
 
       // Set initial location if value exists
-      if (value) {
-        handleSearch(value.address, false);
-        
-        // If coordinates exist, center map and add marker
-        if (value.coordinates) {
-          mapInstance.current.flyTo({
-            center: value.coordinates,
-            zoom: 14,
-          });
+      if (value && value.coordinates) {
+        const [lng, lat] = value.coordinates;
 
-          if (markerRef.current) {
-            markerRef.current.remove();
-          }
+        mapInstance.current.setCenter({ lat, lng });
+        mapInstance.current.setZoom(14);
 
-          markerRef.current = new mapboxgl.Marker({
-            color: "#FF5722",
-          })
-            .setLngLat(value.coordinates)
-            .addTo(mapInstance.current);
+        if (markerRef.current) {
+          markerRef.current.setMap(null);
         }
+
+        markerRef.current = new google.maps.Marker({
+          position: { lat, lng },
+          map: mapInstance.current,
+          animation: google.maps.Animation.DROP,
+        });
+
+        setSearchQuery(value.address);
       }
     } catch (error) {
-      console.error("Mapbox initialization error:", error);
+      console.error("Google Maps initialization error:", error);
     }
 
     return () => {
-      if (mapInstance.current) {
-        mapInstance.current.remove();
-        mapInstance.current = null;
-      }
       if (markerRef.current) {
+        markerRef.current.setMap(null);
         markerRef.current = null;
       }
+      if (userLocationMarkerRef.current) {
+        userLocationMarkerRef.current.setMap(null);
+        userLocationMarkerRef.current = null;
+      }
+      mapInstance.current = null;
     };
   }, [
     mounted,
     isOnline,
     actualEventType,
-    mapboxgl,
+    isGoogleLoaded,
     value,
     onChange,
-    handleSearch,
   ]);
 
   // Handle suggestion selection
-  const handleSuggestionSelect = (feature: any) => {
-    const context = feature.context || [];
+  const handleSuggestionSelect = (prediction: google.maps.places.AutocompletePrediction) => {
+    if (!placesService.current) return;
 
-    const location: LocationData = {
-      address: feature.place_name.split(",")[0] || "",
-      city: context.find((c: any) => c.id.includes("place"))?.text || "",
-      state: context.find((c: any) => c.id.includes("region"))?.text || "",
-      country:
-        context.find((c: any) => c.id.includes("country"))?.text || "Nigeria",
-      coordinates: feature.center, // Include coordinates from suggestion
+    const request: google.maps.places.PlaceDetailsRequest = {
+      placeId: prediction.place_id,
+      fields: ["address_components", "geometry", "formatted_address", "name"],
     };
 
-    onChange?.(location);
-    setSearchQuery(feature.place_name);
-    setShowSuggestions(false);
+    placesService.current.getDetails(request, (place, status) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK && place) {
+        const location = parseGooglePlaceToLocation(place);
 
-    // Update map center and add marker
-    if (mapInstance.current && mapboxgl) {
-      mapInstance.current.flyTo({
-        center: feature.center,
-        zoom: 14,
-      });
+        onChange?.(location);
+        setSearchQuery(prediction.description);
+        setShowSuggestions(false);
 
-      // Add/update marker
-      if (markerRef.current) {
-        markerRef.current.remove();
+        // Update map center and add marker
+        if (mapInstance.current && place.geometry?.location) {
+          const lat = place.geometry.location.lat();
+          const lng = place.geometry.location.lng();
+
+          mapInstance.current.setCenter({ lat, lng });
+          mapInstance.current.setZoom(14);
+
+          // Add/update marker
+          if (markerRef.current) {
+            markerRef.current.setMap(null);
+          }
+
+          markerRef.current = new google.maps.Marker({
+            position: { lat, lng },
+            map: mapInstance.current,
+            animation: google.maps.Animation.DROP,
+          });
+        }
       }
-
-      markerRef.current = new mapboxgl.Marker({
-        color: "#FF5722",
-      })
-        .setLngLat(feature.center)
-        .addTo(mapInstance.current);
-    }
+    });
   };
 
   // Handle tab change (only for events mode)
   const handleTabChange = (newEventType: string) => {
-    if (mode === "stays") return; // No tab changes in stays mode
+    if (mode === "stays") return;
 
     const eventTypeValue = newEventType as EventType;
     onEventTypeChange?.(eventTypeValue);
 
     if (eventTypeValue === "remote") {
-      // Clear location data when switching to remote
       onChange?.(null);
       setSearchQuery("");
       setSuggestions([]);
       setShowSuggestions(false);
     } else {
-      // Clear online event data when switching to venue
       onOnlineEventChange?.("");
     }
   };
 
   // Handle online event input change
   const handleOnlineEventChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('Online event input changed:', e.target.value); // Debug log
     onOnlineEventChange?.(e.target.value);
   };
 
@@ -323,6 +486,127 @@ export function LocationSelector({
       </div>
     );
   }
+
+  // Render map component (used in both modes)
+  const renderMapComponent = () => (
+    <div className="space-y-4">
+      {/* Action Buttons */}
+      <div className="flex gap-2 flex-wrap">
+        <Button
+          type="button"
+          onClick={handleUseMyLocation}
+          disabled={isGettingLocation || !isOnline || !isGoogleLoaded}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          {isGettingLocation ? (
+            <>
+              <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+              Getting location...
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Use My Precise Location
+            </>
+          )}
+        </Button>
+        
+        <Button
+          type="button"
+          onClick={toggleFullscreen}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          {isFullscreen ? (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
+              </svg>
+              Exit Fullscreen
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5.25 5.25M20 8V4m0 0h-4m4 0l-5.25 5.25M4 16v4m0 0h4m-4 0l5.25-5.25M20 16v4m0 0h-4m4 0l-5.25-5.25" />
+              </svg>
+              Fullscreen Map
+            </>
+          )}
+        </Button>
+      </div>
+
+      {/* Location Error Message */}
+      {locationError && (
+        <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
+          {locationError}
+        </div>
+      )}
+
+      {/* Selected Location Info */}
+      {value && value.coordinates && (
+        <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+          📍 Coordinates: {value.coordinates[1].toFixed(6)}, {value.coordinates[0].toFixed(6)}
+          <span className="text-gray-500 ml-2">(High precision)</span>
+        </div>
+      )}
+
+      {/* Map Container */}
+      <div className="relative">
+        <div
+          ref={mapRef}
+          className={`w-full bg-gray-100 border border-gray-200 overflow-hidden transition-all duration-300 ${
+            isFullscreen 
+              ? "fixed inset-0 z-50 rounded-none h-screen" 
+              : "max-w-[565px] h-[198px] rounded-[24px]"
+          }`}
+          style={!isFullscreen ? { maxWidth: "100%" } : {}}
+        />
+
+        {/* Fullscreen close button */}
+        {isFullscreen && (
+          <Button
+            type="button"
+            onClick={toggleFullscreen}
+            className="fixed top-4 right-4 z-[60] shadow-lg"
+            variant="default"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Close Map
+          </Button>
+        )}
+
+        {!isOnline && (
+          <div className="absolute inset-0 bg-gray-100 rounded-[24px] flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mx-auto mb-2">
+                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 100 19.5 9.75 9.75 0 000-19.5z" />
+                </svg>
+              </div>
+              <p className="text-sm text-gray-600">Map unavailable offline</p>
+            </div>
+          </div>
+        )}
+
+        {!isGoogleLoaded && isOnline && (
+          <div className="absolute inset-0 bg-gray-100 rounded-[24px] flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-8 h-8 border-4 border-gray-300 border-t-gray-600 rounded-full animate-spin mx-auto mb-2" />
+              <p className="text-sm text-gray-600">Loading map...</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   // Stays mode - no tabs, always show location input and map
   if (mode === "stays") {
@@ -350,10 +634,10 @@ export function LocationSelector({
                   className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0"
                 >
                   <div className="text-sm font-medium text-gray-900">
-                    {suggestion.place_name.split(",")[0]}
+                    {suggestion.structured_formatting.main_text}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    {suggestion.place_name}
+                    {suggestion.description}
                   </div>
                 </button>
               ))}
@@ -361,44 +645,7 @@ export function LocationSelector({
           )}
         </div>
 
-        {/* Selected Location Info */}
-        {value && value.coordinates && (
-          <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
-            📍 Coordinates: {value.coordinates[1].toFixed(4)}, {value.coordinates[0].toFixed(4)}
-          </div>
-        )}
-
-        {/* Map Container */}
-        <div className="relative">
-          <div
-            ref={mapRef}
-            className="w-full max-w-[565px] h-[198px] rounded-[24px] bg-gray-100 border border-gray-200 overflow-hidden"
-            style={{ maxWidth: "100%" }}
-          />
-
-          {!isOnline && (
-            <div className="absolute inset-0 bg-gray-100 rounded-[24px] flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <svg
-                    className="w-6 h-6 text-gray-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 100 19.5 9.75 9.75 0 000-19.5z"
-                    />
-                  </svg>
-                </div>
-                <p className="text-sm text-gray-600">Map unavailable offline</p>
-              </div>
-            </div>
-          )}
-        </div>
+        {renderMapComponent()}
       </div>
     );
   }
@@ -413,7 +660,7 @@ export function LocationSelector({
         </TabsList>
 
         <TabsContent value="remote" className="space-y-4">
-          {/* Online Event Input instead of placeholder */}
+          {/* Online Event Input */}
           <FormInput
             placeholder="Enter meeting link or event details*"
             value={onlineEventValue || ""}
@@ -424,7 +671,7 @@ export function LocationSelector({
             label="Online event details"
             showLabel={false}
           />
-          
+
           {/* Optional: Helper text */}
           <p className="text-sm text-gray-600">
             Add your Zoom link, Google Meet URL, or other online event details here.
@@ -454,10 +701,10 @@ export function LocationSelector({
                     className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0"
                   >
                     <div className="text-sm font-medium text-gray-900">
-                      {suggestion.place_name.split(",")[0]}
+                      {suggestion.structured_formatting.main_text}
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
-                      {suggestion.place_name}
+                      {suggestion.description}
                     </div>
                   </button>
                 ))}
@@ -465,39 +712,7 @@ export function LocationSelector({
             )}
           </div>
 
-          {/* Map Container */}
-          <div className="relative">
-            <div
-              ref={mapRef}
-              className="w-full max-w-[565px] h-[198px] rounded-[24px] bg-gray-100 border border-gray-200 overflow-hidden"
-              style={{ maxWidth: "100%" }}
-            />
-
-            {!isOnline && (
-              <div className="absolute inset-0 bg-gray-100 rounded-[24px] flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <svg
-                      className="w-6 h-6 text-gray-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 100 19.5 9.75 9.75 0 000-19.5z"
-                      />
-                    </svg>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Map unavailable offline
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
+          {renderMapComponent()}
         </TabsContent>
       </Tabs>
     </div>

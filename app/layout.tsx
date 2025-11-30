@@ -4,6 +4,7 @@ import { ConditionalLayout } from "@/components/layout/conditional-layout";
 import { Space_Grotesk, Source_Sans_3 } from "next/font/google";
 import { QueryProvider } from "@/providers/query-provider";
 import { NetworkStatusProvider } from "@/hooks/use-network-status";
+import { GoogleMapsLoader } from "@/components/ui/google-maps-loader";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -33,10 +34,13 @@ export default function RootLayout({
       lang="en"
       className={`${spaceGrotesk.variable} ${sourceSans.variable}`}
     >
-      <body className="font-source-sans">
+      <body className="font-source-sans-pro">
         <QueryProvider>
           <NetworkStatusProvider>
-            <ConditionalLayout>{children}</ConditionalLayout>
+            <ConditionalLayout>
+              <GoogleMapsLoader apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!} />
+              {children}
+            </ConditionalLayout>
           </NetworkStatusProvider>
         </QueryProvider>
       </body>

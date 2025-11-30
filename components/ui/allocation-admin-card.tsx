@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { useProfileStore } from "@/stores/profile-store";
 import { useAuthStore } from "@/stores/auth-store";
+import { useRouter } from "next/navigation";
 
 interface AllocationAdminCardProps {
   id: string;
@@ -34,15 +35,22 @@ export function AllocationAdminCard({
 
   // Fetch profile if it doesn't exist and we haven't tried yet
   useEffect(() => {
-  if (isAuthenticated && !profile && !currentUserId) {
-    fetchProfile();
-  }
-}, [isAuthenticated, profile, currentUserId, fetchProfile]);
+    if (isAuthenticated && !profile && !currentUserId) {
+      fetchProfile();
+    }
+  }, [isAuthenticated, profile, currentUserId, fetchProfile]);
 
   // Check if this is the current user's own profile
   const isOwnProfile = currentUserId && currentUserId === id;
 
-  const handleFollowClick = async () => {
+  const router = useRouter();
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    router.push(`/all-allocation-admins/${id}`);
+  };
+
+  const handleFollowClick = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card navigation
     // Prevent self-follow - don't make API call
     if (isOwnProfile) {
       return;
@@ -131,7 +139,8 @@ export function AllocationAdminCard({
 
   return (
     <div
-      className={`flex flex-col justify-center items-center flex-shrink-0 ${className}`}
+      onClick={handleCardClick}
+      className={`flex flex-col justify-center items-center flex-shrink-0 cursor-pointer ${className}`}
       style={{
         display: "flex",
         width: "222px",
@@ -198,13 +207,12 @@ export function AllocationAdminCard({
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
           disabled={isLoading}
-          className={`transition-all ${
-            !isOwnProfile && !isLoading
-              ? isFollowing
-                ? "hover:bg-red-50"
-                : "hover:bg-orange-50"
-              : ""
-          }`}
+          className={`transition-all ${!isOwnProfile && !isLoading
+            ? isFollowing
+              ? "hover:bg-red-50"
+              : "hover:bg-orange-50"
+            : ""
+            }`}
           style={getButtonStyle()}
         >
           <span
