@@ -9,28 +9,14 @@ interface ReviewBadgeProps {
 export function ReviewBadge({ rating, className = "" }: ReviewBadgeProps) {
   return (
     <div
-      className={`inline-flex items-center ${className}`}
+      className={`inline-flex items-center gap-1 px-2 h-6 ${className}`}
       style={{
         borderRadius: "12px",
         border: "2px solid #93FFC2",
         background: "#13C962",
-        display: "flex",
-        height: "24px",
-        padding: "8px",
-        justifyContent: "center",
-        alignItems: "center",
-        gap: "4px",
-        flexShrink: 0,
       }}
     >
-      <span style={{ 
-        display: "flex", 
-        alignItems: "center", 
-        justifyContent: "center",
-        width: "12px",
-        height: "12px",
-        flexShrink: 0,
-      }}>
+      <span className="w-3.5 h-3.5 flex items-center justify-center flex-shrink-0">
         <StarIcon />
       </span>
       <span

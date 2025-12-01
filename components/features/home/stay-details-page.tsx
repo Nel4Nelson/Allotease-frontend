@@ -18,6 +18,7 @@ import { StayDetailsOtherStays } from "@/components/ui/stay-details/stay-details
 import { useBookingStore } from "@/stores/booking-store";
 import { BookingSuccessModal } from "@/components/ui/modals/booking-success-modal";
 import { EventDetailsPageSkeleton } from "@/components/ui/loading-skeletons/event-details-skeleton-page";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 interface StayDetailsPageProps {
   id: string;
@@ -36,10 +37,10 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
   const searchParams = useSearchParams();
   const { clearBookingData } = useBookingStore();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  
+
   // Use ref to track if callback has been processed to prevent duplicate toasts
   const callbackProcessedRef = useRef(false);
-  
+
   const [state, setState] = useState<StayDetailsState>({
     stayData: null,
     reviewsData: null,
@@ -52,15 +53,15 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
   const cleanUrlParameters = () => {
     const currentUrl = new URL(window.location.href);
     const params = new URLSearchParams(currentUrl.search);
-    
+
     // Remove booking-related parameters
     params.delete('trxref');
     params.delete('reference');
 
-    
+
     // Build new URL
     const newUrl = `${currentUrl.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
-    
+
     // Replace current URL without triggering navigation
     window.history.replaceState({}, '', newUrl);
   };
@@ -73,17 +74,17 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
 
     // Check if we have booking parameters and haven't processed them yet
     const hasPaymentParams = type === "stays" && (trxref || reference);
-    
+
     if (hasPaymentParams && !callbackProcessedRef.current) {
       // Mark as processed immediately to prevent any duplicate processing
       callbackProcessedRef.current = true;
-      
+
       // Clear booking data
       clearBookingData();
-      
+
       // Show the success modal
       setShowSuccessModal(true);
-      
+
       // Clean URL parameters immediately after processing
       cleanUrlParameters();
     }
@@ -164,7 +165,7 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
 
   // Loading state
   if (state.loading) {
-     return <EventDetailsPageSkeleton />;
+    return <EventDetailsPageSkeleton />;
   }
 
   // Error state
@@ -205,7 +206,7 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
 
   const { stay, stayFacilities, stayUnits } = state.stayData.data;
 
-  // Helper function to render rating section
+  // Helper function to render rating section with tooltip
   const renderRatingSection = () => {
     if (state.reviewsLoading) {
       return (
@@ -219,26 +220,108 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
     const displayData = RatingService.getRatingDisplayData(state.reviewsData);
 
     return displayData.hasRating ? (
-      <div className="flex items-center gap-3">
-        <ReviewBadge rating={displayData.rating} />
-        <span
-          style={{
-            color: "#667085",
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: "14px",
-            fontStyle: "normal",
-            fontWeight: 400,
-            lineHeight: "140%",
-            letterSpacing: "-0.28px",
-          }}
-        >
-          {displayData.reviewsText}
-        </span>
-      </div>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center gap-3 cursor-help">
+            <ReviewBadge rating={displayData.rating} />
+            <div className="flex items-center gap-2">
+              <span
+                style={{
+                  color: "#667085",
+                  fontFamily: "var(--font-space-grotesk), sans-serif",
+                  fontSize: "14px",
+                  fontStyle: "normal",
+                  fontWeight: 400,
+                  lineHeight: "140%",
+                  letterSpacing: "-0.28px",
+                }}
+              >
+                {displayData.reviewsText}
+              </span>
+              {/* Info icon */}
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="text-gray-400"
+              >
+                <path
+                  d="M8 14.6667C11.6819 14.6667 14.6667 11.6819 14.6667 8.00004C14.6667 4.31814 11.6819 1.33337 8 1.33337C4.3181 1.33337 1.33333 4.31814 1.33333 8.00004C1.33333 11.6819 4.3181 14.6667 8 14.6667Z"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M8 10.6667V8.00004"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M8 5.33337H8.00667"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs">
+          <p className="text-xs leading-relaxed">
+            This rating reflects the host's overall performance across all their properties and events, not just this specific accommodation.
+          </p>
+        </TooltipContent>
+      </Tooltip>
     ) : (
-      <div className="text-gray-500 text-sm">
-        {displayData.reviewsText}
-      </div>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center gap-2 text-gray-500 text-sm cursor-help">
+            <span>{displayData.reviewsText}</span>
+            {/* Info icon */}
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="text-gray-400"
+            >
+              <path
+                d="M8 14.6667C11.6819 14.6667 14.6667 11.6819 14.6667 8.00004C14.6667 4.31814 11.6819 1.33337 8 1.33337C4.3181 1.33337 1.33333 4.31814 1.33333 8.00004C1.33333 11.6819 4.3181 14.6667 8 14.6667Z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M8 10.6667V8.00004"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M8 5.33337H8.00667"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs">
+          <p className="text-xs leading-relaxed">
+            This host hasn't received any reviews yet across their properties and events.
+          </p>
+        </TooltipContent>
+      </Tooltip>
     );
   };
 
@@ -260,8 +343,8 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
 
           {/* Reservation Card - Mobile Position (after title) */}
           <div className="lg:sticky lg:top-8">
-            <StayDetailsReservationCard 
-              stay={stay} 
+            <StayDetailsReservationCard
+              stay={stay}
               stayUnits={stayUnits}
             />
           </div>
@@ -339,8 +422,8 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
             <div className="col-span-4">
               {/* Reservation Card - Desktop Position */}
               <div className="lg:sticky lg:top-8">
-                <StayDetailsReservationCard 
-                  stay={stay} 
+                <StayDetailsReservationCard
+                  stay={stay}
                   stayUnits={stayUnits}
                 />
               </div>
