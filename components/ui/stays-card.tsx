@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import { ReviewBadge } from "./review-badge";
 import { StayLocation } from "./stays-card-location";
 import { StayDescription } from "./stays-card-description";
@@ -12,6 +13,7 @@ interface StayCardProps {
   reviewCount: string;
   description: string;
   imageUrl: string;
+  isVerified?: boolean;
   className?: string;
   onClick?: () => void;
 }
@@ -23,6 +25,7 @@ export function StayCard({
   reviewCount,
   description,
   imageUrl,
+  isVerified = false,
   className = "",
   onClick,
 }: StayCardProps) {
@@ -41,6 +44,7 @@ export function StayCard({
       {/* Banner Image */}
       <div
         style={{
+          position: "relative",
           borderRadius: "24px",
           backgroundImage: `url(${imageUrl})`,
           backgroundSize: "cover",
@@ -50,7 +54,42 @@ export function StayCard({
           height: "176px",
           alignSelf: "stretch",
         }}
-      />
+      >
+        {/* Verification Badge - Top Right Corner */}
+        {isVerified && (
+          <div
+            style={{
+              position: "absolute",
+              top: "12px",
+              right: "12px",
+              background: "rgba(255, 255, 255, 0.95)",
+              borderRadius: "8px",
+              padding: "6px 10px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+            }}
+          >
+            <Image
+              src="/icons/verification.png"
+              alt="Verified"
+              width={16}
+              height={16}
+            />
+            <span
+              style={{
+                color: "#1F2024",
+                fontFamily: "var(--font-source-sans), sans-serif",
+                fontSize: "12px",
+                fontWeight: 600,
+              }}
+            >
+              Verified
+            </span>
+          </div>
+        )}
+      </div>
 
       <div>
         {/* Title */}

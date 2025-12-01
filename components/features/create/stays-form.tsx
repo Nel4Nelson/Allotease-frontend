@@ -18,9 +18,9 @@ import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { debounce } from "lodash";
 import { useDebouncedStaysFormStore } from "@/hooks/use-debounced-stay-store";
-import { FacilitiesSelector } from "@/components/ui/facilities-selector";
 import { UnitManager } from "@/components/ui/unit-manager";
 import { StaysFormData } from "@/types/stays-form-schema";
+import { FacilitiesBadgeSelector } from "@/components/ui/facilities-badge-selector";
 
 // Create a partial schema for the current step of the form
 // This only includes the fields that are being validated in this component
@@ -53,16 +53,30 @@ const partialStaysFormSchema = z.object({
 type PartialStaysFormData = z.infer<typeof partialStaysFormSchema>;
 
 const accommodationTypes = [
+  // Old types (keep for backward compatibility)
   { value: "hotel & lodging", label: "Hotel & Lodging" },
   { value: "appartments", label: "Apartments" },
   { value: "school-lodges", label: "School Lodges" },
+
+  // New types
+  { value: "apartment", label: "Apartment" },
+  { value: "shared apartment", label: "Shared Apartment" },
+  { value: "house", label: "House" },
+  { value: "student hostel", label: "Student Hostel" },
+  { value: "hotel room", label: "Hotel Room" },
+  { value: "guest house", label: "Guest House" },
+  { value: "shortlet / serviced apartment", label: "Shortlet / Serviced Apartment" },
+  { value: "co-working space", label: "Co-working Space" },
+  { value: "event hall / meeting space", label: "Event Hall / Meeting Space" },
+  { value: "shop / retail space", label: "Shop / Retail Space" },
+  { value: "others", label: "Others" },
 ];
 
 interface StaysFormProps {
   isLoading?: boolean;
 }
 
-function StaysFormContent({}: StaysFormProps) {
+function StaysFormContent({ }: StaysFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -85,12 +99,12 @@ function StaysFormContent({}: StaysFormProps) {
       // Ensure coordinates are a tuple or undefined
       coordinates:
         location.coordinates &&
-        Array.isArray(location.coordinates) &&
-        location.coordinates.length === 2
+          Array.isArray(location.coordinates) &&
+          location.coordinates.length === 2
           ? ([location.coordinates[0], location.coordinates[1]] as [
-              number,
-              number
-            ])
+            number,
+            number
+          ])
           : undefined,
     };
   };
@@ -302,13 +316,14 @@ function StaysFormContent({}: StaysFormProps) {
         {/* Facilities Section */}
         <div>
           <h2 className="text-[var(--color-dark-slate)] font-source-sans-pro text-[20px] font-semibold leading-normal mb-2">
-            What's in Your Space? We’d love to know!
+            What's in Your Space? We'd love to know!
           </h2>
           <p className="text-[#7A7A7A] font-source-sans-pro text-base font-normal leading-[160%] mb-4">
             Because basic is boring. Guests love the little extras. Show off the
             amazing facilities that make your space stand out.
           </p>
-          <FacilitiesSelector />
+          {/* Replace <FacilitiesSelector /> with: */}
+          <FacilitiesBadgeSelector />
         </div>
 
         {/* Units Section */}

@@ -34,7 +34,7 @@ export function HeroBanner() {
           <h1 className="font-space-grotesk font-bold text-[20px] md:text-3xl lg:text-[32px] leading-[110%] tracking-[-0.36px] my-2 text-[#1F3A3A] md:text-[var(--allotease-teal)]">
             {currentContent.headline}
           </h1>
-          <p className="font-source-sans !text-[20px] md:text-base font-normal leading-[142.745%] tracking-[-0.28px] my-2 max-w-[500px] text-[#71727A] md:text-[var(--body-text)]">
+          <p className="font-source-sans text-[18px] lg:!text-[20px] md:text-base font-normal leading-[142.745%] tracking-[-0.28px] my-2 max-w-[500px] text-[#71727A] md:text-[var(--body-text)]">
             {currentContent.subCopy}
           </p>
           {/* <button className="font-semibold my-2 transition-all duration-300 hover:bg-[#FF5B00] hover:text-white text-[#FF5B00] border border-[var(--feature-accent-orange)] rounded-[51px] px-3 py-1.5 flex justify-center items-center gap-[15px]">

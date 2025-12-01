@@ -131,9 +131,9 @@ export function LocationSearch({
   };
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex flex-col md:flex-row items-stretch md:items-center gap-2 ${className}`}>
       {/* Location Search Input */}
-      <div className="flex items-center gap-3 h-10 max-w-[300px] px-3 flex-1 rounded-full border border-gray-300/20 bg-gray-100/50">
+      <div className="flex items-center gap-3 h-10 w-full md:max-w-[300px] px-3 md:flex-1 rounded-full border border-gray-300/20 bg-gray-100/50">
         <SearchIcon />
         <input
           ref={inputRef}
@@ -150,7 +150,7 @@ export function LocationSearch({
       <button
         onClick={handleGetCurrentLocation}
         disabled={isLoadingLocation}
-        className="flex items-center gap-2 px-4 h-10 rounded-full border border-gray-300/20 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+        className="flex items-center justify-center md:justify-start gap-2 px-4 h-10 w-full md:w-auto rounded-full border border-gray-300/20 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
         title="Use my current location"
       >
         {isLoadingLocation ? (

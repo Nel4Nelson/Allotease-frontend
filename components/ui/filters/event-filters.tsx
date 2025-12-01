@@ -24,7 +24,6 @@ interface EventFiltersProps {
 }
 
 export function EventFilters({
-  selectedLocation,
   selectedTags,
   selectedEventType,
   selectedSortOrder,

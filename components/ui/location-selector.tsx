@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { FormInput } from "./form-input";
-import { Button } from "@/components/ui/button";
 
 export interface LocationData {
   address: string;
@@ -55,7 +54,6 @@ export function LocationSelector({
   const autocompleteService = useRef<google.maps.places.AutocompleteService | null>(null);
   const placesService = useRef<google.maps.places.PlacesService | null>(null);
   const geocoder = useRef<google.maps.Geocoder | null>(null);
-  const userLocationMarkerRef = useRef<google.maps.Marker | null>(null);
 
   // For stays mode, always use venue type
   const actualEventType = mode === "stays" ? "venue" : eventType;
@@ -65,35 +63,20 @@ export function LocationSelector({
     setMounted(true);
   }, []);
 
-  // Load Google Maps Script
+  // Check if Google Maps is already loaded (from GoogleMapsLoader in layout)
   useEffect(() => {
     if (!mounted) return;
 
-    const loadGoogleMaps = () => {
-      // Check if Google Maps is already loaded
+    const checkGoogleMaps = () => {
       if (window.google && window.google.maps) {
         setIsGoogleLoaded(true);
         return;
       }
-
-      // Create script element
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-
-      script.onload = () => {
-        setIsGoogleLoaded(true);
-      };
-
-      script.onerror = () => {
-        console.error("Failed to load Google Maps");
-      };
-
-      document.head.appendChild(script);
+      // Check again after a short delay
+      setTimeout(checkGoogleMaps, 100);
     };
 
-    loadGoogleMaps();
+    checkGoogleMaps();
   }, [mounted]);
 
   // Check online status
@@ -113,7 +96,7 @@ export function LocationSelector({
   }, [mounted]);
 
   // Parse Google Places result to LocationData
-  const parseGooglePlaceToLocation = (place: google.maps.places.PlaceResult): LocationData => {
+  const parseGooglePlaceToLocation = useCallback((place: google.maps.places.PlaceResult): LocationData => {
     let address = "";
     let city = "";
     let state = "";
@@ -155,9 +138,9 @@ export function LocationSelector({
       country,
       coordinates,
     };
-  };
+  }, []);
 
-  // Handle getting user's precise location
+  // Handle getting user's precise location with improved GPS handling
   const handleUseMyLocation = useCallback(() => {
     if (!navigator.geolocation) {
       setLocationError("Geolocation is not supported by your browser");
@@ -167,26 +150,24 @@ export function LocationSelector({
     setIsGettingLocation(true);
     setLocationError(null);
 
-    // Request high accuracy position
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
+
+        console.log('Location accuracy:', position.coords.accuracy, 'meters');
 
         // Update map center
         if (mapInstance.current) {
           mapInstance.current.setCenter({ lat, lng });
           mapInstance.current.setZoom(18); // Zoom in close for precise location
 
-          // Remove old markers
+          // Remove old marker
           if (markerRef.current) {
             markerRef.current.setMap(null);
           }
-          if (userLocationMarkerRef.current) {
-            userLocationMarkerRef.current.setMap(null);
-          }
 
-          // Add a special marker for user location with pulse effect
+          // Add a marker for user location
           markerRef.current = new google.maps.Marker({
             position: { lat, lng },
             map: mapInstance.current,
@@ -210,6 +191,16 @@ export function LocationSelector({
                   const location = parseGooglePlaceToLocation(results[0]);
                   onChange?.(location);
                   setSearchQuery(results[0].formatted_address || "");
+                } else {
+                  // If reverse geocoding fails, still save the coordinates
+                  onChange?.({
+                    address: "Current Location",
+                    city: "",
+                    state: "",
+                    country: "",
+                    coordinates: [lng, lat],
+                  });
+                  setSearchQuery("Current Location");
                 }
                 setIsGettingLocation(false);
               }
@@ -220,25 +211,24 @@ export function LocationSelector({
         }
       },
       (error) => {
+        console.error("Geolocation error:", error);
         setIsGettingLocation(false);
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            setLocationError("Location permission denied. Please enable location access.");
-            break;
-          case error.POSITION_UNAVAILABLE:
-            setLocationError("Location information unavailable.");
-            break;
-          case error.TIMEOUT:
-            setLocationError("Location request timed out.");
-            break;
-          default:
-            setLocationError("An unknown error occurred.");
+
+        let errorMessage = "Unable to get your location";
+        if (error.code === error.PERMISSION_DENIED) {
+          errorMessage = "Location permission denied. Please enable location access in your browser settings.";
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          errorMessage = "Location information unavailable. Make sure GPS is enabled.";
+        } else if (error.code === error.TIMEOUT) {
+          errorMessage = "Location request timed out. Please try again.";
         }
+
+        setLocationError(errorMessage);
       },
       {
-        enableHighAccuracy: true, // Request high precision
-        timeout: 10000,
-        maximumAge: 0, // Don't use cached position
+        enableHighAccuracy: true,  // Force GPS usage
+        timeout: 30000,            // 30 seconds timeout for GPS lock
+        maximumAge: 0,             // Don't use cached position
       }
     );
   }, [onChange, parseGooglePlaceToLocation]);
@@ -397,10 +387,6 @@ export function LocationSelector({
         markerRef.current.setMap(null);
         markerRef.current = null;
       }
-      if (userLocationMarkerRef.current) {
-        userLocationMarkerRef.current.setMap(null);
-        userLocationMarkerRef.current = null;
-      }
       mapInstance.current = null;
     };
   }, [
@@ -410,6 +396,7 @@ export function LocationSelector({
     isGoogleLoaded,
     value,
     onChange,
+    parseGooglePlaceToLocation,
   ]);
 
   // Handle suggestion selection
@@ -490,55 +477,82 @@ export function LocationSelector({
   // Render map component (used in both modes)
   const renderMapComponent = () => (
     <div className="space-y-4">
-      {/* Action Buttons */}
-      <div className="flex gap-2 flex-wrap">
-        <Button
+      {/* Action Buttons - Matching LocationSearch Style */}
+      <div className="flex items-center gap-2">
+        {/* Use My Location Button - Exact LocationSearch Style */}
+        <button
           type="button"
           onClick={handleUseMyLocation}
           disabled={isGettingLocation || !isOnline || !isGoogleLoaded}
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 px-4 h-10 rounded-full border border-gray-300/20 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+          title="Use my current location"
         >
           {isGettingLocation ? (
             <>
-              <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
-              Getting location...
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              <span className="text-sm font-medium text-gray-700">Getting...</span>
             </>
           ) : (
             <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="4" />
+                <line x1="12" y1="2" x2="12" y2="4" />
+                <line x1="12" y1="20" x2="12" y2="22" />
+                <line x1="2" y1="12" x2="4" y2="12" />
+                <line x1="20" y1="12" x2="22" y2="12" />
               </svg>
-              Use My Precise Location
+              <span className="text-sm font-medium text-gray-700">Use My Location</span>
             </>
           )}
-        </Button>
+        </button>
         
-        <Button
+        {/* Fullscreen Button */}
+        <button
           type="button"
           onClick={toggleFullscreen}
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 px-4 h-10 rounded-full border border-gray-300/20 bg-white hover:bg-gray-50 transition-colors whitespace-nowrap"
         >
           {isFullscreen ? (
             <>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
               </svg>
-              Exit Fullscreen
+              <span className="text-sm font-medium text-gray-700">Exit Fullscreen</span>
             </>
           ) : (
             <>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5.25 5.25M20 8V4m0 0h-4m4 0l-5.25 5.25M4 16v4m0 0h4m-4 0l5.25-5.25M20 16v4m0 0h-4m4 0l-5.25-5.25" />
               </svg>
-              Fullscreen Map
+              <span className="text-sm font-medium text-gray-700">Fullscreen Map</span>
             </>
           )}
-        </Button>
+        </button>
       </div>
 
       {/* Location Error Message */}
@@ -568,19 +582,18 @@ export function LocationSelector({
           style={!isFullscreen ? { maxWidth: "100%" } : {}}
         />
 
-        {/* Fullscreen close button */}
+        {/* Fullscreen close button - Improved Style */}
         {isFullscreen && (
-          <Button
+          <button
             type="button"
             onClick={toggleFullscreen}
-            className="fixed top-4 right-4 z-[60] shadow-lg"
-            variant="default"
+            className="fixed top-4 right-4 z-[60] flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-100 rounded-full shadow-lg border border-gray-200 transition-colors"
           >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
-            Close Map
-          </Button>
+            <span className="text-sm font-medium text-gray-700">Close Map</span>
+          </button>
         )}
 
         {!isOnline && (

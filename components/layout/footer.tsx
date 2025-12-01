@@ -4,23 +4,22 @@ import Link from "next/link";
 import {
   InstagramIcon,
   TwitterIcon,
-  WhatsAppIcon,
 } from "@/components/icons";
 
 interface FooterProps {
   logoSrc?: string;
   instagramUrl?: string;
   twitterUrl?: string;
+  linkedinUrl?: string;
   whatsappUrl?: string;
-  facebookUrl?: string;
 }
 
 export const Footer: React.FC<FooterProps> = ({
   logoSrc = "/icons/footer-logo.svg",
-  instagramUrl = "https://instagram.com",
-  twitterUrl = "https://twitter.com",
-  whatsappUrl = "https://whatsapp.com",
-  facebookUrl = "https://facebook.com",
+  instagramUrl = "https://www.instagram.com/allot_ease?igsh=b2JrYTFoYXdhd3B6",
+  twitterUrl = "https://x.com/AllotEase",
+  linkedinUrl = "https://www.linkedin.com/in/allotease-979184382/",
+  whatsappUrl = "https://whatsapp.com/channel/0029VbBdGEuKrWR3YbIfVU33",
 }) => {
   return (
     <div className="p-3 md:p-5">
@@ -110,6 +109,7 @@ export const Footer: React.FC<FooterProps> = ({
               <div className="flex flex-col gap-4">
                 {/* Social Icons */}
                 <div className="flex items-center gap-3 md:gap-4">
+                  {/* Instagram */}
                   <Link
                     href={instagramUrl}
                     target="_blank"
@@ -119,18 +119,25 @@ export const Footer: React.FC<FooterProps> = ({
                   >
                     <InstagramIcon />
                   </Link>
+
+                  {/* LinkedIn */}
                   <Link
-                    href={facebookUrl}
+                    href={linkedinUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:opacity-80 transition-opacity duration-300"
-                    aria-label="Facebook"
+                    aria-label="LinkedIn"
                   >
-                    {/* Facebook Icon - You'll need to add this to your icons */}
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M24 12C24 5.37258 18.6274 0 12 0C5.37258 0 0 5.37258 0 12C0 17.9895 4.3882 22.954 10.125 23.8542V15.4688H7.07812V12H10.125V9.35625C10.125 6.34875 11.9166 4.6875 14.6576 4.6875C15.9701 4.6875 17.3438 4.92188 17.3438 4.92188V7.875H15.8306C14.34 7.875 13.875 8.80008 13.875 9.75V12H17.2031L16.6711 15.4688H13.875V23.8542C19.6118 22.954 24 17.9895 24 12Z" fill="#E5F4EF"/>
-                    </svg>
+                    <Image
+                      src="/icons/linkedin.png"
+                      alt="LinkedIn"
+                      width={24}
+                      height={24}
+                      className="w-6 h-6"
+                    />
                   </Link>
+
+                  {/* Twitter/X */}
                   <Link
                     href={twitterUrl}
                     target="_blank"
@@ -140,6 +147,36 @@ export const Footer: React.FC<FooterProps> = ({
                   >
                     <TwitterIcon />
                   </Link>
+
+                  {/* WhatsApp */}
+                  <Link
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:opacity-80 transition-opacity duration-300"
+                    aria-label="WhatsApp"
+                  >
+                    <Image
+                      src="/icons/whatsapp.png"
+                      alt="WhatsApp"
+                      width={24}
+                      height={24}
+                      className="w-6 h-6"
+                    />
+                  </Link>
+
+                  {/* Facebook - COMMENTED OUT */}
+                  {/* <Link
+                    href={facebookUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:opacity-80 transition-opacity duration-300"
+                    aria-label="Facebook"
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M24 12C24 5.37258 18.6274 0 12 0C5.37258 0 0 5.37258 0 12C0 17.9895 4.3882 22.954 10.125 23.8542V15.4688H7.07812V12H10.125V9.35625C10.125 6.34875 11.9166 4.6875 14.6576 4.6875C15.9701 4.6875 17.3438 4.92188 17.3438 4.92188V7.875H15.8306C14.34 7.875 13.875 8.80008 13.875 9.75V12H17.2031L16.6711 15.4688H13.875V23.8542C19.6118 22.954 24 17.9895 24 12Z" fill="#E5F4EF"/>
+                    </svg>
+                  </Link> */}
                 </div>
                 
                 {/* Copyright */}

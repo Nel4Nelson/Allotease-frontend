@@ -14,12 +14,12 @@ export function AboutPage() {
 
       <section id="discover">
         <FeatureSection
-          headingPrimary="Get a Space or List Yours with Allotease."
-          headingAccent="The marketplace for every space."
-          bannerSrc="/images/about/stay-placeholder.png"
+          headingPrimary="Connected Rooms, Appartments & Lodges"
+          headingAccent="Across Nigeria."
+          bannerSrc="/images/about/nigeria-events-banner.svg"
           bannerAlt="Nigerian hands raised with flag and event elements"
           features={connectedEventsFeatures}
-          ctaText="Get started"
+          ctaText="Explore Events around you"
           ctaLink="/?type=events"
           ctaBackgroundColor="#FF5D04"
         />
@@ -27,12 +27,12 @@ export function AboutPage() {
 
       <section id="hosting">
         <FeatureSection
-          headingPrimary="Find Events You Love."
-          headingAccent="Host Events They’ll Remember."
-          bannerSrc="/images/about/event-placeholder.png"
+          headingPrimary="Organize, Allocate, and"
+          headingAccent="Thrive with Ease."
+          bannerSrc="/images/about/organize-banner.svg"
           bannerAlt="Event organizer with management interface"
           features={organizeEventsFeatures}
-          ctaText="Get started"
+          ctaText="Create Your First Event"
           ctaLink="/allocation-admin/create"
           ctaBackgroundColor="#F8AA00"
         />

@@ -1,6 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { StaysService, Stay } from "@/services/stays-service";
 import { StayCard } from "@/components/ui/stays-card";
@@ -13,17 +14,22 @@ import {
 } from "@/components/ui/network-error";
 import { useIsOnline } from "@/hooks/use-network-status";
 import { useStays, staysKeys } from "@/hooks/use-stays";
+import { UnverifiedStayModal } from "@/components/ui/modals/unverified-stay-modal";
 
 interface AllocationAdminStaysContentProps {
   allocatorId: string;
 }
 
 export function AllocationAdminStaysContent({ allocatorId }: AllocationAdminStaysContentProps) {
+  const router = useRouter();
   const isOnline = useIsOnline();
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(1);
   const [accumulatedStays, setAccumulatedStays] = useState<Stay[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  
+  const [showUnverifiedModal, setShowUnverifiedModal] = useState(false);
+  const [selectedStay, setSelectedStay] = useState<{ id: string; title: string; isVerified: boolean } | null>(null);
 
   // Build query params with allocator filter
   const baseQueryParams = {
@@ -114,6 +120,27 @@ export function AllocationAdminStaysContent({ allocatorId }: AllocationAdminStay
     }
   };
 
+  // HandleStayClick with verification logic
+  const handleStayClick = (stayId: string, stayTitle: string, isVerified: boolean) => {
+    if (!isVerified) {
+      // Show warning modal for unverified stays
+      setSelectedStay({ id: stayId, title: stayTitle, isVerified });
+      setShowUnverifiedModal(true);
+    } else {
+      // Navigate directly for verified stays
+      router.push(`/${stayId}?type=stays`);
+    }
+  };
+
+  // Proceed handler
+  const handleProceedToStay = () => {
+    if (selectedStay) {
+      router.push(`/${selectedStay.id}?type=stays`);
+      setShowUnverifiedModal(false);
+      setSelectedStay(null);
+    }
+  };
+
   // Retry handler
   const handleRetry = () => {
     refetch();
@@ -189,7 +216,8 @@ export function AllocationAdminStaysContent({ allocatorId }: AllocationAdminStay
             reviewCount={StaysService.formatReviewCount(stay.totalReviews)}
             description={stay.description}
             imageUrl={StaysService.getStayBannerImage(stay)}
-            onClick={() => {}} // Add navigation if needed
+            isVerified={stay.isVerified}
+            onClick={() => handleStayClick(stay._id, stay.title, stay.isVerified)}
           />
         ))}
       </div>
@@ -254,6 +282,17 @@ export function AllocationAdminStaysContent({ allocatorId }: AllocationAdminStay
           </Button>
         )}
       </div>
+
+      {/* Unverified Stay Modal */}
+      <UnverifiedStayModal
+        isOpen={showUnverifiedModal}
+        onClose={() => {
+          setShowUnverifiedModal(false);
+          setSelectedStay(null);
+        }}
+        onProceed={handleProceedToStay}
+        stayTitle={selectedStay?.title || ""}
+      />
     </div>
   );
 }

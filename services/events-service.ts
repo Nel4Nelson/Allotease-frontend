@@ -36,10 +36,12 @@ export interface Event {
   organizationName: string;
   organizationBio: string;
   organizationCategory: string;
+  isVerified: boolean;
   averageRating: number;
   totalReviews: number;
   totalComments: number;
   totalFollowers: number;
+  bookedEvents: number;
   createdAt?: string;
   updatedAt?: string;
 }

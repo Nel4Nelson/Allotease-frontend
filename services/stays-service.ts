@@ -17,7 +17,7 @@ export interface Stay {
   };
   geoLocation: {
     type: string;
-    coordinates: [number, number]; // [longitude, latitude]
+    coordinates: [number, number];
   };
   facilities: string[];
   images: string[];
@@ -25,6 +25,7 @@ export interface Stay {
   organizationName: string;
   organizationBio: string;
   organizationCategory: string;
+  isVerified: boolean; // ✅ Add this
   averageRating: number;
   totalReviews: number;
   totalComments: number;

@@ -23,7 +23,6 @@ interface StayFiltersProps {
 }
 
 export function StayFilters({
-  selectedLocation,
   selectedType,
   selectedSortOrder,
   onLocationChange,

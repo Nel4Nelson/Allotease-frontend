@@ -14,6 +14,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { EventFilters } from "@/components/ui/filters";
 import { useSearchStore } from "@/stores/search-store";
 import { buildSearchParams } from "@/lib/search-helper";
+import { UnverifiedEventModal } from "@/components/ui/modals/unverified-event-modal";
 
 interface LocationCoordinates {
   lat: number;
@@ -35,6 +36,8 @@ export function EventsContent({ className = "" }: EventsContentProps) {
   const [selectedEventType, setSelectedEventType] = useState("all");
   const [selectedSortOrder, setSelectedSortOrder] = useState<"asc" | "desc">("desc");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showUnverifiedModal, setShowUnverifiedModal] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<{ id: string; title: string; isVerified: boolean } | null>(null);
 
   // Get search state from store
   const { searchQuery, setActiveContext, clearSearch } = useSearchStore();
@@ -171,8 +174,24 @@ export function EventsContent({ className = "" }: EventsContentProps) {
   };
 
   // Handle event card click
-  const handleEventClick = (eventId: string) => {
-    router.push(`/${eventId}?type=events`);
+  const handleEventClick = (eventId: string, eventTitle: string, isVerified: boolean) => {
+    if (!isVerified) {
+      // Show warning modal for unverified events
+      setSelectedEvent({ id: eventId, title: eventTitle, isVerified });
+      setShowUnverifiedModal(true);
+    } else {
+      // Navigate directly for verified events
+      router.push(`/${eventId}?type=events`);
+    }
+  };
+
+  // Add proceed handler (after handleEventClick)
+  const handleProceedToEvent = () => {
+    if (selectedEvent) {
+      router.push(`/${selectedEvent.id}?type=events`);
+      setShowUnverifiedModal(false);
+      setSelectedEvent(null);
+    }
   };
 
   // Retry handler
@@ -279,8 +298,8 @@ export function EventsContent({ className = "" }: EventsContentProps) {
     const emptyMessage = searchQuery
       ? `No events found for "${searchQuery}"`
       : selectedTags !== "all" || selectedEventType !== "all" || selectedLocation
-      ? "No events match your selected filters. Try adjusting your search criteria."
-      : "No events available.";
+        ? "No events match your selected filters. Try adjusting your search criteria."
+        : "No events available.";
 
     return (
       <div className={`space-y-6 ${className}`}>
@@ -363,7 +382,8 @@ export function EventsContent({ className = "" }: EventsContentProps) {
             badgeText={EventService.formatEventPrice(event.price)}
             organizerName={event.organizationName}
             followerCount={EventService.formatFollowerCount(event.totalFollowers)}
-            onClick={() => handleEventClick(event._id)}
+            isVerified={event.isVerified}
+            onClick={() => handleEventClick(event._id, event.title, event.isVerified)}
           />
         ))}
       </div>
@@ -428,6 +448,17 @@ export function EventsContent({ className = "" }: EventsContentProps) {
           </Button>
         )}
       </div>
+
+      {/* Unverified Event Modal */}
+      <UnverifiedEventModal
+        isOpen={showUnverifiedModal}
+        onClose={() => {
+          setShowUnverifiedModal(false);
+          setSelectedEvent(null);
+        }}
+        onProceed={handleProceedToEvent}
+        eventTitle={selectedEvent?.title || ""}
+      />
     </div>
   );
 }

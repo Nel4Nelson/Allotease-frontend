@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { ProfileService, ProfileResponse, ProfileData } from "@/services/profile-service";
+import { useAuthStore } from "@/stores/auth-store";
 
 // Query keys for profile
 export const profileKeys = {
@@ -11,9 +12,12 @@ export const profileKeys = {
  * Hook to fetch user profile
  */
 export function useProfile() {
+  const { isAuthenticated } = useAuthStore();
+  
   return useQuery<ProfileResponse>({
     queryKey: profileKeys.detail(),
     queryFn: () => ProfileService.getProfile(),
+    enabled: isAuthenticated, // ✅ Only fetch when authenticated
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,

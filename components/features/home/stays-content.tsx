@@ -23,6 +23,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { StayFilters } from "@/components/ui/filters";
 import { useSearchStore } from "@/stores/search-store";
 import { buildSearchParams } from "@/lib/search-helper";
+import { UnverifiedStayModal } from "@/components/ui/modals/unverified-stay-modal";
 
 interface LocationCoordinates {
   lat: number;
@@ -43,6 +44,8 @@ export function StaysContent({ className = "" }: StaysContentProps) {
   const [selectedType, setSelectedType] = useState("all");
   const [selectedSortOrder, setSelectedSortOrder] = useState<"asc" | "desc">("desc");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showUnverifiedModal, setShowUnverifiedModal] = useState(false);
+  const [selectedStay, setSelectedStay] = useState<{ id: string; title: string; isVerified: boolean } | null>(null);
 
   // Get search state from store
   const { searchQuery, setActiveContext, clearSearch } = useSearchStore();
@@ -172,8 +175,24 @@ export function StaysContent({ className = "" }: StaysContentProps) {
   };
 
   // Handle stay card click
-  const handleStayClick = (stayId: string) => {
-    router.push(`/${stayId}?type=stays`);
+  const handleStayClick = (stayId: string, stayTitle: string, isVerified: boolean) => {
+    if (!isVerified) {
+      // Show warning modal for unverified stays
+      setSelectedStay({ id: stayId, title: stayTitle, isVerified });
+      setShowUnverifiedModal(true);
+    } else {
+      // Navigate directly for verified stays
+      router.push(`/${stayId}?type=stays`);
+    }
+  };
+
+  // Add proceed handler
+  const handleProceedToStay = () => {
+    if (selectedStay) {
+      router.push(`/${selectedStay.id}?type=stays`);
+      setShowUnverifiedModal(false);
+      setSelectedStay(null);
+    }
   };
 
   // Retry handler
@@ -270,8 +289,8 @@ export function StaysContent({ className = "" }: StaysContentProps) {
     const emptyMessage = searchQuery
       ? `No accommodations found for "${searchQuery}"`
       : selectedType !== "all" || selectedLocation
-      ? "No accommodations match your selected filters. Try adjusting your search criteria."
-      : "No accommodations available.";
+        ? "No accommodations match your selected filters. Try adjusting your search criteria."
+        : "No accommodations available.";
 
     return (
       <div className={`space-y-6 ${className}`}>
@@ -344,7 +363,8 @@ export function StaysContent({ className = "" }: StaysContentProps) {
             reviewCount={StaysService.formatReviewCount(stay.totalReviews)}
             description={stay.description}
             imageUrl={StaysService.getStayBannerImage(stay)}
-            onClick={() => handleStayClick(stay._id)}
+            isVerified={stay.isVerified}
+            onClick={() => handleStayClick(stay._id, stay.title, stay.isVerified)}
           />
         ))}
       </div>
@@ -409,6 +429,17 @@ export function StaysContent({ className = "" }: StaysContentProps) {
           </Button>
         )}
       </div>
+
+      {/* Unverified Stay Modal */}
+      <UnverifiedStayModal
+        isOpen={showUnverifiedModal}
+        onClose={() => {
+          setShowUnverifiedModal(false);
+          setSelectedStay(null);
+        }}
+        onProceed={handleProceedToStay}
+        stayTitle={selectedStay?.title || ""}
+      />
     </div>
   );
 }

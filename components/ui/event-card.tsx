@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import { EventBadge } from "./event-badge";
 import { EventOrganizer } from "./event-organizer";
 import { Divider } from "./divider";
@@ -10,6 +11,7 @@ interface EventCardProps {
   badgeText: string;
   organizerName: string;
   followerCount: string;
+  isVerified?: boolean;
   className?: string;
   onClick?: () => void;
 }
@@ -21,6 +23,7 @@ export function EventCard({
   badgeText,
   organizerName,
   followerCount,
+  isVerified = false,
   className = "",
   onClick,
 }: EventCardProps) {
@@ -39,6 +42,7 @@ export function EventCard({
       {/* Banner Image */}
       <div
         style={{
+          position: "relative",
           borderRadius: "24px",
           backgroundImage: `url(${imageUrl})`,
           backgroundSize: "cover",
@@ -49,7 +53,42 @@ export function EventCard({
           flexShrink: 0,
           alignSelf: "stretch",
         }}
-      />
+      >
+        {/* Verification Badge - Top Right Corner */}
+        {isVerified && (
+          <div
+            style={{
+              position: "absolute",
+              top: "12px",
+              right: "12px",
+              background: "rgba(255, 255, 255, 0.95)",
+              borderRadius: "8px",
+              padding: "6px 10px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+            }}
+          >
+            <Image
+              src="/icons/verification.png"
+              alt="Verified"
+              width={16}
+              height={16}
+            />
+            <span
+              style={{
+                color: "#1F2024",
+                fontFamily: "var(--font-source-sans), sans-serif",
+                fontSize: "12px",
+                fontWeight: 600,
+              }}
+            >
+              Verified
+            </span>
+          </div>
+        )}
+      </div>
 
       <div>
         {/* Title */}

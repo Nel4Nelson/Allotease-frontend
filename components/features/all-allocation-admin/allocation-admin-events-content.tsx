@@ -1,6 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { EventService, Event } from "@/services/events-service";
 import { EventCard } from "@/components/ui/event-card";
@@ -13,17 +14,22 @@ import {
 } from "@/components/ui/network-error";
 import { useIsOnline } from "@/hooks/use-network-status";
 import { useEvents, eventsKeys } from "@/hooks/use-events";
+import { UnverifiedEventModal } from "@/components/ui/modals/unverified-event-modal";
 
 interface AllocationAdminEventsContentProps {
   allocatorId: string;
 }
 
 export function AllocationAdminEventsContent({ allocatorId }: AllocationAdminEventsContentProps) {
+  const router = useRouter();
   const isOnline = useIsOnline();
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(1);
   const [accumulatedEvents, setAccumulatedEvents] = useState<Event[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  
+  const [showUnverifiedModal, setShowUnverifiedModal] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<{ id: string; title: string; isVerified: boolean } | null>(null);
 
   // Build query params with allocatorId filter
   const baseQueryParams = {
@@ -114,9 +120,25 @@ export function AllocationAdminEventsContent({ allocatorId }: AllocationAdminEve
     }
   };
 
-  // Handle event card click
-  const handleEventClick = (eventId: string) => {
-    // Navigate to event details (can be implemented later)
+  // Update handleEventClick with verification logic
+  const handleEventClick = (eventId: string, eventTitle: string, isVerified: boolean) => {
+    if (!isVerified) {
+      // Show warning modal for unverified events
+      setSelectedEvent({ id: eventId, title: eventTitle, isVerified });
+      setShowUnverifiedModal(true);
+    } else {
+      // Navigate directly for verified events
+      router.push(`/${eventId}?type=events`);
+    }
+  };
+
+  // Add proceed handler
+  const handleProceedToEvent = () => {
+    if (selectedEvent) {
+      router.push(`/${selectedEvent.id}?type=events`);
+      setShowUnverifiedModal(false);
+      setSelectedEvent(null);
+    }
   };
 
   // Retry handler
@@ -200,7 +222,8 @@ export function AllocationAdminEventsContent({ allocatorId }: AllocationAdminEve
             badgeText={EventService.formatEventPrice(event.price)}
             organizerName={event.organizationName}
             followerCount={EventService.formatFollowerCount(event.totalFollowers)}
-            onClick={() => handleEventClick(event._id)}
+            isVerified={event.isVerified}
+            onClick={() => handleEventClick(event._id, event.title, event.isVerified)}
           />
         ))}
       </div>
@@ -265,6 +288,17 @@ export function AllocationAdminEventsContent({ allocatorId }: AllocationAdminEve
           </Button>
         )}
       </div>
+
+      {/* Unverified Event Modal */}
+      <UnverifiedEventModal
+        isOpen={showUnverifiedModal}
+        onClose={() => {
+          setShowUnverifiedModal(false);
+          setSelectedEvent(null);
+        }}
+        onProceed={handleProceedToEvent}
+        eventTitle={selectedEvent?.title || ""}
+      />
     </div>
   );
 }

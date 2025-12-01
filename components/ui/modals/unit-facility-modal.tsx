@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import Image from "next/image";
+import { FallbackImage } from "@/components/ui/fallback-image";
 import { FormInput } from "@/components/ui/form-input";
 import { Button } from "@/components/ui/button";
 import { useDebouncedStaysFormStore } from "@/hooks/use-debounced-stay-store";
@@ -323,9 +323,10 @@ export function UnitFacilityModal({
                                 : {}
                             }
                           >
-                            {/* Facility Icon */}
-                            <Image
-                              src={facility.icon}
+                            {/* Facility Icon with Fallback */}
+                            <FallbackImage
+                              src={facility.icon || "/icons/facilities.png"}
+                              fallbackSrc="/icons/default-facility.svg"
                               alt={facility.name}
                               width={16}
                               height={16}
