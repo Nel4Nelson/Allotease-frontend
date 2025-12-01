@@ -202,7 +202,7 @@ function StaysFormContent({ }: StaysFormProps) {
     if (currentType) {
       router.push(`/allocation-admin/create/preview?type=${currentType}`);
     } else {
-      router.push("/allocation-admin/create/preview");
+      router.push("/allocation-admin/create/preview?type=stays");
     }
   };
 

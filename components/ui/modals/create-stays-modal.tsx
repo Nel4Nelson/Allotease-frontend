@@ -518,7 +518,7 @@ export function CreateStaysModal({
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-3 w-full">
+          <div className="flex gap-3">
             {!isCreating && !isComplete && !hasError && (
               <Button
                 type="button"

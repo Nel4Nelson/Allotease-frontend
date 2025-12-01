@@ -1,6 +1,5 @@
-import React, { useState, useRef } from "react";
-import { FormInput } from "@/components/ui/form-input";
-import { Button } from "@/components/ui/button";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React from "react";
 import { CategoryTagIcon } from "../icons";
 
 interface CategorySelectorProps {
@@ -10,138 +9,93 @@ interface CategorySelectorProps {
   required?: boolean;
 }
 
-const initialCategories: { id: string; label: string }[] = [];
+// Predefined event categories/tags
+const EVENT_CATEGORIES = [
+  { value: "Entertainment & Lifestyle", label: "Entertainment & Lifestyle" },
+  { value: "Education & Learning", label: "Education & Learning" },
+  { value: "Business & Networking", label: "Business & Networking" },
+  { value: "Sports & Recreation", label: "Sports & Recreation" },
+  { value: "Community & Culture", label: "Community & Culture" },
+  { value: "Tech", label: "Tech" },
+] as const;
 
 export function CategorySelector({
-  value = [], // Default to empty array
+  value = [],
   onChange,
   error,
   required = false,
 }: CategorySelectorProps) {
-  const [inputValue, setInputValue] = useState("");
-  const [categories, setCategories] = useState(initialCategories);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const handleCategorySelect = (categoryId: string) => {
-    // Check if category is already selected
-    if (!value.includes(categoryId)) {
-      const newSelection = [...value, categoryId];
+  const handleCategoryToggle = (categoryValue: string) => {
+    if (value.includes(categoryValue)) {
+      // Remove category if already selected
+      const newSelection = value.filter((v) => v !== categoryValue);
+      onChange?.(newSelection);
+    } else {
+      // Add category if not selected
+      const newSelection = [...value, categoryValue];
       onChange?.(newSelection);
     }
-    setInputValue(""); // Clear input after selection
-  };
-
-  const handleCategoryRemove = (categoryId: string) => {
-    // Remove from selection
-    const newSelection = value.filter(id => id !== categoryId);
-    onChange?.(newSelection);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-  };
-
-  const addCategoryFromInput = () => {
-    if (!inputValue.trim()) return;
-
-    // Create a new category ID from the input value
-    const newCategoryId = inputValue.toLowerCase().replace(/\s+/g, "-");
-
-    // Check if category already exists
-    const existingCategory = categories.find(
-      (cat) =>
-        cat.id === newCategoryId ||
-        cat.label.toLowerCase() === inputValue.toLowerCase()
-    );
-
-    if (!existingCategory) {
-      // Add new category to the list
-      const newCategory = { id: newCategoryId, label: inputValue.trim() };
-      setCategories((prev) => [...prev, newCategory]);
-    }
-
-    // Select the category (existing or new)
-    const categoryToSelect = existingCategory || {
-      id: newCategoryId,
-      label: inputValue.trim(),
-    };
-    handleCategorySelect(categoryToSelect.id);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && inputValue.trim()) {
-      e.preventDefault();
-      addCategoryFromInput();
-    }
-  };
-
-  // Check if can add category
-  const canAddCategory = () => {
-    return inputValue.trim().length > 0;
-  };
-
-  // Get category label by ID
-  const getCategoryLabel = (categoryId: string) => {
-    const category = categories.find(cat => cat.id === categoryId);
-    return category?.label || categoryId;
   };
 
   return (
     <div className="space-y-4">
-      {/* Input Field */}
-      <FormInput
-        ref={inputRef}
-        label="Enter category"
-        placeholder="Enter category*"
-        value={inputValue}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        error={error}
-        required={required}
-        showLabel={false}
-      />
+      {/* Categories Grid */}
+      <div className="flex flex-wrap gap-3">
+        {EVENT_CATEGORIES.map((category) => {
+          const isSelected = value.includes(category.value);
 
-      {/* Mobile Add Category Button - Only visible on mobile */}
-      <div className="block sm:hidden">
-        <Button
-          type="button"
-          variant="allotease-blur"
-          size="allotease-sm"
-          onClick={addCategoryFromInput}
-          disabled={!canAddCategory()}
-          className={`text-[var(--feature-accent-orange)] ${
-            !canAddCategory() ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-          title={!canAddCategory() ? 'Enter a category name first' : 'Add category'}
-        >
-          Add Category
-        </Button>
+          return (
+            <button
+              key={category.value}
+              type="button"
+              onClick={() => handleCategoryToggle(category.value)}
+              className={`flex items-center justify-center gap-2.5 px-4 py-2 rounded-[54px] transition-all ${
+                isSelected
+                  ? "bg-[var(--feature-accent-orange)] text-white"
+                  : "bg-[#F2F4F7] text-[var(--color-dark-slate)] hover:bg-gray-200"
+              }`}
+            >
+              <CategoryTagIcon />
+              <span className="font-source-sans-pro text-sm font-normal leading-normal">
+                {category.label}
+              </span>
+              
+              {/* Checkmark icon for selected categories */}
+              {isSelected && (
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="ml-1"
+                >
+                  <path
+                    d="M13.3327 4L5.99935 11.3333L2.66602 8"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Selected Categories */}
+      {/* Selected count indicator */}
       {value.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex flex-wrap gap-2">
-            {value.map((categoryId) => (
-              <div key={categoryId} className="relative group">
-                <div className="flex items-center justify-center gap-2.5 px-3 py-1.5 rounded-[54px] bg-[#F2F4F7] text-(--color-dark-slate) font-source-sans-pro text-sm font-normal leading-normal capitalize">
-                  <CategoryTagIcon />
-                  <span>{getCategoryLabel(categoryId)}</span>
-                </div>
-                
-                {/* Remove button for selected categories */}
-                <button
-                  type="button"
-                  onClick={() => handleCategoryRemove(categoryId)}
-                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-xs leading-none opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-600"
-                  aria-label={`Remove ${getCategoryLabel(categoryId)} category`}
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
+        <div className="text-sm text-gray-600">
+          {value.length} {value.length === 1 ? "category" : "categories"} selected
         </div>
+      )}
+
+      {/* Error message */}
+      {error && (
+        <p className="text-red-500 text-sm font-source-sans-pro mt-2" role="alert">
+          {error}
+        </p>
       )}
     </div>
   );

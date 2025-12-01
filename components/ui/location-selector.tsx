@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { FormInput } from "./form-input";
 
@@ -47,6 +47,7 @@ export function LocationSelector({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [mapInitialized, setMapInitialized] = useState(false);
 
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<google.maps.Map | null>(null);
@@ -57,6 +58,9 @@ export function LocationSelector({
 
   // For stays mode, always use venue type
   const actualEventType = mode === "stays" ? "venue" : eventType;
+
+  // Memoize coordinates to prevent unnecessary re-renders
+  const currentCoordinates = useMemo(() => value?.coordinates, [value?.coordinates]);
 
   // Ensure component is mounted before accessing browser APIs
   useEffect(() => {
@@ -242,15 +246,15 @@ export function LocationSelector({
       if (mapInstance.current) {
         google.maps.event.trigger(mapInstance.current, "resize");
         // Re-center map if we have coordinates
-        if (value?.coordinates) {
-          const [lng, lat] = value.coordinates;
+        if (currentCoordinates) {
+          const [lng, lat] = currentCoordinates;
           mapInstance.current.setCenter({ lat, lng });
         }
       }
     }, 100);
-  }, [value]);
+  }, [currentCoordinates]);
 
-  // Handle search with debouncing
+  // Handle search with old API (stable approach)
   const handleSearch = useCallback(
     async (query: string, updateInput: boolean = true) => {
       if (updateInput) {
@@ -298,14 +302,15 @@ export function LocationSelector({
     [isOnline, actualEventType, isGoogleLoaded]
   );
 
-  // Initialize Google Maps
+  // Initialize Google Maps ONCE - prevent re-initialization
   useEffect(() => {
     if (
       !mounted ||
       !mapRef.current ||
       !isOnline ||
       actualEventType !== "venue" ||
-      !isGoogleLoaded
+      !isGoogleLoaded ||
+      mapInitialized
     )
       return;
 
@@ -359,25 +364,8 @@ export function LocationSelector({
         }
       });
 
-      // Set initial location if value exists
-      if (value && value.coordinates) {
-        const [lng, lat] = value.coordinates;
+      setMapInitialized(true);
 
-        mapInstance.current.setCenter({ lat, lng });
-        mapInstance.current.setZoom(14);
-
-        if (markerRef.current) {
-          markerRef.current.setMap(null);
-        }
-
-        markerRef.current = new google.maps.Marker({
-          position: { lat, lng },
-          map: mapInstance.current,
-          animation: google.maps.Animation.DROP,
-        });
-
-        setSearchQuery(value.address);
-      }
     } catch (error) {
       console.error("Google Maps initialization error:", error);
     }
@@ -387,20 +375,43 @@ export function LocationSelector({
         markerRef.current.setMap(null);
         markerRef.current = null;
       }
-      mapInstance.current = null;
     };
   }, [
     mounted,
     isOnline,
     actualEventType,
     isGoogleLoaded,
-    value,
+    mapInitialized,
     onChange,
     parseGooglePlaceToLocation,
   ]);
 
+  // Separate effect to UPDATE map when value changes (not re-initialize)
+  useEffect(() => {
+    if (!mapInstance.current || !mapInitialized || !currentCoordinates) return;
+
+    const [lng, lat] = currentCoordinates;
+
+    mapInstance.current.setCenter({ lat, lng });
+    mapInstance.current.setZoom(14);
+
+    if (markerRef.current) {
+      markerRef.current.setMap(null);
+    }
+
+    markerRef.current = new google.maps.Marker({
+      position: { lat, lng },
+      map: mapInstance.current,
+      animation: google.maps.Animation.DROP,
+    });
+
+    if (value?.address) {
+      setSearchQuery(value.address);
+    }
+  }, [currentCoordinates, mapInitialized, value?.address]);
+
   // Handle suggestion selection
-  const handleSuggestionSelect = (prediction: google.maps.places.AutocompletePrediction) => {
+  const handleSuggestionSelect = useCallback((prediction: google.maps.places.AutocompletePrediction) => {
     if (!placesService.current) return;
 
     const request: google.maps.places.PlaceDetailsRequest = {
@@ -437,7 +448,7 @@ export function LocationSelector({
         }
       }
     });
-  };
+  }, [onChange, parseGooglePlaceToLocation]);
 
   // Handle tab change (only for events mode)
   const handleTabChange = (newEventType: string) => {
@@ -563,9 +574,9 @@ export function LocationSelector({
       )}
 
       {/* Selected Location Info */}
-      {value && value.coordinates && (
+      {value && currentCoordinates && (
         <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
-          📍 Coordinates: {value.coordinates[1].toFixed(6)}, {value.coordinates[0].toFixed(6)}
+          📍 Coordinates: {currentCoordinates[1].toFixed(6)}, {currentCoordinates[0].toFixed(6)}
           <span className="text-gray-500 ml-2">(High precision)</span>
         </div>
       )}

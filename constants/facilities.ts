@@ -6,7 +6,7 @@ export interface PredefinedFacility {
 
 export const PREDEFINED_FACILITIES: PredefinedFacility[] = [
   // Essentials
-  { name: "WiFi / Internet", category: "Essentials", icon: "/icons/wifi.svg" },
+  { name: "WiFi / Internet", category: "Essentials" },
   { name: "Electricity (24/7 or Generator Backup)", category: "Essentials" },
   { name: "Air Conditioning / Fan", category: "Essentials" },
   { name: "Heating", category: "Essentials" },
@@ -23,7 +23,7 @@ export const PREDEFINED_FACILITIES: PredefinedFacility[] = [
   // Entertainment & Lifestyle
   { name: "TV / Cable", category: "Entertainment & Lifestyle" },
   { name: "Sound System", category: "Entertainment & Lifestyle" },
-  { name: "Swimming Pool", category: "Entertainment & Lifestyle", icon: "/icons/swim.svg" },
+  { name: "Swimming Pool", category: "Entertainment & Lifestyle" },
   { name: "Gym / Fitness Center", category: "Entertainment & Lifestyle" },
   { name: "Lounge / Common Area", category: "Entertainment & Lifestyle" },
 

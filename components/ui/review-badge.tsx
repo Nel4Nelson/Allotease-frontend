@@ -20,9 +20,19 @@ export function ReviewBadge({ rating, className = "" }: ReviewBadgeProps) {
         justifyContent: "center",
         alignItems: "center",
         gap: "4px",
+        flexShrink: 0,
       }}
     >
-      <StarIcon />
+      <span style={{ 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center",
+        width: "12px",
+        height: "12px",
+        flexShrink: 0,
+      }}>
+        <StarIcon />
+      </span>
       <span
         style={{
           color: "#F2F4F7",
@@ -32,6 +42,7 @@ export function ReviewBadge({ rating, className = "" }: ReviewBadgeProps) {
           fontWeight: 700,
           lineHeight: "140%",
           letterSpacing: "-0.24px",
+          whiteSpace: "nowrap",
         }}
       >
         {rating.toFixed(2)}
