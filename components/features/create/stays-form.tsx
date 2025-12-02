@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-unescaped-entities */
-"use client";
-import React, { Suspense } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
-import { z } from "zod";
-import { FormInput } from "@/components/ui/form-input";
-import { FormTextarea } from "@/components/ui/form-textarea";
-import { ImageUpload } from "@/components/ui/image-upload";
-import { Divider } from "@/components/ui/divider";
+'use client';
+import React, { Suspense } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { FormInput } from '@/components/ui/form-input';
+import { FormTextarea } from '@/components/ui/form-textarea';
+import { ImageUpload } from '@/components/ui/image-upload';
+import { Divider } from '@/components/ui/divider';
 import {
   LocationSelector,
   type LocationData,
@@ -27,16 +27,16 @@ import { FacilitiesBadgeSelector } from "@/components/ui/facilities-badge-select
 const partialStaysFormSchema = z.object({
   accommodationTitle: z
     .string()
-    .min(1, { message: "Accommodation title is required." })
-    .max(100, { message: "Title must not exceed 100 characters." }),
+    .min(1, { message: 'Accommodation title is required.' })
+    .max(100, { message: 'Title must not exceed 100 characters.' }),
   accommodationDescription: z
     .string()
-    .min(1, { message: "Accommodation description is required." })
-    .max(1000, { message: "Description must not exceed 1000 characters." }),
+    .min(1, { message: 'Accommodation description is required.' })
+    .max(1000, { message: 'Description must not exceed 1000 characters.' }),
   images: z
-    .array(z.instanceof(File))
-    .min(1, { message: "At least one image is required." })
-    .max(10, { message: "Maximum 10 images allowed." }),
+    .array(z.any())
+    .min(1, { message: 'At least one image is required.' })
+    .max(10, { message: 'Maximum 10 images allowed.' }),
   location: z.object({
     address: z.string().min(1, { message: "Address is required." }),
     city: z.string().min(1, { message: "City is required." }),
@@ -46,7 +46,7 @@ const partialStaysFormSchema = z.object({
   }),
   accommodationType: z
     .string()
-    .min(1, { message: "Accommodation type is required." }),
+    .min(1, { message: 'Accommodation type is required.' }),
 });
 
 // Type for the partial form data
@@ -92,10 +92,10 @@ function StaysFormContent({ }: StaysFormProps) {
     if (!location) return undefined;
 
     return {
-      address: location.address || "",
-      city: location.city || "",
-      state: location.state || "",
-      country: location.country || "",
+      address: location.address || '',
+      city: location.city || '',
+      state: location.state || '',
+      country: location.country || '',
       // Ensure coordinates are a tuple or undefined
       coordinates:
         location.coordinates &&
@@ -117,36 +117,36 @@ function StaysFormContent({ }: StaysFormProps) {
     formState: { errors },
   } = useForm<PartialStaysFormData>({
     resolver: zodResolver(partialStaysFormSchema),
-    mode: "onChange",
+    mode: 'onChange',
     defaultValues: {
-      accommodationTitle: storeData.accommodationTitle || "",
-      accommodationDescription: storeData.accommodationDescription || "",
+      accommodationTitle: storeData.accommodationTitle || '',
+      accommodationDescription: storeData.accommodationDescription || '',
       images: storeData.images || [],
       location: getTypedLocation(storeData.location) || {
-        address: "",
-        city: "",
-        state: "",
-        country: "",
+        address: '',
+        city: '',
+        state: '',
+        country: '',
       },
-      accommodationType: storeData.accommodationType || "",
+      accommodationType: storeData.accommodationType || '',
     },
   });
 
-  const location = watch("location");
+  const location = watch('location');
 
   // Watch for text input changes
-  const accommodationTitle = watch("accommodationTitle");
-  const accommodationDescription = watch("accommodationDescription");
+  const accommodationTitle = watch('accommodationTitle');
+  const accommodationDescription = watch('accommodationDescription');
 
   const handleImagesChange = (images: File[]) => {
-    setValue("images", images, { shouldValidate: true });
+    setValue('images', images, { shouldValidate: true });
     // Immediately sync to store for files
     updateFormDataImmediate({ images });
   };
 
   const handleLocationChange = (selectedLocation: LocationData | null) => {
     if (selectedLocation) {
-      setValue("location", selectedLocation, { shouldValidate: true });
+      setValue('location', selectedLocation, { shouldValidate: true });
 
       // Update both location and geoLocation in store
       const updateData: Partial<StaysFormData> = {
@@ -165,7 +165,7 @@ function StaysFormContent({ }: StaysFormProps) {
   };
 
   const handleAccommodationTypeChange = (value: string) => {
-    setValue("accommodationType", value, { shouldValidate: true });
+    setValue('accommodationType', value, { shouldValidate: true });
     updateFormDataImmediate({ accommodationType: value });
   };
 
@@ -193,12 +193,12 @@ function StaysFormContent({ }: StaysFormProps) {
   }, [accommodationTitle, accommodationDescription, debouncedSyncTextInputs]);
 
   const handleExitClick = () => {
-    router.push("/");
+    router.push('/');
   };
 
   const handlePreviewClick = () => {
     // Preserve the type parameter when navigating to preview
-    const currentType = searchParams.get("type");
+    const currentType = searchParams.get('type');
     if (currentType) {
       router.push(`/allocation-admin/create/preview?type=${currentType}`);
     } else {
@@ -226,7 +226,7 @@ function StaysFormContent({ }: StaysFormProps) {
             placeholder="Space title*"
             required={true}
             error={errors.accommodationTitle?.message}
-            {...register("accommodationTitle")}
+            {...register('accommodationTitle')}
           />
         </div>
 
@@ -240,7 +240,7 @@ function StaysFormContent({ }: StaysFormProps) {
             placeholder="Space description*"
             required={true}
             error={errors.accommodationDescription?.message}
-            {...register("accommodationDescription")}
+            {...register('accommodationDescription')}
           />
         </div>
 
