@@ -6,7 +6,7 @@ export interface SelectedUnit {
   unitId: string;
   numberOfUnits: number;
   checkInDate: string | null;   
-  checkOutDate: string | null;  // Individual checkout date
+  checkOutDate: string | null;  // Keep for UI display only
   frequencyCount: number;       // Duration counter (1, 2, 3, etc.)
 }
 
@@ -15,20 +15,16 @@ export interface BookingData {
   units: SelectedUnit[];
 }
 
-// booking payload interfaces
-export interface BookingPayloadUnit {
+// booking payload interfaces - NEW STRUCTURE
+export interface BookingPayloadItem {
   unitId: string;
   numberOfUnits: number;
-}
-
-export interface BookingPayloadItem {
-  stayId: string;
-  units: BookingPayloadUnit[];
   checkInDate: string;
-  checkOutDate: string;
+  numberOfReservation: number; // This is frequencyCount (backend calculates checkout)
 }
 
 export interface BookingPayload {
+  stayId: string; // Now at root level
   bookings: BookingPayloadItem[];
   callbackURL: string;
   email: string;
@@ -302,27 +298,30 @@ export const useBookingStore = create<BookingState>()(
         return bookingData.units.find((u) => u.unitId === unitId) || null;
       },
 
-      // Get the complete booking payload ready for API
+      // Get the complete booking payload ready for API - NEW STRUCTURE
       getBookingPayload: (userInfo: { email: string; phoneNumber: string; fullName: string }) => {
         const { bookingData } = get();
         const currentStayId = bookingData.stayId || "";
         
-        // Transform each selected unit into a separate booking
+        // Transform units into new booking structure
         const bookings: BookingPayloadItem[] = bookingData.units
-          .filter(unit => unit.checkInDate && unit.checkOutDate) // Only include units with dates
+          .filter(unit => unit.checkInDate) // Only include units with checkin date
           .map(unit => ({
-            stayId: currentStayId,
-            units: [{
-              unitId: unit.unitId,
-              numberOfUnits: unit.numberOfUnits,
-            }],
-            checkInDate: unit.checkInDate!,
-            checkOutDate: unit.checkOutDate!,
+            unitId: unit.unitId,
+            numberOfUnits: unit.numberOfUnits,
+            checkInDate: unit.checkInDate!, // Backend expects ISO string
+            numberOfReservation: unit.frequencyCount, // Backend calculates checkout from this
           }));
         
+        // Build callback URL with current origin and stayId
+        const callbackURL = typeof window !== 'undefined' 
+          ? `${window.location.origin}/${currentStayId}?type=stays`
+          : `https://www.allotease.com/${currentStayId}?type=stays`;
+        
         return {
+          stayId: currentStayId, // Now at root level
           bookings,
-          callbackURL: `${window.location.origin}/${currentStayId}?type=stays`,
+          callbackURL,
           ...userInfo,
         };
       },

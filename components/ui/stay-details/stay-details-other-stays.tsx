@@ -2,7 +2,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
-import { StaysService, Stay, GetStaysParams } from "@/services/stays-service";
+import { StaysService, Stay } from "@/services/stays-service";
 import { LeftArrowIcon, RightArrowIcon } from "@/components/icons";
 import { StayCard } from "../stays-card";
 
@@ -58,32 +58,19 @@ export function StayDetailsOtherStays({
     emblaApi.on("reInit", onSelect);
   }, [emblaApi, onSelect]);
 
-  // Load other stays
-  const loadOtherStays = async () => {
+  // Load similar stays using the new endpoint
+  const loadSimilarStays = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const params: GetStaysParams = {
-        page: 1,
-        limit: 10, // Get more stays to filter out current one
-      };
+      // Use the new getSimilarStays endpoint
+      const similarStays = await StaysService.getSimilarStays(currentStayId);
 
-      const response = await StaysService.getAllStays(params);
-
-      if (response.status === "success") {
-        // Filter out the current stay and take first 6
-        const otherStays = response.data.items
-          .filter((stay) => stay._id !== currentStayId)
-          .slice(0, 6);
-
-        setStays(otherStays);
-      } else {
-        setError("Failed to load other stays");
-      }
+      setStays(similarStays);
     } catch (error) {
-      console.error("Failed to load other stays:", error);
-      setError("Failed to load other stays");
+      console.error("Failed to load similar stays:", error);
+      setError("Failed to load similar stays");
     } finally {
       setLoading(false);
     }
@@ -92,7 +79,7 @@ export function StayDetailsOtherStays({
   // Load stays on mount
   useEffect(() => {
     if (currentStayId) {
-      loadOtherStays();
+      loadSimilarStays();
     }
   }, [currentStayId]);
 
@@ -107,8 +94,8 @@ export function StayDetailsOtherStays({
     return {
       title: stay.title,
       location: StaysService.formatStayLocation(stay.location),
-      rating: stay.averageRating,
-      reviewCount: StaysService.formatReviewCount(stay.totalReviews),
+      rating: stay.averageRating || 0,
+      reviewCount: StaysService.formatReviewCount(stay.totalReviews || 0),
       description: stay.description,
       imageUrl: StaysService.getStayBannerImage(stay),
     };
@@ -149,7 +136,7 @@ export function StayDetailsOtherStays({
             Suggestions based on browse history.
           </p>
         </div>
-        <div className="flex gap-6">
+        <div className="flex gap-6 mt-4">
           {Array(3)
             .fill(0)
             .map((_, index) => (
@@ -179,7 +166,7 @@ export function StayDetailsOtherStays({
   }
 
   if (error || stays.length === 0) {
-    return null; // Don't show section if there are no other stays
+    return null; // Don't show section if there are no similar stays
   }
 
   return (
@@ -213,7 +200,7 @@ export function StayDetailsOtherStays({
             margin: 0,
           }}
         >
-          Suggestions based on browse history.
+          Similar stays based on location and type.
         </p>
       </div>
 

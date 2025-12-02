@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useDebouncedStaysFormStore } from "@/hooks/use-debounced-stay-store";
 import { FacilitiesModal } from "@/components/ui/modals/facilities-modal";
 import { FacilitiesService } from "@/services/facilities-service";
-import { PREDEFINED_FACILITIES, FACILITY_CATEGORIES } from "@/constants/facilities";
+import { PREDEFINED_FACILITIES, FACILITY_CATEGORIES } from "@/lib/constants/facilities";
 import toast from "react-hot-toast";
 
 interface MatchedFacility {

@@ -25,7 +25,7 @@ export interface Stay {
   organizationName: string;
   organizationBio: string;
   organizationCategory: string;
-  isVerified: boolean; // ✅ Add this
+  isVerified: boolean;
   averageRating: number;
   totalReviews: number;
   totalComments: number;
@@ -76,6 +76,14 @@ export interface GetStaysResponse {
     totalPages: number;
     hasNextPage: boolean;
     hasPrevPage: boolean;
+  };
+}
+
+// Similar stays response interface
+export interface GetSimilarStaysResponse {
+  status: string;
+  data: {
+    similarStays: Stay[];
   };
 }
 
@@ -144,6 +152,7 @@ export class StaysService {
     CREATE_STAY: "/stays/",
     GET_STAYS: "/stays/",
     GET_STAY_BY_ID: "/stays/", // Will append ID
+    GET_SIMILAR_STAYS: "/stays/", // Will append ID/similar-stays
     DELETE_STAY: "/stays/", // Will append ID
   } as const;
 
@@ -160,6 +169,27 @@ export class StaysService {
     } catch (error) {
       console.error(`Failed to fetch stay with ID ${id}:`, error);
       throw error;
+    }
+  }
+
+  /**
+   * Get similar stays for a given stay ID
+   *
+   */
+  static async getSimilarStays(stayId: string): Promise<Stay[]> {
+    try {
+      const response = await apiClient.get<GetSimilarStaysResponse>(
+        `${this.ENDPOINTS.GET_SIMILAR_STAYS}${stayId}/similar-stays`
+      );
+
+      if (response.status === "success") {
+        return response.data.similarStays;
+      }
+
+      return [];
+    } catch (error) {
+      console.error(`Failed to fetch similar stays for ${stayId}:`, error);
+      return []; // Return empty array on error instead of throwing
     }
   }
 
@@ -250,10 +280,13 @@ export class StaysService {
     // Convert from backend format to display format
     const typeMap: Record<string, string> = {
       apartment: "Apartment",
+      appartments: "Apartments",
       "shared apartment": "Shared Apartment",
       house: "House",
       "student hostel": "Student Hostel",
+      hostels: "Hostels",
       "hotel room": "Hotel Room",
+      "hotel & lodging": "Hotel & Lodging",
       "guest house": "Guest House",
       "shortlet / serviced apartment": "Shortlet / Serviced Apartment",
       "co-working space": "Co-working Space",
@@ -262,7 +295,18 @@ export class StaysService {
       others: "Others",
     };
 
-    return typeMap[type.toLowerCase()] || type;
+    return typeMap[type.toLowerCase()] || this.capitalizeWords(type);
+  }
+
+  /**
+   * Capitalize first letter of each word
+   */
+  static capitalizeWords(str: string): string {
+    if (!str) return '';
+    return str
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   }
 
   /**

@@ -24,6 +24,19 @@ export function StayDetailsAvailability({
     setImageErrors((prev) => new Set(prev).add(facilityId));
   };
 
+  // Get unit availability
+  const getAvailability = (unit: StayUnit) => {
+    const available = unit.quantity - unit.totalBooked;
+
+    if (available <= 0) {
+      return { available: 0, status: "unavailable" as const };
+    } else if (available <= 5) {
+      return { available, status: "limited" as const };
+    } else {
+      return { available, status: "available" as const };
+    }
+  };
+
   // Handle unit selection
   const handleUnitToggle = (unitId: string, frequency: string) => {
     if (isUnitSelected(unitId)) {
@@ -67,6 +80,7 @@ export function StayDetailsAvailability({
       <div className="space-y-4">
         {units.map((unit) => {
           const isSelected = isUnitSelected(unit._id);
+          const { available, status } = getAvailability(unit);
           const unitFacilities = getUnitFacilities(unit);
 
           return (
@@ -92,59 +106,104 @@ export function StayDetailsAvailability({
               }}
               onClick={() => handleUnitToggle(unit._id, unit.frequency)}
             >
-              {/* Header with Title and Selection Button */}
-              <div className="flex items-center justify-between w-full">
-                <h4
-                  style={{
-                    color: "#1F2024",
-                    fontFamily: "var(--font-source-sans), sans-serif",
-                    fontSize: "18px",
-                    fontStyle: "normal",
-                    fontWeight: 600,
-                    lineHeight: "142.745%",
-                    letterSpacing: "-0.36px",
-                    margin: 0,
-                  }}
-                >
-                  {unit.title}
-                </h4>
+              {/* Header with Title, Remaining Units, and Selection Button */}
+              <div className="flex items-start justify-between w-full gap-3">
+                <div className="flex-1">
+                  <h4
+                    style={{
+                      color: "#1F2024",
+                      fontFamily: "var(--font-source-sans), sans-serif",
+                      fontSize: "18px",
+                      fontStyle: "normal",
+                      fontWeight: 600,
+                      lineHeight: "142.745%",
+                      letterSpacing: "-0.36px",
+                      margin: 0,
+                    }}
+                  >
+                    {unit.title}
+                  </h4>
+                </div>
 
-                {/* Selection Button */}
-                <button
-                  style={{
-                    borderRadius: "39.667px",
-                    border: isSelected
-                      ? "0.778px solid #15BA6B"
-                      : "0.778px solid rgba(138, 174, 164, 0.50)",
-                    background: isSelected
-                      ? "rgba(255, 255, 255, 0.70)"
-                      : "rgba(242, 244, 247, 0.50)",
-                    backdropFilter: isSelected
-                      ? "blur(16.33333396911621px)"
-                      : "none",
-                    display: "flex",
-                    width: "28px",
-                    height: "28px",
-                    padding: "4.667px",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: "11.667px",
-                    cursor: "pointer",
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleUnitToggle(unit._id, unit.frequency);
-                  }}
-                >
-                  {isSelected ? <CheckIcon /> : <PlusIcon />}
-                </button>
+                {/* Right side: Remaining units and selection button */}
+                <div className="flex items-center gap-3">
+                  {/* Remaining Units Badge */}
+                  <div
+                    style={{
+                      borderRadius: "6px",
+                      background:
+                        status === "unavailable"
+                          ? "rgba(239, 68, 68, 0.15)"
+                          : status === "limited"
+                            ? "rgba(251, 191, 36, 0.15)"
+                            : "rgba(34, 197, 94, 0.15)",
+                      padding: "4px 8px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        color:
+                          status === "unavailable"
+                            ? "#DC2626"
+                            : status === "limited"
+                              ? "#F59E0B"
+                              : "#16A34A",
+                        fontFamily: "var(--font-source-sans), sans-serif",
+                        fontSize: "12px",
+                        fontStyle: "normal",
+                        fontWeight: 600,
+                        lineHeight: "140%",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {status === "unavailable"
+                        ? "Fully Booked"
+                        : `${available} ${available === 1 ? "unit" : "units"} left`}
+                    </span>
+                  </div>
+
+                  {/* Selection Button */}
+                  <button
+                    style={{
+                      borderRadius: "39.667px",
+                      border: isSelected
+                        ? "0.778px solid #15BA6B"
+                        : "0.778px solid rgba(138, 174, 164, 0.50)",
+                      background: isSelected
+                        ? "rgba(255, 255, 255, 0.70)"
+                        : "rgba(242, 244, 247, 0.50)",
+                      backdropFilter: isSelected
+                        ? "blur(16.33333396911621px)"
+                        : "none",
+                      display: "flex",
+                      width: "28px",
+                      height: "28px",
+                      padding: "4.667px",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      gap: "11.667px",
+                      cursor: "pointer",
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUnitToggle(unit._id, unit.frequency);
+                    }}
+                  >
+                    {isSelected ? <CheckIcon /> : <PlusIcon />}
+                  </button>
+                </div>
               </div>
 
               {/* Price Badge */}
               <div
                 style={{
                   borderRadius: "4px",
-                  background: "rgba(138, 174, 164, 0.20)",
+                  background: available
+                    ? "rgba(138, 174, 164, 0.20)"
+                    : "rgba(200, 200, 200, 0.20)",
                   display: "flex",
                   padding: "2px 8px",
                   justifyContent: "center",
@@ -154,7 +213,7 @@ export function StayDetailsAvailability({
               >
                 <span
                   style={{
-                    color: "#1F3A3A",
+                    color: available ? "#1F3A3A" : "#9CA3AF",
                     fontFamily: "var(--font-source-sans), sans-serif",
                     fontSize: "14px",
                     fontStyle: "normal",
@@ -170,7 +229,7 @@ export function StayDetailsAvailability({
               {/* Description */}
               <p
                 style={{
-                  color: "#71727A",
+                  color: available ? "#71727A" : "#9CA3AF",
                   fontFamily: "var(--font-source-sans), sans-serif",
                   fontSize: "16px",
                   fontStyle: "normal",
@@ -217,7 +276,12 @@ export function StayDetailsAvailability({
                       </div>
 
                       {/* Facility Name */}
-                      <span className="text-[var(--Body,#71727A)] font-source-sans-pro text-sm font-normal">
+                      <span
+                        className="font-source-sans-pro text-sm font-normal"
+                        style={{
+                          color: available ? "#71727A" : "#9CA3AF",
+                        }}
+                      >
                         {facility.name}
                       </span>
                     </div>
@@ -226,13 +290,13 @@ export function StayDetailsAvailability({
               )}
 
               {/* Selection Indicator Text */}
-              {isSelected && (
+              {isSelected && available ? (
                 <div className="mt-2">
                   <p className="text-[#15BA6B] font-source-sans-pro text-sm font-medium">
                     ✓ Selected - Configure dates and duration in the reservation card
                   </p>
                 </div>
-              )}
+              ) : ""}
             </div>
           );
         })}

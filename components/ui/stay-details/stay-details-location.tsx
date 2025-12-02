@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef, useState } from "react";
 import type { Stay } from "@/services/stays-service";
 
@@ -48,30 +47,30 @@ export function StayDetailsLocation({
 }: StayDetailsLocationProps) {
   const [mounted, setMounted] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
-  const [mapboxgl, setMapboxgl] = useState<any>(null);
+  const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<any>(null);
-  const markerRef = useRef<any>(null);
+  const mapInstance = useRef<google.maps.Map | null>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
 
   // Ensure component is mounted before accessing browser APIs
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Dynamic import of mapbox-gl
+  // Check if Google Maps is already loaded
   useEffect(() => {
     if (!mounted) return;
 
-    const loadMapbox = async () => {
-      try {
-        const mapboxModule = await import("mapbox-gl");
-        setMapboxgl(mapboxModule.default);
-      } catch (error) {
-        console.error("Failed to load mapbox-gl:", error);
+    const checkGoogleMaps = () => {
+      if (window.google && window.google.maps) {
+        setIsGoogleLoaded(true);
+        return;
       }
+      // Check again after a short delay
+      setTimeout(checkGoogleMaps, 100);
     };
 
-    loadMapbox();
+    checkGoogleMaps();
   }, [mounted]);
 
   // Check online status
@@ -90,97 +89,90 @@ export function StayDetailsLocation({
     };
   }, [mounted]);
 
-  // Initialize Mapbox for stay location
+  // Initialize Google Maps for stay location
   useEffect(() => {
-    if (!mounted || !mapRef.current || !isOnline || !mapboxgl) return;
+    if (!mounted || !mapRef.current || !isOnline || !isGoogleLoaded) return;
 
-    const initializeMap = async () => {
-      try {
-        mapboxgl.accessToken =
-          process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ||
-          "your_mapbox_token_here";
+    try {
+      // Initialize map centered on Nigeria
+      mapInstance.current = new google.maps.Map(mapRef.current, {
+        center: { lat: 9.0579, lng: 7.4951 }, // Default Nigeria coordinates
+        zoom: 6,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+      });
 
-        mapInstance.current = new mapboxgl.Map({
-          container: mapRef.current,
-          style: "mapbox://styles/mapbox/streets-v11",
-          center: [7.4951, 9.0579], // Default Nigeria coordinates
-          zoom: 6,
-          attributionControl: false,
-          interactive: true,
-        });
+      // Get coordinates - priority: geoLocation > geocode address
+      let coordinates: { lat: number; lng: number } | null = null;
 
-        // Add navigation control
-        mapInstance.current.addControl(
-          new mapboxgl.NavigationControl(),
-          "top-right"
-        );
-
-        // Get coordinates - priority: geoLocation > geocode address
-        let coordinates: [number, number] | null = null;
-
-        // Check if we have stored coordinates
-        if (
-          stay.geoLocation &&
-          stay.geoLocation.coordinates &&
-          stay.geoLocation.coordinates.length === 2
-        ) {
-          const [lng, lat] = stay.geoLocation.coordinates;
-          coordinates = [lng, lat];
-        } else if (stay.location && stay.location.address) {
-          // Fallback: Geocode the address
-          try {
-            const query = `${stay.location.address}, ${stay.location.city}, ${stay.location.state}`;
-            const response = await fetch(
-              `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-                query
-              )}.json?access_token=${mapboxgl.accessToken}&country=ng&limit=1`
-            );
-            const data = await response.json();
-
-            if (data.features && data.features.length > 0) {
-              const [lng, lat] = data.features[0].center;
-              coordinates = [lng, lat];
-            }
-          } catch (error) {
-            console.error("Geocoding error:", error);
-          }
-        }
-
-        // If we have coordinates, center map and add marker
-        if (coordinates) {
-          mapInstance.current.flyTo({
-            center: coordinates,
-            zoom: 14,
-          });
-
-          // Add marker
-          if (markerRef.current) {
-            markerRef.current.remove();
-          }
-
-          markerRef.current = new mapboxgl.Marker({
-            color: "#FF5722",
-          })
-            .setLngLat(coordinates)
-            .addTo(mapInstance.current);
-        }
-      } catch (error) {
-        console.error("Mapbox initialization error:", error);
+      // Check if we have stored coordinates
+      if (
+        stay.geoLocation &&
+        stay.geoLocation.coordinates &&
+        stay.geoLocation.coordinates.length === 2
+      ) {
+        const [lng, lat] = stay.geoLocation.coordinates;
+        coordinates = { lat, lng };
       }
-    };
 
-    initializeMap();
+      // If we have coordinates, center map and add marker
+      if (coordinates) {
+        mapInstance.current.setCenter(coordinates);
+        mapInstance.current.setZoom(14);
+
+        // Add marker
+        if (markerRef.current) {
+          markerRef.current.setMap(null);
+        }
+
+        markerRef.current = new google.maps.Marker({
+          position: coordinates,
+          map: mapInstance.current,
+          animation: google.maps.Animation.DROP,
+          title: stay.title || "Stay Location",
+        });
+      } else if (stay.location && stay.location.address) {
+        // Fallback: If we have address but no coordinates, geocode it
+        const geocoder = new google.maps.Geocoder();
+        const query = `${stay.location.address}, ${stay.location.city}, ${stay.location.state}, ${stay.location.country}`;
+
+        geocoder.geocode({ address: query }, (results, status) => {
+          if (status === "OK" && results && results[0] && mapInstance.current) {
+            const location = results[0].geometry.location;
+            const lat = location.lat();
+            const lng = location.lng();
+
+            // Center map on location
+            mapInstance.current.setCenter({ lat, lng });
+            mapInstance.current.setZoom(14);
+
+            // Add marker
+            if (markerRef.current) {
+              markerRef.current.setMap(null);
+            }
+
+            markerRef.current = new google.maps.Marker({
+              position: { lat, lng },
+              map: mapInstance.current,
+              animation: google.maps.Animation.DROP,
+              title: stay.location?.address || "Stay Location",
+            });
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Google Maps initialization error:", error);
+    }
 
     return () => {
-      if (mapInstance.current) {
-        mapInstance.current.remove();
-        mapInstance.current = null;
-      }
       if (markerRef.current) {
+        markerRef.current.setMap(null);
         markerRef.current = null;
       }
+      // Don't destroy map instance to prevent re-initialization
     };
-  }, [mounted, isOnline, mapboxgl, stay]);
+  }, [mounted, isOnline, isGoogleLoaded, stay]);
 
   // Don't render until mounted
   if (!mounted) {
@@ -255,6 +247,15 @@ export function StayDetailsLocation({
                 </svg>
               </div>
               <p className="text-sm text-gray-600">Map unavailable offline</p>
+            </div>
+          </div>
+        )}
+
+        {!isGoogleLoaded && isOnline && (
+          <div className="absolute inset-0 bg-gray-100 rounded-[24px] flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-8 h-8 border-4 border-gray-300 border-t-gray-600 rounded-full animate-spin mx-auto mb-2" />
+              <p className="text-sm text-gray-600">Loading map...</p>
             </div>
           </div>
         )}

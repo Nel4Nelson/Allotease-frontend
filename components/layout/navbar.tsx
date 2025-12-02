@@ -23,6 +23,7 @@ import { getSearchPlaceholder } from "@/lib/search-helper";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useProfileData } from "@/hooks/use-profile";
 import { FallbackImage } from "@/components/ui/fallback-image";
+import { capitalizeFirstLetter } from "@/lib/utils";
 
 
 // Animated Create Text Component
@@ -344,7 +345,7 @@ export default function Header() {
                           >
                             {userRole === "allocator"
                               ? "Allocation Admin"
-                              : "User"}
+                              : capitalizeFirstLetter(userRole)}
                           </span>
                         </div>
                       )}

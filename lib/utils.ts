@@ -103,3 +103,10 @@ export function generateId(): string {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
 }
 
+/**
+ * Capitalize the first letter of a string
+ */
+export function capitalizeFirstLetter(str: string | null): string {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
