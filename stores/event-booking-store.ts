@@ -7,6 +7,23 @@ export interface EventBookingData {
   numberOfTickets: number;
 }
 
+// Payload interface for API submission
+export interface EventBookingPayload {
+  email: string;
+  phoneNumber: string;
+  fullName: string;
+  eventId: string;
+  numberOfTickets: number;
+  callbackURL: string;
+}
+
+// User data interface
+export interface EventBookingUserData {
+  email: string;
+  phoneNumber: string;
+  fullName: string;
+}
+
 interface EventBookingState {
   bookingData: EventBookingData;
 
@@ -16,7 +33,7 @@ interface EventBookingState {
   clearEventBookingData: () => void;
 
   // Computed values
-  getEventBookingPayload: () => EventBookingData & { callbackURL: string };
+  getEventBookingPayload: (userData: EventBookingUserData) => EventBookingPayload;
 }
 
 // Initial state
@@ -69,11 +86,14 @@ export const useEventBookingStore = create<EventBookingState>()(
       },
 
       // Get the complete event booking payload ready for API
-      getEventBookingPayload: () => {
+      getEventBookingPayload: (userData: EventBookingUserData) => {
         const { bookingData } = get();
         const currentEventId = bookingData.eventId || "";
         
         return {
+          email: userData.email,
+          phoneNumber: userData.phoneNumber,
+          fullName: userData.fullName,
           eventId: currentEventId,
           numberOfTickets: bookingData.numberOfTickets,
           callbackURL: `${window.location.origin}/${currentEventId}?type=events`,

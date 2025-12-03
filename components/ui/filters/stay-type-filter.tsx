@@ -3,7 +3,7 @@ import { VariantSelect } from "@/components/ui/variant-select";
 
 export const STAY_TYPE_OPTIONS = [
   { value: "all", label: "All Types" },
-  { value: "apartment", label: "Apartment" },
+  { value: "apartments", label: "Apartment" },
   { value: "shared apartment", label: "Shared Apartment" },
   { value: "house", label: "House" },
   { value: "student hostel", label: "Student Hostel" },

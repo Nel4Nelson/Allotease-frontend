@@ -38,7 +38,7 @@ export function EventDetailsPage({
   const searchParams = useSearchParams();
   const { clearEventBookingData } = useEventBookingStore();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  
+
   // Use ref to track if callback has been processed to prevent duplicate toasts
   const callbackProcessedRef = useRef(false);
 
@@ -53,15 +53,15 @@ export function EventDetailsPage({
   const cleanUrlParameters = () => {
     const currentUrl = new URL(window.location.href);
     const params = new URLSearchParams(currentUrl.search);
-    
+
     // Remove booking-related parameters
     params.delete('trxref');
     params.delete('reference');
     params.delete('booking');
-    
+
     // Build new URL
     const newUrl = `${currentUrl.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
-    
+
     // Replace current URL without triggering navigation
     window.history.replaceState({}, '', newUrl);
   };
@@ -76,17 +76,17 @@ export function EventDetailsPage({
     // Check if we have booking parameters and haven't processed them yet
     const hasPaymentParams = type === "events" && (trxref || reference);
     const hasFreeBookingParam = booking === "free";
-    
+
     if ((hasPaymentParams || hasFreeBookingParam) && !callbackProcessedRef.current) {
       // Mark as processed immediately to prevent any duplicate processing
       callbackProcessedRef.current = true;
-      
+
       // Clear booking data
       clearEventBookingData();
-      
+
       // Show the success modal
       setShowSuccessModal(true);
-      
+
       // Clean URL parameters immediately after processing
       cleanUrlParameters();
     }
@@ -223,7 +223,9 @@ export function EventDetailsPage({
           {/* Location Section */}
           <EventDetailsLocation
             eventType={event.eventType}
+            link={event.link}  // This will show for remote events
             location={event.location}
+            geoLocation={event.geoLocation}
           />
 
           {/* Event Details Section */}
@@ -272,7 +274,9 @@ export function EventDetailsPage({
               <div className="mb-8">
                 <EventDetailsLocation
                   eventType={event.eventType}
+                  link={event.link}  // This will show for remote events
                   location={event.location}
+                  geoLocation={event.geoLocation}
                 />
               </div>
 

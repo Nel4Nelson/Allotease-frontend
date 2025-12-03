@@ -2,11 +2,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
-import {
-  EventService,
-  Event,
-  GetEventsParams,
-} from "@/services/events-service";
+import { EventService, Event } from "@/services/events-service";
 import { EventCard } from "@/components/ui/event-card";
 import { LeftArrowIcon, RightArrowIcon } from "@/components/icons";
 
@@ -62,32 +58,18 @@ export function EventDetailsOtherEvents({
     emblaApi.on("reInit", onSelect);
   }, [emblaApi, onSelect]);
 
-  // Load other events
-  const loadOtherEvents = async () => {
+  // Load similar events
+  const loadSimilarEvents = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const params: GetEventsParams = {
-        page: 1,
-        limit: 10, // Get more events to filter out current one
-      };
+      const similarEvents = await EventService.getSimilarEvents(currentEventId);
 
-      const response = await EventService.getAllEvents(params);
-
-      if (response.status === "success") {
-        // Filter out the current event and take first 6
-        const otherEvents = response.data.items
-          .filter((event) => event._id !== currentEventId)
-          .slice(0, 6);
-
-        setEvents(otherEvents);
-      } else {
-        setError("Failed to load other events");
-      }
+      setEvents(similarEvents);
     } catch (error) {
-      console.error("Failed to load other events:", error);
-      setError("Failed to load other events");
+      console.error("Failed to load similar events:", error);
+      setError("Failed to load similar events");
     } finally {
       setLoading(false);
     }
@@ -96,7 +78,7 @@ export function EventDetailsOtherEvents({
   // Load events on mount
   useEffect(() => {
     if (currentEventId) {
-      loadOtherEvents();
+      loadSimilarEvents();
     }
   }, [currentEventId]);
 
@@ -124,13 +106,12 @@ export function EventDetailsOtherEvents({
               marginBottom: "8px",
             }}
           >
-            Other events you may like
+            Similar events you may like
           </h2>
           <p
             style={{
               color: "var(--Body, #71727A)",
               fontFamily: "var(--font-source-sans), sans-serif",
-
               fontSize: "16px",
               fontStyle: "normal",
               fontWeight: 400,
@@ -139,8 +120,7 @@ export function EventDetailsOtherEvents({
               margin: 0,
             }}
           >
-            Get to know the peers in the room. An interactive activity to get
-            conversations going before we head into lunch.
+            Events similar to this one based on location, type, and category
           </p>
         </div>
         <div className="flex gap-6">
@@ -165,7 +145,7 @@ export function EventDetailsOtherEvents({
   }
 
   if (error || events.length === 0) {
-    return null; // Don't show section if there are no other events
+    return null; // Don't show section if there are no similar events
   }
 
   return (
@@ -185,7 +165,7 @@ export function EventDetailsOtherEvents({
             marginBottom: "8px",
           }}
         >
-          Other events you may like
+          Similar events you may like
         </h2>
         <p
           style={{
@@ -199,8 +179,7 @@ export function EventDetailsOtherEvents({
             margin: 0,
           }}
         >
-          Get to know the peers in the room. An interactive activity to get
-          conversations going before we head into lunch.
+          Events similar to this one based on location, type, and category
         </p>
       </div>
 

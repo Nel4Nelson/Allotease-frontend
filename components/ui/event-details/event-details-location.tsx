@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef, useState } from "react";
 
 const LocationIcon = () => (
@@ -22,7 +21,7 @@ const LocationIcon = () => (
       strokeLinejoin="round"
     />
     <path
-      d="M5.07814 4.84375L4.37501 6.5C4.31377 6.64704 4.31097 6.81191 4.3672 6.96094L5.26564 9.35156C5.30075 9.45121 5.36085 9.54017 5.44019 9.60993C5.51953 9.67969 5.61545 9.72792 5.71876 9.75L7.39064 10.1094C7.48343 10.1281 7.57058 10.1683 7.64516 10.2266C7.71975 10.2849 7.77972 10.3598 7.82033 10.4453L8.1172 11.0625C8.16995 11.1669 8.25025 11.2548 8.34941 11.3168C8.44856 11.3787 8.56276 11.4124 8.6797 11.4141H9.73439"
+      d="M5.07814 4.84375L4.37501 6.5C4.31377 6.64704 4.31097 6.81191 4.3672 6.96094L5.26564 9.35156C5.30075 9.45121 5.36085 9.54017 5.44019 9.60993C5.51953 9.67969 5.61545 9.72792 5.71876 9.75L7.39064 10.1094C7.48343 10.1281 7.57058 10.1683 7.64516 10.2266C7.71975 10.2849 7.77972 10.3598 7.82033 10.4453L8.1172 11.0625C8.16995 11.1669 8.25025 11.2548 8.34941 11.3168C8.44856 11.3787 8.56278 11.4124 8.6797 11.4141H9.73439"
       stroke="#1F3A3A"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -36,8 +35,34 @@ const LocationIcon = () => (
   </svg>
 );
 
+const LinkIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+  >
+    <path
+      d="M8.33333 10.8333C8.69054 11.3118 9.14776 11.7074 9.67247 11.9939C10.1972 12.2805 10.7764 12.4514 11.3717 12.4958C11.967 12.5402 12.5651 12.4571 13.1268 12.2519C13.6884 12.0467 14.2011 11.7241 14.6333 11.3042L17.1333 8.80417C17.9617 7.94749 18.4204 6.80401 18.4108 5.61601C18.4012 4.42802 17.9241 3.29208 17.0818 2.44979C16.2395 1.6075 15.1036 1.13041 13.9156 1.12081C12.7276 1.11121 11.5841 1.56989 10.7275 2.39833L9.16667 3.95"
+      stroke="#15BA6B"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M11.6667 9.16667C11.3095 8.68815 10.8522 8.29255 10.3275 8.00601C9.80281 7.71947 9.22362 7.54862 8.62831 7.50423C8.033 7.45983 7.43491 7.54288 6.87325 7.74808C6.31159 7.95329 5.79889 8.27588 5.36667 8.69583L2.86667 11.1958C2.03822 12.0525 1.57954 13.196 1.58914 14.384C1.59874 15.572 2.07584 16.7079 2.91812 17.5502C3.76041 18.3925 4.89635 18.8696 6.08435 18.8792C7.27234 18.8888 8.41582 18.4301 9.2725 17.6017L10.825 16.05"
+      stroke="#15BA6B"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 interface EventDetailsLocationProps {
   eventType: "remote" | "physical";
+  link?: string;
   location?: {
     country: string;
     city?: string;
@@ -53,36 +78,38 @@ interface EventDetailsLocationProps {
 
 export function EventDetailsLocation({
   eventType,
+  link,
   location,
   geoLocation,
   className = "",
 }: EventDetailsLocationProps) {
   const [mounted, setMounted] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
-  const [mapboxgl, setMapboxgl] = useState<any>(null);
+  const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<any>(null);
-  const markerRef = useRef<any>(null);
+  const mapInstance = useRef<google.maps.Map | null>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
 
   // Ensure component is mounted before accessing browser APIs
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Dynamic import of mapbox-gl
+  // Check if Google Maps is already loaded
   useEffect(() => {
     if (!mounted) return;
 
-    const loadMapbox = async () => {
-      try {
-        const mapboxModule = await import("mapbox-gl");
-        setMapboxgl(mapboxModule.default);
-      } catch (error) {
-        console.error("Failed to load mapbox-gl:", error);
+    const checkGoogleMaps = () => {
+      if (window.google && window.google.maps) {
+        setIsGoogleLoaded(true);
+        return;
       }
+      // Check again after a short delay
+      setTimeout(checkGoogleMaps, 100);
     };
 
-    loadMapbox();
+    checkGoogleMaps();
   }, [mounted]);
 
   // Check online status
@@ -101,109 +128,106 @@ export function EventDetailsLocation({
     };
   }, [mounted]);
 
-  // Initialize Mapbox for event locations
+  // Initialize Google Maps for physical events
   useEffect(() => {
-    if (!mounted || !mapRef.current || !isOnline || !mapboxgl) return;
+    if (!mounted || !mapRef.current || !isOnline || !isGoogleLoaded) return;
 
     // Only initialize map for physical events
     if (eventType !== "physical") return;
 
     try {
-      mapboxgl.accessToken =
-        process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "your_mapbox_token_here";
-
-      mapInstance.current = new mapboxgl.Map({
-        container: mapRef.current,
-        style: "mapbox://styles/mapbox/streets-v11",
-        center: [7.4951, 9.0579], // Nigeria coordinates
+      // Initialize map centered on Nigeria
+      mapInstance.current = new google.maps.Map(mapRef.current, {
+        center: { lat: 9.0579, lng: 7.4951 }, // Default Nigeria coordinates
         zoom: 6,
-        attributionControl: false,
-        interactive: true, // Allow zoom/pan
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
       });
 
-      // Add navigation control
-      mapInstance.current.addControl(
-        new mapboxgl.NavigationControl(),
-        "top-right"
-      );
+      // Get coordinates - priority: geoLocation > geocode address
+      let coordinates: { lat: number; lng: number } | null = null;
 
-      // Use coordinates if provided, otherwise geocode address
+      // Check if we have stored coordinates
       if (
         geoLocation &&
         geoLocation.coordinates &&
         geoLocation.coordinates.length === 2
       ) {
         const [lng, lat] = geoLocation.coordinates;
+        coordinates = { lat, lng };
+      }
 
-        // Center map on coordinates
-        mapInstance.current.flyTo({
-          center: [lng, lat],
-          zoom: 14,
-        });
+      // If we have coordinates, center map and add marker
+      if (coordinates) {
+        mapInstance.current.setCenter(coordinates);
+        mapInstance.current.setZoom(14);
 
         // Add marker
         if (markerRef.current) {
-          markerRef.current.remove();
+          markerRef.current.setMap(null);
         }
 
-        markerRef.current = new mapboxgl.Marker({
-          color: "#FF5722",
-        })
-          .setLngLat([lng, lat])
-          .addTo(mapInstance.current);
+        markerRef.current = new google.maps.Marker({
+          position: coordinates,
+          map: mapInstance.current,
+          animation: google.maps.Animation.DROP,
+          title: "Event Location",
+        });
       } else if (location && location.address) {
-        // Geocode the address to get coordinates
-        const geocodeAddress = async () => {
-          try {
-            const query = `${location.address}, ${location.city}, ${location.state}`;
-            const response = await fetch(
-              `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-                query
-              )}.json?access_token=${mapboxgl.accessToken}&country=ng&limit=1`
-            );
-            const data = await response.json();
+        // Fallback: If we have address but no coordinates, geocode it
+        const geocoder = new google.maps.Geocoder();
+        const query = `${location.address}, ${location.city}, ${location.state}, ${location.country}`;
 
-            if (data.features && data.features.length > 0) {
-              const [lng, lat] = data.features[0].center;
+        geocoder.geocode({ address: query }, (results, status) => {
+          if (status === "OK" && results && results[0] && mapInstance.current) {
+            const locationResult = results[0].geometry.location;
+            const lat = locationResult.lat();
+            const lng = locationResult.lng();
 
-              // Center map on location
-              mapInstance.current.flyTo({
-                center: [lng, lat],
-                zoom: 14,
-              });
+            // Center map on location
+            mapInstance.current.setCenter({ lat, lng });
+            mapInstance.current.setZoom(14);
 
-              // Add marker
-              if (markerRef.current) {
-                markerRef.current.remove();
-              }
-
-              markerRef.current = new mapboxgl.Marker({
-                color: "#FF5722",
-              })
-                .setLngLat([lng, lat])
-                .addTo(mapInstance.current);
+            // Add marker
+            if (markerRef.current) {
+              markerRef.current.setMap(null);
             }
-          } catch (error) {
-            console.error("Geocoding error:", error);
-          }
-        };
 
-        geocodeAddress();
+            markerRef.current = new google.maps.Marker({
+              position: { lat, lng },
+              map: mapInstance.current,
+              animation: google.maps.Animation.DROP,
+              title: location.address || "Event Location",
+            });
+          }
+        });
       }
     } catch (error) {
-      console.error("Mapbox initialization error:", error);
+      console.error("Google Maps initialization error:", error);
     }
 
     return () => {
-      if (mapInstance.current) {
-        mapInstance.current.remove();
-        mapInstance.current = null;
-      }
       if (markerRef.current) {
+        markerRef.current.setMap(null);
         markerRef.current = null;
       }
+      // Don't destroy map instance to prevent re-initialization
     };
-  }, [mounted, isOnline, mapboxgl, eventType, location, geoLocation]);
+  }, [mounted, isOnline, isGoogleLoaded, eventType, location, geoLocation]);
+
+  // Handle copy link to clipboard
+  const handleCopyLink = async () => {
+    if (!link) return;
+
+    try {
+      await navigator.clipboard.writeText(link);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch (error) {
+      console.error("Failed to copy link:", error);
+    }
+  };
 
   // Don't render until mounted
   if (!mounted) {
@@ -213,7 +237,7 @@ export function EventDetailsLocation({
   // Handle event location display based on event type
   const hasLocation = location && location.address;
 
-  // For remote events, show different content
+  // For remote events, show meeting link
   if (eventType === "remote") {
     return (
       <div className={className}>
@@ -237,32 +261,71 @@ export function EventDetailsLocation({
           </div>
         </div>
 
-        {/* Remote Event Card with neutral gray colors */}
-        <div className="w-full max-w-[565px] h-[198px] rounded-[24px] bg-[#D9D9D9] border border-gray-300 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-gray-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
+        {/* Meeting Link Card */}
+        {link ? (
+          <div className="w-full max-w-[565px] rounded-[24px] bg-[#E3F5EB] border border-[rgba(21,186,107,0.20)] p-6">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 mt-1">
+                <LinkIcon />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-[var(--Title,#1F2024)] font-source-sans-pro text-base font-semibold leading-[142.745%] tracking-[-0.32px] mb-2">
+                  Meeting Link
+                </h4>
+                <a
+                  href={link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#15BA6B] font-source-sans-pro text-sm font-normal leading-[142.745%] tracking-[-0.28px] break-all hover:underline"
+                >
+                  {link}
+                </a>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={handleCopyLink}
+                    className="px-4 py-2 rounded-lg bg-white border border-[rgba(21,186,107,0.30)] text-[#15BA6B] font-source-sans-pro text-sm font-semibold hover:bg-[rgba(21,186,107,0.05)] transition-colors"
+                  >
+                    {linkCopied ? "Copied!" : "Copy Link"}
+                  </button>
+                  <a
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 rounded-lg bg-[#15BA6B] text-white font-source-sans-pro text-sm font-semibold hover:bg-[#139B5A] transition-colors"
+                  >
+                    Open Link
+                  </a>
+                </div>
+              </div>
             </div>
-            <p className="text-gray-800 font-semibold text-lg mb-2">
-              Online Event
-            </p>
-            <p className="text-gray-600 text-sm">
-              Access details will be provided after registration
-            </p>
           </div>
-        </div>
+        ) : (
+          <div className="w-full max-w-[565px] h-[198px] rounded-[24px] bg-[#D9D9D9] border border-gray-300 flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-8 h-8 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <p className="text-gray-800 font-semibold text-lg mb-2">
+                Online Event
+              </p>
+              <p className="text-gray-600 text-sm">
+                Access details will be provided after registration
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -335,6 +398,15 @@ export function EventDetailsLocation({
                 </svg>
               </div>
               <p className="text-sm text-gray-600">Map unavailable offline</p>
+            </div>
+          </div>
+        )}
+
+        {!isGoogleLoaded && isOnline && (
+          <div className="absolute inset-0 bg-gray-100 rounded-[24px] flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-8 h-8 border-4 border-gray-300 border-t-gray-600 rounded-full animate-spin mx-auto mb-2" />
+              <p className="text-sm text-gray-600">Loading map...</p>
             </div>
           </div>
         )}

@@ -406,7 +406,7 @@ export class StaysService {
 
   /**
    * Generate coordinates from location data
-   * Note: This is a fallback. Prefer using Google Maps geocoding for accurate coordinates.
+   * Note: This is a fallback. I'm Google Maps geocoding for accurate coordinates.
    */
   private static generateCoordinatesFromLocation(
     location: StaysFormData["location"]
@@ -417,8 +417,6 @@ export class StaysService {
     }
 
     // Default to Nigeria center coordinates if no coordinates provided
-    // In production, this should use Google Maps Geocoding API
-    console.warn("Using default coordinates - consider using Google Maps Geocoding API");
     return [7.4951, 9.0579]; // Nigeria center
   }
 

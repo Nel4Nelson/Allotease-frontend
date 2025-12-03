@@ -21,8 +21,8 @@ export interface Event {
     address?: string;
   };
   geoLocation?: {
-    type: string;
-    coordinates: number[];
+    type: "Point";
+    coordinates: [number, number];
   };
   tags?: string[];
   agenda?: Array<{
@@ -71,6 +71,14 @@ interface GetEventsResponse {
   };
 }
 
+// API response interface for getting similar events
+interface GetSimilarEventsResponse {
+  status: string;
+  data: {
+    similarEvents: Event[];
+  };
+}
+
 // API response interface for creating event
 interface CreateEventResponse {
   status: string;
@@ -80,7 +88,6 @@ interface CreateEventResponse {
   };
 }
 
-// Query parameters for getting events
 // Query parameters for getting events
 export interface GetEventsParams {
   page?: number;
@@ -100,6 +107,7 @@ export class EventService {
     CREATE_EVENT: "/events/",
     GET_EVENTS: "/events/",
     GET_EVENT_BY_ID: "/events/",
+    GET_SIMILAR_EVENTS: "/events/similar/",
   } as const;
 
   /**
@@ -120,48 +128,78 @@ export class EventService {
   /**
    * Get all events with pagination and filters
    */
-static async getAllEvents(
-  params: GetEventsParams = {}
-): Promise<GetEventsResponse> {
-  try {
-    const queryParams = new URLSearchParams();
+  static async getAllEvents(
+    params: GetEventsParams = {}
+  ): Promise<GetEventsResponse> {
+    try {
+      const queryParams = new URLSearchParams();
 
-    // Add default params
-    queryParams.append("page", (params.page || 1).toString());
-    queryParams.append("limit", (params.limit || 6).toString());
+      // Add default params
+      queryParams.append("page", (params.page || 1).toString());
+      queryParams.append("limit", (params.limit || 6).toString());
 
-    // Add optional params
-    if (params.query) queryParams.append("query", params.query);
-    if (params.allocatorId) queryParams.append("allocatorId", params.allocatorId);
-    if (params.tags) queryParams.append("tags", params.tags);
-    if (params.eventType) queryParams.append("eventType", params.eventType);
-    if (params.sortOrder) queryParams.append("sortOrder", params.sortOrder);
-    
-    // Add location coordinates if provided
-    if (params.latitude !== undefined)
-      queryParams.append("latitude", params.latitude.toString());
-    if (params.longitude !== undefined)
-      queryParams.append("longitude", params.longitude.toString());
+      // Add optional params
+      if (params.query) queryParams.append("query", params.query);
+      if (params.allocatorId)
+        queryParams.append("allocatorId", params.allocatorId);
+      if (params.tags) queryParams.append("tags", params.tags);
+      if (params.eventType) queryParams.append("eventType", params.eventType);
+      if (params.sortOrder) queryParams.append("sortOrder", params.sortOrder);
 
-    // Add any additional params
-    Object.keys(params).forEach((key) => {
-      if (
-        !["page", "limit", "query", "allocatorId", "tags", "eventType", "sortOrder", "latitude", "longitude"].includes(key) &&
-        params[key]
-      ) {
-        queryParams.append(key, params[key].toString());
-      }
-    });
+      // Add location coordinates if provided
+      if (params.latitude !== undefined)
+        queryParams.append("latitude", params.latitude.toString());
+      if (params.longitude !== undefined)
+        queryParams.append("longitude", params.longitude.toString());
 
-    const url = `${this.ENDPOINTS.GET_EVENTS}?${queryParams.toString()}`;
-    const response = await apiClient.get<GetEventsResponse>(url);
+      // Add any additional params
+      Object.keys(params).forEach((key) => {
+        if (
+          ![
+            "page",
+            "limit",
+            "query",
+            "allocatorId",
+            "tags",
+            "eventType",
+            "sortOrder",
+            "latitude",
+            "longitude",
+          ].includes(key) &&
+          params[key]
+        ) {
+          queryParams.append(key, params[key].toString());
+        }
+      });
 
-    return response;
-  } catch (error) {
-    console.error("Failed to fetch events:", error);
-    throw error;
+      const url = `${this.ENDPOINTS.GET_EVENTS}?${queryParams.toString()}`;
+      const response = await apiClient.get<GetEventsResponse>(url);
+
+      return response;
+    } catch (error) {
+      console.error("Failed to fetch events:", error);
+      throw error;
+    }
   }
-}
+
+  /**
+   * Get similar events for a given event ID
+   */
+  static async getSimilarEvents(eventId: string): Promise<Event[]> {
+    try {
+      const url = `${this.ENDPOINTS.GET_SIMILAR_EVENTS}${eventId}`;
+      const response = await apiClient.get<GetSimilarEventsResponse>(url);
+
+      if (response.status === "success") {
+        return response.data.similarEvents;
+      }
+
+      return [];
+    } catch (error) {
+      console.error("Failed to fetch similar events:", error);
+      return [];
+    }
+  }
 
   /**
    * Format event date and time for display
@@ -169,17 +207,17 @@ static async getAllEvents(
   static formatEventDateTime(startTime: string): string {
     try {
       const date = new Date(startTime);
-      
+
       // Get day with ordinal suffix (1st, 2nd, 3rd, 4th, etc.)
       const day = date.getDate();
       const dayWithSuffix = this.getDayWithOrdinalSuffix(day);
-      
+
       // Get month name
       const month = date.toLocaleDateString("en-US", { month: "long" });
-      
+
       // Get day name
       const dayName = date.toLocaleDateString("en-US", { weekday: "long" });
-      
+
       // Get time
       const time = date.toLocaleTimeString("en-US", {
         hour: "numeric",
@@ -205,10 +243,14 @@ static async getAllEvents(
   private static getDayWithOrdinalSuffix(day: number): string {
     if (day > 3 && day < 21) return `${day}th`;
     switch (day % 10) {
-      case 1: return `${day}st`;
-      case 2: return `${day}nd`;
-      case 3: return `${day}rd`;
-      default: return `${day}th`;
+      case 1:
+        return `${day}st`;
+      case 2:
+        return `${day}nd`;
+      case 3:
+        return `${day}rd`;
+      default:
+        return `${day}th`;
     }
   }
 
@@ -216,7 +258,7 @@ static async getAllEvents(
    * Format event price for display
    */
   static formatEventPrice(price: number): string {
-    return price === 0 ? "Free" : `₦${price.toLocaleString()}`;
+  return price === 0 ? "Free" : `₦${new Intl.NumberFormat("en-NG").format(price)}`;
   }
 
   /**
@@ -239,8 +281,9 @@ static async getAllEvents(
     return event.coverImage || "/images/event-banner.svg";
   }
 
-  /**
-   * Generate coordinates from location data (same as stays service)
+   /**
+   * Generate coordinates from location data
+   * Note: This is a fallback. I'm Google Maps geocoding for accurate coordinates.
    */
   private static generateCoordinatesFromLocation(
     location: EventsFormData["location"]
@@ -249,81 +292,6 @@ static async getAllEvents(
     if (location?.coordinates) {
       return location.coordinates;
     }
-
-    // Fallback coordinates for major Nigerian cities
-    const cityCoordinates: Record<string, [number, number]> = {
-      // Lagos
-      lagos: [3.3792, 6.5244],
-      ikeja: [3.3566, 6.6018],
-      lekki: [3.4716, 6.4698],
-
-      // Abuja
-      abuja: [7.5399, 9.0579],
-      garki: [7.4951, 9.0579],
-
-      // Port Harcourt
-      "port harcourt": [7.0134, 4.8156],
-
-      // Kano
-      kano: [8.5264, 11.9925],
-
-      // Ibadan
-      ibadan: [3.947, 7.3986],
-
-      // Kaduna
-      kaduna: [7.4421, 10.5264],
-
-      // Benin City
-      benin: [5.6037, 6.335],
-      "benin city": [5.6037, 6.335],
-
-      // Enugu
-      enugu: [7.5105, 6.2649],
-
-      // Jos
-      jos: [8.8932, 9.8965],
-
-      // Warri
-      warri: [5.75, 5.5166],
-
-      // Calabar
-      calabar: [8.3275, 4.9517],
-    };
-
-    // Try to match city
-    const cityKey = location?.city?.toLowerCase() || "";
-    if (cityCoordinates[cityKey]) {
-      return cityCoordinates[cityKey];
-    }
-
-    // Fallback: state (approximate center coordinates)
-    const stateCoordinates: Record<string, [number, number]> = {
-      lagos: [3.3792, 6.5244],
-      abuja: [7.5399, 9.0579],
-      rivers: [7.0134, 4.8156],
-      kano: [8.5264, 11.9925],
-      oyo: [3.947, 7.3986],
-      kaduna: [7.4421, 10.5264],
-      edo: [5.6037, 6.335],
-      enugu: [7.5105, 6.2649],
-      plateau: [8.8932, 9.8965],
-      delta: [5.75, 5.5166],
-      "cross river": [8.3275, 4.9517],
-      anambra: [6.9175, 6.2649],
-      imo: [7.0255, 5.4966],
-      abia: [7.5248, 5.4527],
-      "akwa ibom": [7.8249, 4.9059],
-      bayelsa: [6.0699, 4.7719],
-      benue: [8.734, 7.7099],
-      borno: [13.0827, 11.8846],
-      taraba: [9.7799, 7.8637],
-    };
-
-    const stateKey = location?.state?.toLowerCase() || "";
-    if (stateCoordinates[stateKey]) {
-      return stateCoordinates[stateKey];
-    }
-
     // Default to Nigeria center coordinates
     return [7.4951, 9.0579];
   }
@@ -426,7 +394,6 @@ static async getAllEvents(
 
       form.append("geoLocation[coordinates][0]", coordinates[0].toString());
       form.append("geoLocation[coordinates][1]", coordinates[1].toString());
-
 
       // Log coordinates for debugging
       console.log("Creating event with coordinates:", coordinates);
@@ -596,8 +563,13 @@ static async getAllEvents(
 
     // Validate online event link for remote events
     if (formData.eventType === "remote") {
-      if (!formData.onlineEventLink || formData.onlineEventLink.trim().length === 0) {
-        errors.push("Meeting link or event details are required for remote events");
+      if (
+        !formData.onlineEventLink ||
+        formData.onlineEventLink.trim().length === 0
+      ) {
+        errors.push(
+          "Meeting link or event details are required for remote events"
+        );
       }
     }
 
@@ -607,7 +579,11 @@ static async getAllEvents(
     }
 
     // Coordinates validation (will be auto-generated if missing)
-    if (formData.eventType === "venue" && !formData.geoLocation?.coordinates && !formData.location) {
+    if (
+      formData.eventType === "venue" &&
+      !formData.geoLocation?.coordinates &&
+      !formData.location
+    ) {
       errors.push("Location coordinates are required for venue events");
     }
 
