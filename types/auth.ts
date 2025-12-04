@@ -49,6 +49,17 @@ export interface VerifyOtpRequest {
   otp: string;
 }
 
+// Password reset response
+export interface ForgotPasswordResponse {
+  status: string;
+  message: string;
+}
+
+export interface ResetPasswordResponse {
+  status: string;
+  message: string;
+}
+
 export interface PartialUpgradeRequest {
   organizationName: string;
   businessCategory: string;

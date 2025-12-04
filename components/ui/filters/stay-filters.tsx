@@ -35,7 +35,7 @@ export function StayFilters({
       {/* Desktop */}
       <div className="hidden md:block space-y-4">
         <ContentHeader
-          title={<SectionTitle>Available accommodation near you</SectionTitle>}
+          title={<SectionTitle>Available space near you</SectionTitle>}
           action={
             <div className="flex items-center gap-3">
               <SortOrderFilter
@@ -56,7 +56,7 @@ export function StayFilters({
       {/* Mobile */}
       <div className="block md:hidden space-y-4">
         <div className="mb-4">
-          <SectionTitle>Available accommodation near you</SectionTitle>
+          <SectionTitle>Available space near you</SectionTitle>
         </div>
 
         <LocationSearch
@@ -65,11 +65,11 @@ export function StayFilters({
         />
 
         <div className="flex items-center gap-3">
-          <div className="flex-1">
+          <div className="">
             <StayTypeFilter value={selectedType} onValueChange={onTypeChange} />
           </div>
 
-          <div className="flex-1">
+          <div className="">
             <SortOrderFilter
               value={selectedSortOrder}
               onValueChange={onSortOrderChange}

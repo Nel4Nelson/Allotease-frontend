@@ -74,24 +74,22 @@ export function EventFilters({
           placeholder="Search location..."
         />
 
-        <div className="flex items-center gap-3">
-          <div className="flex-1">
+        <div className="flex items-center gap-1">
+          <div className="">
             <EventTypeFilter
               value={selectedEventType}
               onValueChange={onEventTypeChange}
             />
           </div>
 
-          <div className="flex-1">
+          <div className="">
             <EventTagsFilter
               value={selectedTags}
               onValueChange={onTagsChange}
             />
           </div>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex-1">
+            <div className="">
             <SortOrderFilter
               value={selectedSortOrder}
               onValueChange={onSortOrderChange}

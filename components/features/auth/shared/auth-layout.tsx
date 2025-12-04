@@ -12,6 +12,7 @@ interface AuthLayoutProps {
   linkText?: string;
   linkHref?: string;
   showAccountSection?: boolean;
+  showLine?: boolean;
 }
 
 export function AuthLayout({ 
@@ -25,6 +26,7 @@ export function AuthLayout({
   linkText = "Sign In",
   linkHref = "/signin",
   showAccountSection = true,
+  showLine = true
 }: AuthLayoutProps) {
   return (
     <div className="auth-background py-10">
@@ -41,6 +43,7 @@ export function AuthLayout({
             linkText={linkText}
             linkHref={linkHref}
             showAccountSection={showAccountSection}
+            showLine={showLine}
           >
             {footerChildren}
           </AuthFooter>

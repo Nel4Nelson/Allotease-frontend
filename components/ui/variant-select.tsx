@@ -53,7 +53,6 @@ export function VariantSelect<T extends string>({
       padding: "6px 12px",
       justifyContent: "center",
       alignItems: "center",
-      gap: "15px",
       borderRadius: "51px",
       border:
         "1px solid var(--Outline-on-System-Teal, rgba(138, 174, 164, 0.20))",

@@ -8,6 +8,7 @@ interface AuthFooterProps {
   linkText?: string;
   linkHref?: string;
   showAccountSection?: boolean;
+  showLine?: boolean;
 }
 
 export function AuthFooter({
@@ -16,6 +17,7 @@ export function AuthFooter({
   linkText = "Sign In",
   linkHref = "/signin",
   showAccountSection = true,
+  showLine = true,
 }: AuthFooterProps) {
   return (
     <div className="space-y-6">
@@ -52,7 +54,7 @@ export function AuthFooter({
       )}
 
       {/* Horizontal divider line */}
-      <div className="flex justify-center">
+      {showLine && <div className="flex justify-center mt-2">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="320"
@@ -67,7 +69,8 @@ export function AuthFooter({
             strokeOpacity="0.5"
           />
         </svg>
-      </div>
+      </div>}
+
 
       {/* Optional children slot (e.g., Google sign up button) */}
       {children && <div className="flex justify-center">{children}</div>}

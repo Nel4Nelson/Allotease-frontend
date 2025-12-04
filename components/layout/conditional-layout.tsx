@@ -32,12 +32,12 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
 
     const isMobile = detectMobile();
     setMobileDevice(isMobile);
-    
+
     console.log(`[Layout] Initializing on ${isMobile ? 'mobile' : 'desktop'} device`);
-    
+
     // Initialize auth state
     AuthService.initializeAuth();
-    
+
     // Mark as mounted
     setMounted(true);
 
@@ -56,6 +56,8 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     pathname.startsWith("/upgrade") ||
     pathname.startsWith("/email-verification") ||
     pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/reset-password") ||
+    pathname.startsWith("/callback") ||
     pathname.startsWith("/about");
 
   // Check if we're in a dashboard route that needs full width

@@ -3,17 +3,16 @@ import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import Link from "next/link";
 import { FormInput } from "@/components/ui/form-input";
 import { Button } from "@/components/ui/button";
 
-const signInFormSchema = z.object({
-  email: z
+const resetPasswordFormSchema = z.object({
+  otp: z
     .string()
-    .min(1, { message: "Email is required." })
-    .email({ message: "Please enter a valid email address." })
-    .max(100, { message: "Email must not exceed 100 characters." }),
-
+    .min(6, { message: "OTP must be 6 digits." })
+    .max(6, { message: "OTP must be 6 digits." })
+    .regex(/^\d+$/, { message: "OTP must contain only numbers." }),
+  
   password: z
     .string()
     .min(8, { message: "Password must be at least 8 characters." })
@@ -22,56 +21,78 @@ const signInFormSchema = z.object({
       message:
         "Password must contain uppercase, lowercase, number, and special character.",
     }),
+
+  confirmPassword: z
+    .string()
+    .min(1, { message: "Please confirm your password." }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match.",
+  path: ["confirmPassword"],
 });
 
-export interface SignInFormData {
-  email: string;
+export interface ResetPasswordFormData {
+  otp: string;
   password: string;
+  confirmPassword: string;
 }
 
-interface SignInFormProps {
-  onSubmit: (values: SignInFormData) => void;
+interface ResetPasswordFormProps {
+  onSubmit: (values: ResetPasswordFormData) => void;
   isLoading?: boolean;
   submitButtonText?: string;
 }
 
-export function SignInForm({
+export function ResetPasswordForm({
   onSubmit,
   isLoading = false,
-  submitButtonText = "Sign In",
-}: SignInFormProps) {
+  submitButtonText = "Reset Password",
+}: ResetPasswordFormProps) {
   const {
     register,
     handleSubmit,
     formState: { errors, isValid },
-  } = useForm<SignInFormData>({
-    resolver: zodResolver(signInFormSchema),
+  } = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordFormSchema),
     mode: "onChange",
     defaultValues: {
-      email: "",
+      otp: "",
       password: "",
+      confirmPassword: "",
     },
   });
 
   const formFields = [
     {
-      name: "email" as const,
-      label: "Email",
-      placeholder: "Email*",
-      type: "email",
+      name: "otp" as const,
+      label: "Verification Code",
+      placeholder: "Enter 6-digit code*",
+      type: "text",
       required: true,
     },
     {
       name: "password" as const,
-      label: "Password",
-      placeholder: "Password*",
+      label: "New Password",
+      placeholder: "New Password*",
+      type: "password",
+      required: true,
+    },
+    {
+      name: "confirmPassword" as const,
+      label: "Confirm Password",
+      placeholder: "Confirm Password*",
       type: "password",
       required: true,
     },
   ];
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <div className="text-center space-y-3 mb-6">
+        <p className="text-[var(--body-text)] font-source-sans-pro max-w-md mx-auto">
+          Enter the 6-digit code sent to your email and create a new password.
+        </p>
+      </div>
+
       <div className="space-y-3">
         {formFields.map(({ name, label, placeholder, type, required }) => (
           <FormInput
@@ -86,30 +107,7 @@ export function SignInForm({
         ))}
       </div>
 
-      {/* Forgot Password Link */}
-      <div className="flex justify-end">
-        <Link
-          href="/forgot-password"
-          className="
-            font-source-sans-pro 
-            text-[var(--feature-accent-orange)] 
-            text-sm 
-            font-normal 
-            leading-[160%]
-            hover:underline
-            transition-all 
-            duration-200 
-            focus:outline-none 
-            focus:ring-2 
-            focus:ring-[var(--feature-accent-orange)]/30 
-            focus:ring-offset-1
-          "
-        >
-          Forgot password?
-        </Link>
-      </div>
-
-      <div className="flex justify-center pt-2">
+      <div className="flex justify-center">
         <Button
           type="submit"
           variant="signup-primary"

@@ -11,6 +11,8 @@ import {
   PartialUpgradeRequest,
   PartialUpgradeResponse,
   LogoutResponse,
+  ForgotPasswordResponse,
+  ResetPasswordResponse,
 } from "@/types/auth";
 import { useAuthStore } from "@/stores/auth-store";
 import {
@@ -31,6 +33,10 @@ export class AuthService {
     // OTP endpoints
     VERIFY_OTP: "/auth/verify-otp",
     RESEND_OTP: "/auth/resend-otp",
+
+    // Password reset endpoints
+    FORGOT_PASSWORD: "/auth/forgot-password",
+    RESET_PASSWORD: "/auth/reset-password",
 
     // Other endpoints
     PARTIAL_UPGRADE: "/users/partial-upgrade",
@@ -176,6 +182,106 @@ export class AuthService {
       console.error("User login failed:", error);
       throw error;
     }
+  }
+
+  /**
+ * Request password reset OTP
+ */
+  static async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
+    try {
+      const response = await apiClient.post<ForgotPasswordResponse>(
+        this.ENDPOINTS.FORGOT_PASSWORD,
+        { email }
+      );
+
+      return response;
+    } catch (error) {
+      console.error("Forgot password request failed:", error);
+      throw error;
+    }
+  }
+
+
+  /**
+ * Reset password with OTP
+ */
+  static async resetPassword(
+    email: string,
+    otp: string,
+    password: string
+  ): Promise<ResetPasswordResponse> {
+    try {
+      const response = await apiClient.post<ResetPasswordResponse>(
+        this.ENDPOINTS.RESET_PASSWORD,
+        {
+          email,
+          otp,
+          password,
+        }
+      );
+
+      return response;
+    } catch (error) {
+      console.error("Password reset failed:", error);
+      throw error;
+    }
+  }
+
+  /**
+ * Get Google OAuth URL for authentication
+ * @param isSignup - Whether this is for signup (true) or signin (false)
+ * @returns The Google OAuth URL to redirect to
+ */
+  static getGoogleAuthUrl(isSignup: boolean = false): string {
+    // Get frontend base URL from environment or window location
+    const frontendUrl =
+      process.env.NEXT_PUBLIC_FRONTEND_URL ||
+      (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
+
+    // Backend API base URL
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+    // Callback URL where Google will redirect after authentication
+    const callbackUrl = `${frontendUrl}/callback`;
+
+    // Encode the callback URL
+    const encodedCallbackUrl = encodeURIComponent(callbackUrl);
+
+    // Construct the Google OAuth URL
+    const googleAuthUrl = `${backendUrl}/auth/google?redirect_uri=${encodedCallbackUrl}`;
+
+    console.log(`[Auth Service] Google ${isSignup ? "signup" : "signin"} URL:`, googleAuthUrl);
+    console.log(`[Auth Service] Callback URL:`, callbackUrl);
+
+    return googleAuthUrl;
+  }
+
+  /**
+   * Initiate Google Sign In
+   * Redirects user to Google OAuth flow
+   */
+  static initiateGoogleSignIn(): void {
+    if (typeof window === "undefined") return;
+
+    const googleAuthUrl = this.getGoogleAuthUrl(false);
+    console.log("[Auth Service] Initiating Google Sign In");
+
+    // Redirect to Google OAuth
+    window.location.href = googleAuthUrl;
+  }
+
+  /**
+   * Initiate Google Sign Up
+   * Redirects user to Google OAuth flow
+   */
+  static initiateGoogleSignUp(): void {
+    if (typeof window === "undefined") return;
+
+    const googleAuthUrl = this.getGoogleAuthUrl(true);
+    console.log("[Auth Service] Initiating Google Sign Up");
+
+    // Redirect to Google OAuth
+    window.location.href = googleAuthUrl;
   }
 
   /**
