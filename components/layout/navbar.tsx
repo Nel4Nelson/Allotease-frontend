@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,6 +65,8 @@ const AnimatedCreateText: React.FC<AnimatedCreateTextProps> = ({
 
 export default function Header() {
   const [localSearchInput, setLocalSearchInput] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const router = useRouter();
 
   // Get current pathname and search params
   const pathname = usePathname();
@@ -110,8 +112,14 @@ export default function Header() {
     setLocalSearchInput(e.target.value);
   }, []);
 
+  // Close dropdown helper
+  const closeDropdown = useCallback(() => {
+    setIsDropdownOpen(false);
+  }, []);
+
   // Handle logout
   const handleLogout = async () => {
+    closeDropdown();
     try {
       await AuthService.logout();
     } catch (error) {
@@ -121,16 +129,23 @@ export default function Header() {
 
   // Handle create event button click
   const handleCreateEvent = () => {
+    closeDropdown();
     if (!isAuthenticated) {
       // Unauthenticated users redirect to create event page
-      window.location.href = "/allocation-admin/create";
+      router.push("/allocation-admin/create");
     } else if (userRole === "allocator") {
       // Allocators can create events - redirect to create event page
-      window.location.href = "/allocation-admin/create";
+      router.push("/allocation-admin/create");
     } else {
       // Regular authenticated users need to upgrade first
-      window.location.href = "/upgrade";
+      router.push("/upgrade");
     }
+  };
+
+  // Handle navigation with dropdown close
+  const handleNavigation = (href: string) => {
+    closeDropdown();
+    router.push(href);
   };
 
   // Determine if search should be shown based on BOTH activeContext AND current route
@@ -239,7 +254,7 @@ export default function Header() {
 
             {/* User Profile Dropdown - Show if authenticated */}
             {isAuthenticated && (
-              <DropdownMenu>
+              <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
                 <DropdownMenuTrigger asChild>
                   <button
                     className="flex items-center gap-3 hover:bg-gray-50 rounded-lg px-2 py-1 transition-colors cursor-pointer md:border-l md:border-l-gray-300/20 md:pl-4"
@@ -332,7 +347,7 @@ export default function Header() {
                           {userEmail}
                         </span>
                       </div>
-                      {/* Display user role for debugging/info */}
+                      {/* Display user role */}
                       {user && (
                         <div className="flex font-source-sans justify-center mt-1">
                           <span
@@ -399,13 +414,13 @@ export default function Header() {
                         </div>
 
                         {/* Ticket - Mobile */}
-                        <Link
-                          href="/tickets"
+                        <div
                           className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
                           style={{
                             padding: "16px 20px",
                             borderBottom: "1px solid rgba(138, 174, 164, 0.20)",
                           }}
+                          onClick={() => handleNavigation("/tickets")}
                         >
                           <TicketIcon />
                           <span
@@ -419,19 +434,19 @@ export default function Header() {
                           >
                             Ticket
                           </span>
-                        </Link>
+                        </div>
                       </div>
 
                       {/* Regular Menu Items */}
                       {/* Ticket - Desktop only */}
-                      <Link
-                        href="/tickets"
+                      <div
                         className="hidden md:flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
                         style={{
                           padding: "16px 20px",
                           borderBottom: "1px solid rgba(138, 174, 164, 0.20)",
                           borderRadius: "16px 16px 0 0",
                         }}
+                        onClick={() => handleNavigation("/tickets")}
                       >
                         <Image
                           src="/icons/ticket.svg"
@@ -450,17 +465,17 @@ export default function Header() {
                         >
                           Ticket
                         </span>
-                      </Link>
+                      </div>
 
                       {/* Manage my resources - Only show if user is allocation-admin */}
                       {isAllocationAdmin && (
-                        <Link
-                          href="/allocation-admin/dashboard/overview"
+                        <div
                           className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
                           style={{
                             padding: "16px 20px",
                             borderBottom: "1px solid rgba(138, 174, 164, 0.20)",
                           }}
+                          onClick={() => handleNavigation("/allocation-admin/dashboard/overview")}
                         >
                           <Image
                             src="/icons/browsers.svg"
@@ -479,17 +494,17 @@ export default function Header() {
                           >
                             Manage my resources
                           </span>
-                        </Link>
+                        </div>
                       )}
 
-                      {/* All Allocation Admins - NEW ITEM */}
-                      <Link
-                        href="/all-allocation-admins"
+                      {/* All Allocation Admins */}
+                      <div
                         className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
                         style={{
                           padding: "16px 20px",
                           borderBottom: "1px solid rgba(138, 174, 164, 0.20)",
                         }}
+                        onClick={() => handleNavigation("/all-allocation-admins")}
                       >
                         <Image
                           src="/icons/allotease-icon.svg"
@@ -508,7 +523,7 @@ export default function Header() {
                         >
                           All Allocation Admins
                         </span>
-                      </Link>
+                      </div>
 
                       {/* Create new event - Desktop only */}
                       <div
@@ -537,13 +552,13 @@ export default function Header() {
                       </div>
 
                       {/* About Allotease - Last item with bottom rounded corners */}
-                      <Link
-                        href="/about"
+                      <div
                         className="flex items-center gap-[10px] self-stretch cursor-pointer hover:bg-black/5 transition-colors"
                         style={{
                           padding: "16px 20px",
                           borderRadius: "0 0 16px 16px",
                         }}
+                        onClick={() => handleNavigation("/about")}
                       >
                         <Image
                           src="/icons/allotease-icon.svg"
@@ -562,7 +577,7 @@ export default function Header() {
                         >
                           About Allotease
                         </span>
-                      </Link>
+                      </div>
                     </div>
 
                     {/* Logout Section */}

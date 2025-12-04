@@ -17,6 +17,7 @@ import { EventDetailsRegistrationCard } from "@/components/ui/event-details/even
 import { useEventBookingStore } from "@/stores/event-booking-store";
 import { BookingSuccessModal } from "@/components/ui/modals/booking-success-modal";
 import { EventDetailsPageSkeleton } from "@/components/ui/loading-skeletons/event-details-skeleton-page";
+import { BackButton } from "../auth/shared/back-button";
 
 interface EventDetailsPageProps {
   id: string;
@@ -187,6 +188,9 @@ export function EventDetailsPage({
   return (
     <>
       <div className={`space-y-6 ${className}`}>
+        <div className="flex items-center">
+          <BackButton />
+        </div>
         {/* Event Banner - Full Width */}
         <EventDetailsBanner
           imageUrl={EventService.getEventCoverImage(event)}

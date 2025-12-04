@@ -1,4 +1,6 @@
+"use client";
 import React from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 const ChevronLeftIcon = ({ className = "" }: { className?: string }) => (
@@ -15,16 +17,28 @@ const ChevronLeftIcon = ({ className = "" }: { className?: string }) => (
 );
 
 interface BackButtonProps {
-  onClick: () => void;
+  onClick?: () => void;
   className?: string;
 }
 
 export function BackButton({ onClick, className = "" }: BackButtonProps) {
+  const router = useRouter();
+
+  const handleClick = () => {
+    if (onClick) {
+      // Use provided onClick handler
+      onClick();
+    } else {
+      // Default behavior: go back in browser history
+      router.back();
+    }
+  };
+
   return (
     <Button
       type="button"
       variant="ghost"
-      onClick={onClick}
+      onClick={handleClick}
       className={`
         group
         flex 

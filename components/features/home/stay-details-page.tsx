@@ -19,6 +19,7 @@ import { useBookingStore } from "@/stores/booking-store";
 import { BookingSuccessModal } from "@/components/ui/modals/booking-success-modal";
 import { EventDetailsPageSkeleton } from "@/components/ui/loading-skeletons/event-details-skeleton-page";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { BackButton } from "../auth/shared/back-button";
 
 interface StayDetailsPageProps {
   id: string;
@@ -328,6 +329,9 @@ export function StayDetailsPage({ id, className = "" }: StayDetailsPageProps) {
   return (
     <>
       <div className={`space-y-6 ${className}`}>
+        <div className="flex items-center">
+          <BackButton />
+        </div>
         {/* Stay Banner - Full Width */}
         <StayDetailsBanner images={stay.images} title={stay.title} />
 
