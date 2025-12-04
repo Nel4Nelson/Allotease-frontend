@@ -56,19 +56,14 @@ export function StayDetailsAmenities({
                   onError={() => handleImageError(facility._id)}
                 />
               ) : (
-                <svg
-                  className="w-5 h-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H9m0 0H7m2 0v-9a2 2 0 012-2h2a2 2 0 012 2v9M9 7h6m-6 4h6m-6 4h2"
-                  />
-                </svg>
+                <Image
+                  src="/icons/facilities.png"
+                  alt={facility.name}
+                  fill
+                  className="object-contain"
+                  sizes="20px"
+                  onError={() => handleImageError(facility._id)}
+                />
               )}
             </div>
 

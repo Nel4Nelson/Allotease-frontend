@@ -60,6 +60,31 @@ const LinkIcon = () => (
   </svg>
 );
 
+const DirectionsIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+  >
+    <path
+      d="M10 17.5C14.1421 17.5 17.5 14.1421 17.5 10C17.5 5.85786 14.1421 2.5 10 2.5C5.85786 2.5 2.5 5.85786 2.5 10C2.5 14.1421 5.85786 17.5 10 17.5Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10 6.25V10L12.5 11.875"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 interface EventDetailsLocationProps {
   eventType: "remote" | "physical";
   link?: string;
@@ -216,6 +241,29 @@ export function EventDetailsLocation({
     };
   }, [mounted, isOnline, isGoogleLoaded, eventType, location, geoLocation]);
 
+  // Generate Google Maps URL for directions
+  const getGoogleMapsUrl = (): string => {
+    // Priority 1: Use coordinates if available (most accurate)
+    if (
+      geoLocation &&
+      geoLocation.coordinates &&
+      geoLocation.coordinates.length === 2
+    ) {
+      const [lng, lat] = geoLocation.coordinates;
+      return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    }
+
+    // Priority 2: Use address
+    if (location && location.address) {
+      const address = `${location.address}, ${location.city}, ${location.state}, ${location.country}`;
+      const encodedAddress = encodeURIComponent(address);
+      return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+    }
+
+    // Fallback: General search
+    return "https://www.google.com/maps";
+  };
+
   // Handle copy link to clipboard
   const handleCopyLink = async () => {
     if (!link) return;
@@ -236,6 +284,7 @@ export function EventDetailsLocation({
 
   // Handle event location display based on event type
   const hasLocation = location && location.address;
+  const googleMapsUrl = getGoogleMapsUrl();
 
   // For remote events, show meeting link
   if (eventType === "remote") {
@@ -372,7 +421,7 @@ export function EventDetailsLocation({
       </div>
 
       {/* Map */}
-      <div className="relative">
+      <div className="relative mb-4">
         <div
           ref={mapRef}
           className="w-full max-w-[565px] h-[198px] rounded-[24px] bg-gray-100 border border-gray-200 overflow-hidden"
@@ -411,6 +460,19 @@ export function EventDetailsLocation({
           </div>
         )}
       </div>
+
+      {/* Get Directions Button */}
+      {hasLocation && (
+        <a
+          href={googleMapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-[var(--feature-accent-orange)] hover:bg-[#E54A00] text-white rounded-full transition-colors duration-200 font-source-sans-pro font-semibold text-sm"
+        >
+          <DirectionsIcon />
+          Get Directions
+        </a>
+      )}
     </div>
   );
 }

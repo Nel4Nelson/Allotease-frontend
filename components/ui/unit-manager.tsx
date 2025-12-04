@@ -2,7 +2,7 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 import React, { useState, useCallback } from "react";
-import Image from "next/image";
+import { FallbackImage } from "@/components/ui/fallback-image";
 import { FormInput } from "@/components/ui/form-input";
 import { FormTextarea } from "@/components/ui/form-textarea";
 import { FormSelect } from "@/components/ui/form-select";
@@ -345,12 +345,13 @@ export function UnitManager() {
                       key={facilityId}
                       className="flex items-center gap-1 px-2 py-1 bg-white/60 rounded-md"
                     >
-                      <Image
-                        src={facilityDetails.icon}
+                      <FallbackImage
+                        src={facilityDetails.icon || "/icons/facilities.png"}
+                        fallbackSrc="/icons/default-facility.svg"
                         alt={facilityDetails.name}
                         width={16}
                         height={16}
-                        className="object-cover rounded"
+                        className="object-contain flex-shrink-0"
                       />
                       <span
                         className="text-xs"

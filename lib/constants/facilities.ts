@@ -45,4 +45,5 @@ export const FACILITY_CATEGORIES = [
   "Entertainment & Lifestyle",
   "Business & Work",
   "Extras",
+  "Custom",
 ];

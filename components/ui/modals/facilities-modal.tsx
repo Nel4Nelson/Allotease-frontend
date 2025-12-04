@@ -1,36 +1,15 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 import React, { useState } from "react";
-import Image from "next/image";
 import toast from "react-hot-toast";
 import { FormInput } from "@/components/ui/form-input";
-import { FormSelect } from "@/components/ui/form-select";
 import { Button } from "@/components/ui/button";
 
 interface FacilitiesModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddFacility: (facilityName: string, facilityIcon?: File | string) => void;
+  onAddFacility: (facilityName: string) => void;
 }
-
-// Predefined facility icons using local SVG files
-const facilityIcons = [
-  {
-    value: "wifi.svg", // Just filename, not full path
-    label: "WiFi",
-    displayPath: "/icons/wifi.svg" // Keep full path for display
-  },
-  {
-    value: "swim.svg",
-    label: "Swimming Pool",
-    displayPath: "/icons/swim.svg"
-  },
-  {
-    value: "prohibit.svg",
-    label: "No Smoking",
-    displayPath: "/icons/prohibit.svg"
-  },
-];
 
 export function FacilitiesModal({
   isOpen,
@@ -38,32 +17,19 @@ export function FacilitiesModal({
   onAddFacility,
 }: FacilitiesModalProps) {
   const [facilityName, setFacilityName] = useState("");
-  const [selectedIcon, setSelectedIcon] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Convert preset icon to File object
-  const convertPresetIconToFile = async (iconFilename: string): Promise<File> => {
-    const iconPath = `/icons/${iconFilename}`;
-    const response = await fetch(iconPath);
-    const blob = await response.blob();
-    return new File([blob], iconFilename, { type: blob.type });
-  };
-
   const handleSubmit = async () => {
-    if (facilityName.trim() && selectedIcon) {
+    if (facilityName.trim()) {
       setIsSubmitting(true);
       try {
-        // Convert preset icon to File object
-        const iconToUse = await convertPresetIconToFile(selectedIcon);
-
-        await onAddFacility(facilityName.trim(), iconToUse);
+        await onAddFacility(facilityName.trim());
         
         // Show success toast
         toast.success("Facility added successfully!");
         
         // Reset form
         setFacilityName("");
-        setSelectedIcon("");
         onClose();
       } catch (error) {
         console.error("Failed to add facility:", error);
@@ -78,7 +44,6 @@ export function FacilitiesModal({
   const handleClose = () => {
     if (!isSubmitting) {
       setFacilityName("");
-      setSelectedIcon("");
       onClose();
     }
   };
@@ -89,14 +54,8 @@ export function FacilitiesModal({
     }
   };
 
-  // Get display path for selected icon
-  const getSelectedIconDisplayPath = () => {
-    const selectedIconData = facilityIcons.find(icon => icon.value === selectedIcon);
-    return selectedIconData?.displayPath || selectedIcon;
-  };
-
   // Check if form is valid
-  const isFormValid = facilityName.trim() && selectedIcon;
+  const isFormValid = facilityName.trim().length > 0;
 
   if (!isOpen) return null;
 
@@ -184,10 +143,10 @@ export function FacilitiesModal({
               margin: 0,
             }}
           >
-            Add extra facility to space
+            Add Custom Facility
           </h2>
 
-          {/* Subtitle - Increased spacing */}
+          {/* Subtitle */}
           <p
             style={{
               color: "#7A7A7A",
@@ -201,77 +160,25 @@ export function FacilitiesModal({
               marginTop: "8px",
             }}
           >
-            This facility will be added to your accommodation's general facilities.
+            Add a custom facility that's unique to your space. This will be added to your accommodation's facilities.
           </p>
 
           {/* Form */}
           <div className="w-full space-y-6">
-            {/* Facility Name and Icon - Side by side */}
-            <div className="grid grid-cols-1 gap-4">
-              {/* Facility Name Input */}
-              <div className="mt-4">
-                <FormInput
-                  label="Facility"
-                  placeholder="Facility* e.g Outdoor swimming pool"
-                  value={facilityName}
-                  onChange={(e) => setFacilityName(e.target.value)}
-                  required={true}
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              {/* Icon Selection */}
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-[var(--color-dark-slate)] text-left">
-                  Choose icon:
-                </p>
-                
-                <FormSelect
-                  placeholder="Select facility icon*"
-                  options={facilityIcons}
-                  value={selectedIcon}
-                  onValueChange={setSelectedIcon}
-                  className="w-full"
-                />
-              </div>
+            {/* Facility Name Input */}
+            <div className="mt-4">
+              <FormInput
+                label="Facility Name"
+                placeholder="e.g., Rooftop Garden, Private Chef, Beach Access"
+                value={facilityName}
+                onChange={(e) => setFacilityName(e.target.value)}
+                required={true}
+                disabled={isSubmitting}
+              />
             </div>
 
-            {/* Elegant Icon Preview */}
-            {selectedIcon && (
-              <div className="flex items-center justify-center py-2">
-                <div 
-                  className="flex items-center gap-3 px-4 py-3 rounded-full transition-all duration-200"
-                  style={{
-                    background: "rgba(255, 255, 255, 0.4)",
-                    backdropFilter: "blur(10px)",
-                    border: "1px solid rgba(255, 255, 255, 0.2)",
-                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)"
-                  }}
-                >
-                  <div className="relative">
-                    <Image
-                      src={getSelectedIconDisplayPath()}
-                      alt="Selected facility icon"
-                      width={24}
-                      height={24}
-                      className="object-contain"
-                    />
-                  </div>
-                  <span 
-                    className="text-sm font-medium"
-                    style={{
-                      color: "var(--color-dark-slate)",
-                      fontFamily: "var(--font-source-sans), sans-serif",
-                    }}
-                  >
-                    {facilityIcons.find(icon => icon.value === selectedIcon)?.label}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Add Facility Button - Auto width */}
-            <div className="flex justify-center">
+            {/* Add Facility Button */}
+            <div className="flex justify-center pt-2">
               <Button
                 type="button"
                 onClick={handleSubmit}
@@ -302,7 +209,7 @@ export function FacilitiesModal({
                   }
                 }}
               >
-                Add facility
+                Add Facility
               </Button>
             </div>
           </div>

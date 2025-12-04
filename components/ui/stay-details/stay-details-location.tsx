@@ -36,6 +36,31 @@ const LocationIcon = () => (
   </svg>
 );
 
+const DirectionsIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+  >
+    <path
+      d="M10 17.5C14.1421 17.5 17.5 14.1421 17.5 10C17.5 5.85786 14.1421 2.5 10 2.5C5.85786 2.5 2.5 5.85786 2.5 10C2.5 14.1421 5.85786 17.5 10 17.5Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10 6.25V10L12.5 11.875"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 interface StayDetailsLocationProps {
   stay: Stay;
   className?: string;
@@ -174,6 +199,29 @@ export function StayDetailsLocation({
     };
   }, [mounted, isOnline, isGoogleLoaded, stay]);
 
+  // Generate Google Maps URL for directions
+  const getGoogleMapsUrl = (): string => {
+    // Priority 1: Use coordinates if available (most accurate)
+    if (
+      stay.geoLocation &&
+      stay.geoLocation.coordinates &&
+      stay.geoLocation.coordinates.length === 2
+    ) {
+      const [lng, lat] = stay.geoLocation.coordinates;
+      return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    }
+
+    // Priority 2: Use address
+    if (stay.location && stay.location.address) {
+      const address = `${stay.location.address}, ${stay.location.city}, ${stay.location.state}, ${stay.location.country}`;
+      const encodedAddress = encodeURIComponent(address);
+      return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+    }
+
+    // Fallback: General search
+    return "https://www.google.com/maps";
+  };
+
   // Don't render until mounted
   if (!mounted) {
     return <div className={className}>Loading location...</div>;
@@ -181,6 +229,7 @@ export function StayDetailsLocation({
 
   const location = stay.location;
   const hasLocation = location && location.address;
+  const googleMapsUrl = getGoogleMapsUrl();
 
   return (
     <div className={className}>
@@ -221,7 +270,7 @@ export function StayDetailsLocation({
       </div>
 
       {/* Map */}
-      <div className="relative">
+      <div className="relative mb-4">
         <div
           ref={mapRef}
           className="w-full max-w-[565px] h-[198px] rounded-[24px] bg-gray-100 border border-gray-200 overflow-hidden"
@@ -260,6 +309,19 @@ export function StayDetailsLocation({
           </div>
         )}
       </div>
+
+      {/* Get Directions Button */}
+      {hasLocation && (
+        <a
+          href={googleMapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-[var(--feature-accent-orange)] hover:bg-[#E54A00] text-white rounded-full transition-colors duration-200 font-source-sans-pro font-semibold text-sm"
+        >
+          <DirectionsIcon />
+          Get Directions
+        </a>
+      )}
     </div>
   );
 }

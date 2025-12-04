@@ -44,8 +44,10 @@ export function FacilitiesBadgeSelector() {
     const loadAndMatchFacilities = async () => {
         setIsLoading(true);
         try {
-            // Fetch all facilities from backend (no query = all facilities)
-            const allBackendFacilities = await FacilitiesService.searchFacilities();
+            // Fetch ALL facilities from backend with limit of 2000
+            const allBackendFacilities = await FacilitiesService.searchFacilities({
+                limit: 2000
+            });
 
             // Update cache with fetched facilities
             updateFacilitiesCache(allBackendFacilities);
@@ -66,10 +68,32 @@ export function FacilitiesBadgeSelector() {
                 };
             });
 
+            // Find custom facilities (backend facilities NOT in predefined list)
+            const predefinedNames = new Set(
+                PREDEFINED_FACILITIES.map(f => f.name.toLowerCase().trim())
+            );
+
+            const customFacilities: MatchedFacility[] = allBackendFacilities
+                .filter(bf => !predefinedNames.has(bf.name.toLowerCase().trim()))
+                .map(bf => ({
+                    name: bf.name,
+                    category: "Custom", // All non-predefined facilities go to Custom category
+                    icon: bf.icon,
+                    id: bf._id,
+                    exists: true,
+                    isCreating: false,
+                }));
+
             // Group by category
             const grouped = FACILITY_CATEGORIES.reduce(
                 (acc, category) => {
-                    acc[category] = matched.filter((f) => f.category === category);
+                    if (category === "Custom") {
+                        // Add custom facilities to Custom category
+                        acc[category] = customFacilities;
+                    } else {
+                        // Add predefined facilities to their respective categories
+                        acc[category] = matched.filter((f) => f.category === category);
+                    }
                     return acc;
                 },
                 {} as Record<string, MatchedFacility[]>
@@ -173,19 +197,31 @@ export function FacilitiesBadgeSelector() {
     };
 
     // Handle custom facility creation from modal
-    const handleAddCustomFacility = async (
-        facilityName: string,
-        facilityIcon?: File | string
-    ) => {
+    const handleAddCustomFacility = async (facilityName: string) => {
         try {
             const newFacility = await FacilitiesService.createFacility({
                 name: facilityName,
-                icon: facilityIcon,
             });
 
             // Add to selection and cache
             addFacilityToSelection(newFacility._id);
             updateFacilitiesCache([newFacility]);
+
+            // Add to Custom category in local state
+            setFacilitiesByCategory((prev) => ({
+                ...prev,
+                Custom: [
+                    ...(prev.Custom || []),
+                    {
+                        name: newFacility.name,
+                        category: "Custom",
+                        icon: newFacility.icon,
+                        id: newFacility._id,
+                        exists: true,
+                        isCreating: false,
+                    },
+                ],
+            }));
 
             toast.success("Custom facility added successfully!");
         } catch (error) {
@@ -224,6 +260,11 @@ export function FacilitiesBadgeSelector() {
                 const isExpanded = expandedCategories.has(category);
                 const selectedCount = getSelectedCountForCategory(category);
 
+                // Skip rendering category if it has no facilities
+                if (facilities.length === 0) {
+                    return null;
+                }
+
                 return (
                     <div key={category} className="border border-gray-200 rounded-lg overflow-hidden">
                         {/* Category Header */}
@@ -257,7 +298,7 @@ export function FacilitiesBadgeSelector() {
                                 )}
                             </div>
                             <span className="text-sm text-gray-500 font-source-sans-pro">
-                                {facilities.length} facilities
+                                {facilities.length} {facilities.length === 1 ? 'facility' : 'facilities'}
                             </span>
                         </button>
 
