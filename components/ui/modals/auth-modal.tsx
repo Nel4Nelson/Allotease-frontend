@@ -1,5 +1,6 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -16,7 +17,28 @@ export function AuthModal({
   redirectUrl = "",
   className = "",
 }: AuthModalProps) {
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted before accessing document
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
+  if (!isOpen || !mounted) return null;
 
   const signinUrl = redirectUrl
     ? `/signin?redirect=${encodeURIComponent(redirectUrl)}`
@@ -26,8 +48,8 @@ export function AuthModal({
     ? `/signup?redirect=${encodeURIComponent(redirectUrl)}`
     : "/signup";
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/20" 
@@ -237,4 +259,7 @@ export function AuthModal({
       </div>
     </div>
   );
+
+  // Render modal in portal at document.body
+  return createPortal(modalContent, document.body);
 }

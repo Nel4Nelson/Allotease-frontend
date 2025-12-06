@@ -10,8 +10,8 @@ export default function TicketsLayout({ children }: TicketsLayoutProps) {
     <div className="min-h-screen">
       <div className="max-w-[1050px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex gap-8 py-8">
-          {/* Profile Sidebar - 34% width on desktop */}
-          <div className="w-[34%] hidden lg:block">
+          {/* Profile Sidebar - 30% width on desktop */}
+          <div className="w-[30%] hidden lg:block">
             <div className="sticky top-8">
               <TicketsProfileSidebar />
             </div>
@@ -25,8 +25,8 @@ export default function TicketsLayout({ children }: TicketsLayoutProps) {
             </div>
           </div>
 
-          {/* Main Content Area - 65% width on desktop, full width on mobile */}
-          <div className="flex-1 lg:w-[65%]">{children}</div>
+          {/* Main Content Area - 70% width on desktop, full width on mobile */}
+          <div className="flex-1 lg:w-[70%]">{children}</div>
         </div>
       </div>
     </div>

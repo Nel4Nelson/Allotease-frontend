@@ -30,7 +30,7 @@ export function FeaturedSection({ className = "" }: FeaturedSectionProps) {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreData, setHasMoreData] = useState(true);
-  const loadingMoreRef = useRef(false); // Prevent duplicate requests
+  const loadingMoreRef = useRef(false);
 
   // Get auth state from store
   const { isAuthenticated } = useAuthStore();

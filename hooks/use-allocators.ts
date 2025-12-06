@@ -17,6 +17,9 @@ export const allocatorKeys = {
   list: (params: GetAllocatorsParams) =>
     [...allocatorKeys.lists(), params] as const,
   followed: () => [...allocatorKeys.all, "followed"] as const,
+  followedPaginated: () => [...allocatorKeys.all, "followed-paginated"] as const,
+  followedPaginatedList: (params: GetAllocatorsParams) =>
+    [...allocatorKeys.followedPaginated(), params] as const,
 };
 
 /**
@@ -34,7 +37,7 @@ export function useAllocators(params: GetAllocatorsParams = {}) {
 }
 
 /**
- * Hook to fetch followed users
+ * Hook to fetch followed users (simple ID list)
  */
 export function useFollowedUsers() {
   const { isAuthenticated } = useAuthStore();
@@ -46,6 +49,23 @@ export function useFollowedUsers() {
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: true, // Refetch when window regains focus
+  });
+}
+
+/**
+ * Hook to fetch followed users with pagination (for TicketsProfileSidebar)
+ */
+export function useFollowedUsersWithPagination(params: GetAllocatorsParams = {}) {
+  const { isAuthenticated } = useAuthStore();
+
+  return useQuery<GetAllocatorsResponse>({
+    queryKey: allocatorKeys.followedPaginatedList(params),
+    queryFn: () => AllocatorService.getFollowedUsersWithPagination(params),
+    enabled: isAuthenticated, // Only fetch if authenticated
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: true, // Refetch when window regains focus
+    retry: 2,
   });
 }
 
@@ -86,6 +106,7 @@ function extractErrorMessage(error: any): string {
 
 /**
  * Hook to follow/unfollow users with optimistic updates and improved error handling
+ * Now also updates the followed users paginated cache
  */
 export function useFollowToggle() {
   const queryClient = useQueryClient();
@@ -123,8 +144,11 @@ export function useFollowToggle() {
       const previousFollowed = queryClient.getQueryData(
         allocatorKeys.followed()
       );
+      const previousFollowedPaginated = queryClient.getQueriesData({
+        queryKey: allocatorKeys.followedPaginated(),
+      });
 
-      // Optimistically update allocators
+      // Optimistically update allocators (all pages)
       queryClient.setQueriesData(
         { queryKey: allocatorKeys.lists() },
         (old: any) => {
@@ -150,7 +174,7 @@ export function useFollowToggle() {
         }
       );
 
-      // Optimistically update followed users list
+      // Optimistically update followed users list (simple ID array)
       queryClient.setQueryData(
         allocatorKeys.followed(),
         (old: string[] = []) => {
@@ -164,7 +188,33 @@ export function useFollowToggle() {
         }
       );
 
-      return { previousAllocators, previousFollowed };
+      // Optimistically update followed users paginated list
+      queryClient.setQueriesData(
+        { queryKey: allocatorKeys.followedPaginated() },
+        (old: any) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              items: old.data.items.map((allocator: Allocator) =>
+                allocator._id === userId
+                  ? {
+                      ...allocator,
+                      isFollowing: !isFollowing,
+                      followersCount: isFollowing
+                        ? allocator.followersCount - 1
+                        : allocator.followersCount + 1,
+                    }
+                  : allocator
+              ),
+            },
+          };
+        }
+      );
+
+      return { previousAllocators, previousFollowed, previousFollowedPaginated };
     },
     onError: (err, variables, context) => {
       // Rollback on error
@@ -178,6 +228,11 @@ export function useFollowToggle() {
           allocatorKeys.followed(),
           context.previousFollowed
         );
+      }
+      if (context?.previousFollowedPaginated) {
+        context.previousFollowedPaginated.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
       }
 
       // Extract and show specific error message
@@ -198,7 +253,8 @@ export function useFollowToggle() {
     },
     onSettled: () => {
       // Refetch after mutation regardless of error or success
-      queryClient.invalidateQueries({ queryKey: allocatorKeys.followed() });  
+      queryClient.invalidateQueries({ queryKey: allocatorKeys.followed() });
+      queryClient.invalidateQueries({ queryKey: allocatorKeys.followedPaginated() });
     },
   });
 }

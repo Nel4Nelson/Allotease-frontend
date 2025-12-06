@@ -9,6 +9,7 @@ interface FollowerItemProps {
   avatarUrl: string;
   isFollowing: boolean;
   onToggleFollow?: (id: string) => void;
+  onCardClick?: (id: string) => void;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -19,18 +20,27 @@ export function FollowerItem({
   avatarUrl,
   isFollowing,
   onToggleFollow,
+  onCardClick,
   className = "",
-  style, // Add this parameter
+  style,
 }: FollowerItemProps) {
-  const handleToggleFollow = () => {
+  const handleToggleFollow = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (onToggleFollow) {
       onToggleFollow(id);
     }
   };
 
+  const handleCardClick = () => {
+    if (onCardClick) {
+      onCardClick(id);
+    }
+  };
+
   return (
     <div
-      className={className}
+      onClick={handleCardClick}
+      className={`cursor-pointer hover:bg-gray-50/50 transition-colors ${className}`}
       style={{
         borderBottom:
           "1px solid var(--Outline-on-System-Teal, rgba(138, 174, 164, 0.20))",
@@ -39,7 +49,7 @@ export function FollowerItem({
         alignItems: "center",
         gap: "20px",
         alignSelf: "stretch",
-        ...style, // Merge with any passed style prop
+        ...style,
       }}
     >
       {/* Avatar */}

@@ -27,7 +27,7 @@ export function TicketTabs({ className = "" }: TicketTabsProps) {
   return (
     <TabsWithUrlState
       tabs={tabs}
-      defaultTab="events"
+      defaultTab="stays"
       basePath="/tickets"
       className={className}
     />

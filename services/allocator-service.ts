@@ -16,7 +16,7 @@ export interface Allocator {
 }
 
 // Followed user interface from the follow endpoint
-interface FollowedUser {
+export interface FollowedUser {
   _id: string;
   email: string;
   firstname: string;
@@ -47,11 +47,26 @@ interface FollowResponse {
   data?: any;
 }
 
-// Response for getting followed users
+// Response for getting followed users (current - flat array)
 interface GetFollowedUsersResponse {
   status: string;
   message: string;
   data: FollowedUser[];
+}
+
+// Response for getting followed users with pagination (future-proofed)
+export interface GetFollowedUsersWithPaginationResponse {
+  status: string;
+  message: string;
+  data: {
+    items: FollowedUser[];
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+    totalPages: number;
+    totalCount: number;
+    limit: number;
+    page: number;
+  } | FollowedUser[]; // Support both current (array) and future (paginated object)
 }
 
 // Query parameters for getting allocators
@@ -108,6 +123,138 @@ export class AllocatorService {
 
       console.error("Failed to fetch followed users:", error);
       return [];
+    }
+  }
+
+  /**
+   * Get followed users with pagination support (future-proofed)
+   * Converts FollowedUser to Allocator format for consistency
+   */
+  static async getFollowedUsersWithPagination(
+    params: GetAllocatorsParams = {}
+  ): Promise<GetAllocatorsResponse> {
+    // Check authentication before making the request
+    if (!this.isAuthenticated()) {
+      throw new Error("User must be authenticated to view followed users");
+    }
+
+    try {
+      const queryParams = new URLSearchParams();
+
+      // Add pagination params (backend may ignore for now, but we're ready)
+      queryParams.append("page", (params.page || 1).toString());
+      queryParams.append("limit", (params.limit || 10).toString());
+
+      // Add any additional params
+      Object.keys(params).forEach((key) => {
+        if (!["page", "limit"].includes(key) && params[key]) {
+          queryParams.append(key, params[key].toString());
+        }
+      });
+
+      const url = `${this.ENDPOINTS.GET_FOLLOWED_USERS}?${queryParams.toString()}`;
+
+      const response = await apiClient.get<GetFollowedUsersWithPaginationResponse>(url);
+
+      if (response.status === "success") {
+        // Check if response.data is an array (current backend) or object (future backend)
+        const isArray = Array.isArray(response.data);
+
+        if (isArray) {
+          // Current backend response - flat array
+          const followedUsers = response.data as FollowedUser[];
+
+          // Convert FollowedUser to Allocator format
+          const allocators: Allocator[] = followedUsers.map((user) => ({
+            _id: user._id,
+            firstname: user.firstname,
+            lastname: user.lastname,
+            role: "allocator", // Default role
+            avatar: user.avatar,
+            followingCount: 0, //Ask Johnpaul to provide it, Not provided in followed users endpoint
+            followersCount: user.followersCount,
+            isFollowing: true, // They're in the followed list, so they're followed
+          }));
+
+          // Return in paginated format
+          return {
+            status: "success",
+            message: response.message,
+            data: {
+              items: allocators,
+              hasNextPage: false, // No pagination yet from backend
+              hasPrevPage: false,
+              totalPages: 1,
+              totalCount: allocators.length,
+              limit: params.limit || 10,
+              page: params.page || 1,
+            },
+          };
+        } else {
+          // Future backend response - paginated object
+          const paginatedData = response.data as {
+            items: FollowedUser[];
+            hasNextPage: boolean;
+            hasPrevPage: boolean;
+            totalPages: number;
+            totalCount: number;
+            limit: number;
+            page: number;
+          };
+
+          // Convert FollowedUser to Allocator format
+          const allocators: Allocator[] = paginatedData.items.map((user) => ({
+            _id: user._id,
+            firstname: user.firstname,
+            lastname: user.lastname,
+            role: "allocator",
+            avatar: user.avatar,
+            followingCount: 0,
+            followersCount: user.followersCount,
+            isFollowing: true,
+          }));
+
+          // Return in paginated format
+          return {
+            status: "success",
+            message: response.message,
+            data: {
+              items: allocators,
+              hasNextPage: paginatedData.hasNextPage,
+              hasPrevPage: paginatedData.hasPrevPage,
+              totalPages: paginatedData.totalPages,
+              totalCount: paginatedData.totalCount,
+              limit: paginatedData.limit,
+              page: paginatedData.page,
+            },
+          };
+        }
+      }
+
+      // Fallback empty response
+      return {
+        status: "success",
+        message: "No followed users found",
+        data: {
+          items: [],
+          hasNextPage: false,
+          hasPrevPage: false,
+          totalPages: 0,
+          totalCount: 0,
+          limit: params.limit || 10,
+          page: params.page || 1,
+        },
+      };
+    } catch (error: any) {
+      // Handle 401 specifically
+      if (error?.response?.status === 401) {
+        console.log("User session expired, clearing auth");
+        useAuthStore.getState().clearAuth();
+        throw new Error("User must be authenticated to view followed users");
+      }
+
+      console.error("Failed to fetch followed users with pagination:", error);
+      throw error;
     }
   }
 
@@ -261,7 +408,7 @@ export class AllocatorService {
   /**
    * Format allocator name for display
    */
-  static formatAllocatorName(allocator: Allocator): string {
+  static formatAllocatorName(allocator: Allocator | FollowedUser): string {
     return `${allocator.firstname} ${allocator.lastname}`;
   }
 
@@ -287,9 +434,9 @@ export class AllocatorService {
   /**
    * Get allocator avatar with fallback
    */
-static getAllocatorAvatar(allocator: Allocator): string {
-  return allocator.avatar || "/icons/encircle-star-orange-avatar.svg";
-}
+  static getAllocatorAvatar(allocator: Allocator | FollowedUser): string {
+    return allocator.avatar || "/icons/encircle-star-orange-avatar.svg";
+  }
 
   /**
    * Map API allocator to UI profile format

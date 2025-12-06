@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 import { useEffect, useState, useCallback, useRef } from "react";
@@ -10,9 +9,10 @@ import { FollowingSection } from "@/components/ui/following-section";
 import { useProfileStore } from "@/stores/profile-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { useIsOnline } from "@/hooks/use-network-status";
-import { useAllocators, useFollowToggle } from "@/hooks/use-allocators";
+import { useFollowedUsersWithPagination, useFollowToggle } from "@/hooks/use-allocators";
 import { AllocatorService, Allocator } from "@/services/allocator-service";
 import { NetworkError, OfflineState } from "@/components/ui/network-error";
+import { AuthModal } from "@/components/ui/modals/auth-modal";
 import { toast } from "react-hot-toast";
 
 interface FollowerProfile {
@@ -21,6 +21,16 @@ interface FollowerProfile {
   avatarUrl: string;
   isFollowing: boolean;
 }
+
+// Interface for cached unfollowed users
+interface CachedUnfollowedUser {
+  userId: string;
+  unfollowedAt: number; // timestamp
+  allocatorData: Allocator;
+}
+
+// Cache duration: 4 hours in milliseconds
+const UNFOLLOW_CACHE_DURATION = 4 * 60 * 60 * 1000;
 
 export function TicketsProfileSidebar() {
   const router = useRouter();
@@ -46,18 +56,60 @@ export function TicketsProfileSidebar() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreData, setHasMoreData] = useState(true);
   const loadingMoreRef = useRef(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // State for cached unfollowed users (stored in localStorage)
+  const [cachedUnfollowedUsers, setCachedUnfollowedUsers] = useState<CachedUnfollowedUser[]>([]);
 
   // Refs for infinite scroll observer
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-  // Use established TanStack Query hooks
-  const { data, isLoading, isError, refetch } = useAllocators({
+  // Use paginated followed users hook
+  const { data, isLoading, isError, refetch } = useFollowedUsersWithPagination({
     page: currentPage,
     limit: 10,
   });
 
   const followToggleMutation = useFollowToggle();
+
+  // Load cached unfollowed users from localStorage on mount
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    try {
+      const cached = localStorage.getItem("unfollowedUsersCache");
+      if (cached) {
+        const parsedCache: CachedUnfollowedUser[] = JSON.parse(cached);
+        const now = Date.now();
+
+        // Filter out expired cache entries (older than 4 hours)
+        const validCache = parsedCache.filter(
+          (item) => now - item.unfollowedAt < UNFOLLOW_CACHE_DURATION
+        );
+
+        setCachedUnfollowedUsers(validCache);
+
+        // Update localStorage with cleaned cache
+        if (validCache.length !== parsedCache.length) {
+          localStorage.setItem("unfollowedUsersCache", JSON.stringify(validCache));
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load unfollow cache:", error);
+    }
+  }, [isAuthenticated]);
+
+  // Save cached unfollowed users to localStorage whenever it changes
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    try {
+      localStorage.setItem("unfollowedUsersCache", JSON.stringify(cachedUnfollowedUsers));
+    } catch (error) {
+      console.error("Failed to save unfollow cache:", error);
+    }
+  }, [cachedUnfollowedUsers, isAuthenticated]);
 
   // Fetch profile with authentication guard
   useEffect(() => {
@@ -94,14 +146,6 @@ export function TicketsProfileSidebar() {
     }
   }, [data, currentPage]);
 
-  // Debug log to check if data is being received
-  useEffect(() => {
-    console.log('Debug - Current page:', currentPage);
-    console.log('Debug - Data received:', data?.data?.items?.length || 0);
-    console.log('Debug - Has next page:', data?.data?.hasNextPage);
-    console.log('Debug - Total allocators:', allAllocators.length);
-  }, [data, currentPage, allAllocators.length]);
-
   // Refetch when coming back online
   useEffect(() => {
     if (isOnline && isError) {
@@ -109,29 +153,19 @@ export function TicketsProfileSidebar() {
     }
   }, [isOnline, isError, refetch]);
 
-  // Load more allocators for infinite scroll - FIXED: Stable function with useCallback
+  // Load more allocators for infinite scroll
   const loadMoreAllocators = useCallback(() => {
-    console.log('Debug - loadMoreAllocators called');
-    console.log('Debug - loadingMoreRef.current:', loadingMoreRef.current);
-    console.log('Debug - isLoadingMore:', isLoadingMore);
-    console.log('Debug - hasMoreData:', hasMoreData);
-    console.log('Debug - isOnline:', isOnline);
-    
     if (loadingMoreRef.current || isLoadingMore || !hasMoreData || !isOnline) {
-      console.log('Debug - Early return from loadMoreAllocators');
       return;
     }
 
-    console.log('Debug - Incrementing page from:', currentPage, 'to:', currentPage + 1);
     loadingMoreRef.current = true;
     setIsLoadingMore(true);
     setCurrentPage((prev) => prev + 1);
-  }, [isLoadingMore, hasMoreData, isOnline]); // REMOVED currentPage dependency
+  }, [isLoadingMore, hasMoreData, isOnline]);
 
-  // FIXED: Set up intersection observer with stable dependencies
+  // Set up intersection observer with stable dependencies
   useEffect(() => {
-    console.log('Debug - Setting up intersection observer');
-    
     // Clean up previous observer
     if (observerRef.current) {
       observerRef.current.disconnect();
@@ -140,29 +174,20 @@ export function TicketsProfileSidebar() {
     // Create new observer
     observerRef.current = new IntersectionObserver(
       (entries) => {
-        console.log('Debug - Intersection observer triggered');
         const [entry] = entries;
-        console.log('Debug - Entry isIntersecting:', entry.isIntersecting);
-        console.log('Debug - Current hasMoreData:', hasMoreData);
-        console.log('Debug - Current isLoadingMore:', isLoadingMore);
-        
         if (entry.isIntersecting && hasMoreData && !isLoadingMore && !loadingMoreRef.current) {
-          console.log('Debug - Calling loadMoreAllocators from observer');
           loadMoreAllocators();
         }
       },
       {
         threshold: 0.1,
-        rootMargin: '100px', // Increased rootMargin for earlier triggering
+        rootMargin: '100px',
       }
     );
 
     // Observe the trigger element
     if (loadMoreRef.current) {
-      console.log('Debug - Observing loadMoreRef element');
       observerRef.current.observe(loadMoreRef.current);
-    } else {
-      console.log('Debug - loadMoreRef.current is null');
     }
 
     return () => {
@@ -170,21 +195,20 @@ export function TicketsProfileSidebar() {
         observerRef.current.disconnect();
       }
     };
-  }, [loadMoreAllocators]); // FIXED: Only depend on loadMoreAllocators
+  }, [loadMoreAllocators]);
 
-  // FIXED: Re-observe when element becomes available
+  // Re-observe when element becomes available
   useEffect(() => {
     if (observerRef.current && loadMoreRef.current && hasMoreData) {
-      console.log('Debug - Re-observing loadMoreRef element');
       observerRef.current.observe(loadMoreRef.current);
     }
-  }, [allAllocators.length, hasMoreData]); // Re-observe when data changes
+  }, [allAllocators.length, hasMoreData]);
 
-  // Handle follow/unfollow with established patterns
+  // Handle follow/unfollow with 4-hour cache for unfollowed users
   const handleToggleFollow = async (allocatorId: string) => {
     // Check authentication first
     if (!isAuthenticated) {
-      router.push("/signin");
+      setShowAuthModal(true);
       return;
     }
 
@@ -201,9 +225,20 @@ export function TicketsProfileSidebar() {
       return;
     }
 
-    // Find the current allocator
-    const currentAllocator = allAllocators.find((a) => a._id === allocatorId);
+    // Find the current allocator (check both API data and cached unfollowed)
+    let currentAllocator = allAllocators.find((a) => a._id === allocatorId);
+    
+    if (!currentAllocator) {
+      // Check cached unfollowed users
+      const cachedUser = cachedUnfollowedUsers.find((c) => c.userId === allocatorId);
+      if (cachedUser) {
+        currentAllocator = cachedUser.allocatorData;
+      }
+    }
+
     if (!currentAllocator) return;
+
+    const wasFollowing = currentAllocator.isFollowing || false;
 
     // Update local state optimistically BEFORE the mutation
     setAllAllocators((prev) =>
@@ -220,10 +255,35 @@ export function TicketsProfileSidebar() {
       )
     );
 
+    // Handle caching for unfollowed users
+    if (wasFollowing) {
+      // User is unfollowing - add to cache
+      const newCachedUser: CachedUnfollowedUser = {
+        userId: allocatorId,
+        unfollowedAt: Date.now(),
+        allocatorData: {
+          ...currentAllocator,
+          isFollowing: false,
+          followersCount: currentAllocator.followersCount - 1,
+        },
+      };
+
+      setCachedUnfollowedUsers((prev) => {
+        // Remove any existing cache entry for this user
+        const filtered = prev.filter((c) => c.userId !== allocatorId);
+        return [...filtered, newCachedUser];
+      });
+    } else {
+      // User is re-following - remove from cache
+      setCachedUnfollowedUsers((prev) =>
+        prev.filter((c) => c.userId !== allocatorId)
+      );
+    }
+
     try {
       await followToggleMutation.mutateAsync({
         userId: allocatorId,
-        isFollowing: currentAllocator.isFollowing || false,
+        isFollowing: wasFollowing,
       });
     } catch (error: any) {
       // Revert the optimistic update on error
@@ -232,32 +292,62 @@ export function TicketsProfileSidebar() {
           allocator._id === allocatorId
             ? {
                 ...allocator,
-                isFollowing: currentAllocator.isFollowing,
-                followersCount: currentAllocator.followersCount,
+                isFollowing: currentAllocator!.isFollowing,
+                followersCount: currentAllocator!.followersCount,
               }
             : allocator
         )
       );
 
-      // If it's an auth error, redirect to signin
+      // Revert cache changes
+      if (wasFollowing) {
+        setCachedUnfollowedUsers((prev) =>
+          prev.filter((c) => c.userId !== allocatorId)
+        );
+      }
+
+      // If it's an auth error, show the modal
       if (
         error.message === "User must be authenticated" ||
         error?.response?.status === 401
       ) {
-        router.push("/signin");
+        setShowAuthModal(true);
       }
     }
   };
 
+  // Handle card click - navigate to allocator details page
+  const handleCardClick = (allocatorId: string) => {
+    router.push(`/all-allocation-admins/${allocatorId}`);
+  };
+
+  // Merge API followed users with cached unfollowed users
+  const getMergedAllocators = useCallback((): Allocator[] => {
+    const now = Date.now();
+    
+    // Get valid cached unfollowed users (not expired)
+    const validCachedUsers = cachedUnfollowedUsers
+      .filter((cached) => now - cached.unfollowedAt < UNFOLLOW_CACHE_DURATION)
+      .map((cached) => cached.allocatorData);
+
+    // Merge: API followed users + cached unfollowed users
+    const apiUserIds = new Set(allAllocators.map((a) => a._id));
+    const cachedNotInApi = validCachedUsers.filter((cached) => !apiUserIds.has(cached._id));
+
+    return [...allAllocators, ...cachedNotInApi];
+  }, [allAllocators, cachedUnfollowedUsers]);
+
   // Convert allocators to FollowerProfile format
   const getFollowerProfiles = useCallback((): FollowerProfile[] => {
-    return allAllocators.map((allocator) => ({
+    const merged = getMergedAllocators();
+    
+    return merged.map((allocator) => ({
       id: allocator._id,
       name: AllocatorService.formatAllocatorName(allocator),
       avatarUrl: AllocatorService.getAllocatorAvatar(allocator),
       isFollowing: allocator.isFollowing || false,
     }));
-  }, [allAllocators]);
+  }, [getMergedAllocators]);
 
   // Reset states when starting fresh
   const handleReset = () => {
@@ -267,6 +357,53 @@ export function TicketsProfileSidebar() {
     setHasMoreData(true);
     loadingMoreRef.current = false;
   };
+
+  // Handle unauthenticated state
+  if (!isAuthenticated && !authLoading) {
+    return (
+      <div className="space-y-6">
+        {/* Profile Header Placeholder */}
+        <div className="flex flex-col items-center gap-4 p-6 bg-gray-50 rounded-2xl">
+          <div className="w-20 h-20 bg-gray-300 rounded-full flex items-center justify-center">
+            <svg
+              className="w-10 h-10 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
+            </svg>
+          </div>
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-gray-800 mb-1">
+              Sign in to Follow
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Sign in to see allocation admins you're following
+            </p>
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="px-6 py-2 bg-[var(--feature-accent-orange)] hover:bg-[#E54A00] text-white rounded-full font-semibold transition-colors"
+            >
+              Sign In
+            </button>
+          </div>
+        </div>
+
+        {/* Auth Modal */}
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          redirectUrl={typeof window !== "undefined" ? window.location.pathname : "/"}
+        />
+      </div>
+    );
+  }
 
   // Loading State for profile
   if (profileLoading && !profile) {
@@ -317,14 +454,14 @@ export function TicketsProfileSidebar() {
         ) : /* Handle error state */
         isError && !isLoading && allAllocators.length === 0 ? (
           <NetworkError
-            message="Failed to load organizers"
+            message="Failed to load followed users"
             onRetry={() => {
               handleReset();
               refetch();
             }}
           />
         ) : /* Initial loading state */
-        isLoading && allAllocators.length === 0 ? (
+        isLoading && allAllocators.length === 0 && cachedUnfollowedUsers.length === 0 ? (
           <div className="flex flex-col gap-2">
             {Array.from({ length: 3 }).map((_, index) => (
               <div key={index} className="flex items-center gap-3 p-3">
@@ -336,28 +473,52 @@ export function TicketsProfileSidebar() {
               </div>
             ))}
           </div>
-        ) : /* Normal render with data */
-        allAllocators.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-gray-500">No organizers found</p>
+        ) : /* Empty state - not following anyone */
+        getMergedAllocators().length === 0 ? (
+          <div className="flex flex-col items-center gap-4 p-8 bg-gray-50 rounded-2xl text-center">
+            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
+              <svg
+                className="w-8 h-8 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-1">
+                No Followed Admins Yet
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Start following allocation admins to see them here
+              </p>
+              <button
+                onClick={() => router.push("/all-allocation-admins")}
+                className="px-6 py-2 bg-[var(--feature-accent-orange)] hover:bg-[#E54A00] text-white rounded-full font-semibold transition-colors"
+              >
+                Browse Admins
+              </button>
+            </div>
           </div>
         ) : (
           <>
             <FollowingSection
               followers={getFollowerProfiles()}
               onToggleFollow={handleToggleFollow}
+              onCardClick={handleCardClick}
             />
             
-            {/* FIXED: Infinite scroll trigger element with better visibility */}
+            {/* Infinite scroll trigger element */}
             {hasMoreData && (
               <div 
                 ref={loadMoreRef} 
                 className="py-8 text-center min-h-[50px] flex items-center justify-center"
-                style={{ 
-                  // DEBUGGING: Temporary visible styling - remove after testing
-                  backgroundColor: 'rgba(255, 0, 0, 0.1)',
-                  border: '1px dashed red'
-                }}
               >
                 {isLoadingMore ? (
                   <div className="flex items-center justify-center gap-2">
@@ -371,7 +532,7 @@ export function TicketsProfileSidebar() {
             )}
 
             {/* End of list indicator */}
-            {!hasMoreData && allAllocators.length > 0 && (
+            {!hasMoreData && getMergedAllocators().length > 0 && (
               <div className="py-4 text-center">
                 <span className="text-xs text-gray-400">
                   You've reached the end
@@ -381,6 +542,13 @@ export function TicketsProfileSidebar() {
           </>
         )}
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        redirectUrl={typeof window !== "undefined" ? window.location.pathname : "/"}
+      />
     </div>
   );
 }

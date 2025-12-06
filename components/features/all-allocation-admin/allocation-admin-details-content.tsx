@@ -9,6 +9,7 @@ import { AllocationAdminInfo } from "./allocation-admin-info";
 import { AllocationAdminTabs } from "./allocation-admin-tabs";
 import { StayDetailsGuestReviews } from "@/components/ui/stay-details/stay-details-guest-reviews";
 import { useAllocatorProfile } from "@/hooks/useAllocatorProfile";
+import { BackButton } from "../auth/shared/back-button";
 
 
 interface AllocationAdminDetailsContentProps {
@@ -54,6 +55,9 @@ export function AllocationAdminDetailsContent({ allocatorId }: AllocationAdminDe
         <div className="p-6 space-y-10">
             {/* Banner with Info hanging at the bottom */}
             <div className="relative mb-[170px]">
+                <div className="flex items-center mb-4">
+                    <BackButton />
+                </div>
                 {/* Banner */}
                 <AllocationAdminBanner />
 

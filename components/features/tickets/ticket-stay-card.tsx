@@ -21,7 +21,6 @@ export function TicketStayCard({
   imageUrl,
   price,
   frequency,
-  statusText,
   onAccept,
   onRefund,
   disabled = false,
@@ -59,7 +58,7 @@ export function TicketStayCard({
 
       {/* Content Section */}
       <div
-        className="flex flex-col justify-between flex-1"
+        className="flex flex-col gap-4 flex-1"
         style={{ height: "176px" }}
       >
         {/* Top Content */}
@@ -86,7 +85,7 @@ export function TicketStayCard({
 
         {/* Location and Price */}
         <div className="space-y-3">
-          <div className="flex justify-between">
+          <div className="flex flex-col gap-1">
             <p
               style={{
                 color: "var(--Body, #71727A)",
@@ -121,7 +120,7 @@ export function TicketStayCard({
           <Divider />
 
           {/* Status Badge */}
-          <div
+          {/* <div
             style={{
               display: 'flex',
               padding: '6px 12px',
@@ -146,7 +145,7 @@ export function TicketStayCard({
             >
               {statusText}
             </span>
-          </div>
+          </div> */}
         </div>
 
         {/* Bottom Action Buttons */}

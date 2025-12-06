@@ -3,7 +3,7 @@ import React from "react";
 
 interface FollowButtonProps {
   isFollowing: boolean;
-  onToggleFollow?: () => void;
+  onToggleFollow?: (e: React.MouseEvent) => void;
   disabled?: boolean;
   className?: string;
 }
@@ -14,9 +14,9 @@ export function FollowButton({
   disabled = false,
   className = "",
 }: FollowButtonProps) {
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
     if (!disabled && onToggleFollow) {
-      onToggleFollow();
+      onToggleFollow(e);
     }
   };
 

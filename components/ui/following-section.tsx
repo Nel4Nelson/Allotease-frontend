@@ -12,17 +12,25 @@ interface FollowerProfile {
 interface FollowingSectionProps {
   followers: FollowerProfile[];
   onToggleFollow?: (id: string) => void;
+  onCardClick?: (id: string) => void;
   className?: string;
 }
 
 export function FollowingSection({
   followers,
   onToggleFollow,
+  onCardClick,
   className = ""
 }: FollowingSectionProps) {
   const handleToggleFollow = (id: string) => {
     if (onToggleFollow) {
       onToggleFollow(id);
+    }
+  };
+
+  const handleCardClick = (id: string) => {
+    if (onCardClick) {
+      onCardClick(id);
     }
   };
 
@@ -55,6 +63,7 @@ export function FollowingSection({
           avatarUrl={follower.avatarUrl}
           isFollowing={follower.isFollowing}
           onToggleFollow={handleToggleFollow}
+          onCardClick={handleCardClick}
           className={index === uniqueFollowers.length - 1 ? "border-b-0" : ""}
           style={index === uniqueFollowers.length - 1 ? { borderBottom: 'none' } : {}}
         />

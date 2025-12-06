@@ -2,7 +2,6 @@
 import { ContentHeader } from "@/components/ui/content-header";
 import { SectionTitle } from "@/components/ui/section-title";
 import { StayTypeFilter } from "./stay-type-filter";
-
 import { LocationSearch } from "../location-search";
 import { SortOrderFilter } from "./sort-order-filter";
 
