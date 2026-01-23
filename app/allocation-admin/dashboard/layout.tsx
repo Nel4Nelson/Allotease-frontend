@@ -10,12 +10,12 @@ export default function AllocationAdminLayout({ children }: AllocationAdminLayou
     <div className="min-h-screen">
       {/* Container */}
       <div className="max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <div className="flex min-h-screen">
+        <div className="flex min-h-screen relative">
           {/* Sidebar */}
           <AllocationAdminSidebar />
           
-          {/* Main Content Area */}
-          <div className="flex-1 flex flex-col">
+          {/* Main Content Area - Full width on mobile, adjusted on desktop */}
+          <div className="flex-1 flex flex-col w-full md:w-auto">
             {/* Content */}
             <main className="flex-1 p-0">
               {children}

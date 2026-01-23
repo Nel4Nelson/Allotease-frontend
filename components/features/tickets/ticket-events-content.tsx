@@ -255,7 +255,7 @@ export function TicketEventsContent() {
   };
 
   const handleViewEvent = (eventId: string) => {
-    router.push(`/events/${eventId}`);
+    router.push(`/${eventId}?type=events`);
   };
 
   const handleResetActive = () => {

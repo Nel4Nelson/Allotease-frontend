@@ -22,11 +22,11 @@ export function OverviewContent() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-6">
       {/* Balance Card Container with Withdraw Section */}
       <div className="relative">
         {/* Balance Card */}
-        <BalanceCard
+        <BalanceCard 
           onWithdrawalHistoryClick={handleWithdrawalHistoryClick}
         />
 

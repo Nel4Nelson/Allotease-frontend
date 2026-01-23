@@ -5,6 +5,7 @@ import Header from "@/components/layout/navbar";
 import { Footer } from "@/components/layout";
 import { AuthService } from "@/services/auth-service";
 import { useAuthStore } from "@/stores/auth-store";
+import { useSidebarStore } from "@/stores/sidebar-store";
 import { CustomToast } from "@/components/ui/custom-toast";
 import { AuthRedirectHandler } from "../features/auth/auth-redirect-handler";
 import { SyncLoader } from "react-spinners";
@@ -17,6 +18,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const { setMobileDevice, isMobileDevice } = useAuthStore();
+  const { toggleSidebar } = useSidebarStore();
 
   // Enhanced initialization with mobile detection
   useEffect(() => {
@@ -123,7 +125,35 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
               />
             </div>
             <div className="max-w-7xl mx-auto px-4 sm:px-6">
-              <Header />
+              <div className="flex items-center h-16">
+                {/* Hamburger Menu - Only show on mobile for allocation admin routes */}
+                {isDashboardRoute && (
+                  <button
+                    onClick={toggleSidebar}
+                    className="md:hidden p-2 mr-4 hover:bg-gray-100 rounded-lg transition-colors"
+                    aria-label="Toggle sidebar"
+                  >
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-gray-700"
+                    >
+                      <line x1="3" y1="12" x2="21" y2="12" />
+                      <line x1="3" y1="6" x2="21" y2="6" />
+                      <line x1="3" y1="18" x2="21" y2="18" />
+                    </svg>
+                  </button>
+                )}
+                
+                {/* Header Component */}
+                <Header />
+              </div>
             </div>
           </header>
 

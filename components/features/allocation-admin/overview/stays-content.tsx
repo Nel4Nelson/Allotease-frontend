@@ -1,29 +1,35 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StatCard } from "./stat-card";
 import { StatCardSkeleton } from "@/components/ui/loading-skeletons/stat-card-skeleton";
 import { DataTable, ColumnConfig } from "@/components/ui/data-table";
 import { DataTableSkeleton } from "@/components/ui/loading-skeletons/data-table-skeleton";
 import { Pagination } from "@/components/ui/pagination";
 import { NetworkError } from "@/components/ui/network-error";
-import { Button } from "@/components/ui/button";
-import { useProcessedStaysStats } from "@/hooks/use-stays-stats";
 import { useTransformedReservations } from "@/hooks/use-reservations";
+import { TimeframeValue } from "@/components/ui/timeframe-selector";
+import { useProcessedStaysStats } from "@/hooks/use-stays-stats";
 
-export function StaysContent() {
+interface StaysContentProps {
+  timeframe: TimeframeValue;
+}
+
+export function StaysContent({ timeframe }: StaysContentProps) {
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  // Fetch stats data
+  // Reset to page 1 when items per page changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [itemsPerPage]);
+
+  // Fetch stats data with selected timeframe
   const {
     statsArray,
     isLoading: isStatsLoading,
     hasError: hasStatsError,
-    isPartialError,
-    refetchAll: refetchStats,
-    isDailySuccess,
-    isMonthlySuccess,
-  } = useProcessedStaysStats();
+    refetch: refetchStats,
+  } = useProcessedStaysStats(timeframe);
 
   // Fetch reservations data with pagination
   const {
@@ -32,15 +38,15 @@ export function StaysContent() {
     isLoading: isReservationsLoading,
     isError: hasReservationsError,
     refetch: refetchReservations,
-  } = useTransformedReservations({ 
-    page: currentPage, 
-    limit: itemsPerPage 
+  } = useTransformedReservations({
+    page: currentPage,
+    limit: itemsPerPage,
   });
 
   const columns: ColumnConfig[] = [
     { key: "id", label: "Reservation ID", type: "truncated_id" },
     { key: "guest", label: "Guest", type: "guest" },
-    { key: "room", label: "Room", type: "text" },
+    { key: "room", label: "Unit", type: "text" },
     { key: "dates", label: "Dates", type: "text" },
     { key: "status", label: "Status", type: "status" },
   ];
@@ -49,67 +55,64 @@ export function StaysContent() {
     setCurrentPage(page);
   };
 
+  const handleItemsPerPageChange = (items: number) => {
+    setItemsPerPage(items);
+  };
+
   // Render stats section based on loading/error states
   const renderStatsSection = () => {
-    // Complete loading state - show skeletons
     if (isStatsLoading) {
       return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <StatCardSkeleton
-              key={index}
-              isFirstCard={index === 0}
-            />
-          ))}
-        </div>
+        <>
+          <div className="lg:hidden -mx-4 px-4">
+            <div className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="flex-shrink-0 w-[280px] snap-start">
+                  <StatCardSkeleton isFirstCard={index === 0} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="hidden lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <StatCardSkeleton key={index} isFirstCard={index === 0} />
+            ))}
+          </div>
+        </>
       );
     }
 
-    // Complete error state - both API calls failed
-    if (hasStatsError && !isPartialError) {
+    // Error state
+    if (hasStatsError) {
       return (
         <div className="grid grid-cols-1 gap-6">
-          <NetworkError
-            message="Unable to load statistics"
-            onRetry={refetchStats}
-          />
+          <NetworkError message="Unable to load statistics" onRetry={refetchStats} />
         </div>
       );
     }
 
-    // Partial error or success state - show stats with fallbacks
+    // Success state - show stats
     return (
-      <div className="space-y-4">
-        {/* Partial error notification - when one API call succeeds but the other fails */}
-        {isPartialError && (
-          <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="flex items-center gap-3">
-              <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                  clipRule="evenodd"
+      <>
+        <div className="lg:hidden -mx-4 px-4 relative">
+          {/* Scroll container */}
+          <div className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2">
+            {statsArray.map((stat, index) => (
+              <div key={index} className="flex-shrink-0 w-[280px] snap-start">
+                <StatCard
+                  title={stat.title}
+                  value={stat.value}
+                  percentage={stat.percentage === "--" ? undefined : stat.percentage}
+                  isFirstCard={stat.isFirstCard}
                 />
-              </svg>
-              <span className="text-yellow-800 text-sm">
-                {!isDailySuccess && isMonthlySuccess && "Daily statistics are unavailable"}
-                {isDailySuccess && !isMonthlySuccess && "Monthly statistics are unavailable"}
-                {!isDailySuccess && !isMonthlySuccess && "Some statistics may be outdated due to connection issues"}
-              </span>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={refetchStats}
-              className="text-yellow-700 border-yellow-300 hover:bg-yellow-100"
-            >
-              Retry
-            </Button>
+              </div>
+            ))}
           </div>
-        )}
+          <div className="absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none" />
+        </div>
 
-        {/* Stats Grid - shows data with "--" fallbacks for missing data */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="hidden lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {statsArray.map((stat, index) => (
             <StatCard
               key={index}
@@ -120,21 +123,21 @@ export function StaysContent() {
             />
           ))}
         </div>
-      </div>
+      </>
     );
   };
 
   // Render reservations table section
   const renderReservationsSection = () => {
-    // Loading state - show table skeleton
+    // Loading state
     if (isReservationsLoading) {
       return (
         <DataTableSkeleton
           title="Recent reservations"
-          columns={["Reservation ID", "Guest", "Room", "Dates", "Status"]}
+          columns={["Reservation ID", "Guest", "Space", "Dates", "Status"]}
           rowCount={itemsPerPage}
           showSearch={true}
-          showExport={true}
+          showExport={false}
         />
       );
     }
@@ -146,38 +149,29 @@ export function StaysContent() {
           <h3 className="text-[#1F2024] font-space-grotesk text-xl font-bold leading-[140%] tracking-[-0.4px] mb-4">
             Recent reservations
           </h3>
-          <NetworkError
-            message="Unable to load reservations"
-            onRetry={refetchReservations}
-          />
+          <NetworkError message="Unable to load reservations" onRetry={refetchReservations} />
         </div>
       );
     }
 
-    // Success state - show data with proper empty states
+    // Success state
     return (
       <div className="space-y-4">
-        {/* Reservations Table */}
         <DataTable
           title="Recent reservations"
           columns={columns}
           data={reservationsData}
           variant="reservations"
           showSearch={true}
-          showExport={true}
+          showExport={false}
           searchPlaceholder="Search by guest name or ID"
-          onExport={() => {
-            console.log("Export reservations:", reservationsData);
-            // TODO: Implement actual export functionality
-          }}
           isLoading={isReservationsLoading}
           isEmpty={reservationsData.length === 0}
           hasError={hasReservationsError}
           onRetry={refetchReservations}
         />
 
-        {/* Pagination - only show if we have data and pagination info */}
-        {pagination && pagination.totalPages > 1 && !isReservationsLoading && (
+        {pagination && !isReservationsLoading && (
           <div className="flex justify-end">
             <Pagination
               currentPage={pagination.currentPage}
@@ -187,6 +181,7 @@ export function StaysContent() {
               hasPrevPage={pagination.hasPrevPage}
               totalItems={pagination.totalItems}
               itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
               disabled={isReservationsLoading}
               showInfo={true}
             />
@@ -198,7 +193,7 @@ export function StaysContent() {
 
   return (
     <div className="space-y-6">
-      {/* Stats Section with optimized 2-call approach */}
+      {/* Stats Section */}
       {renderStatsSection()}
 
       {/* Reservations Table Section */}

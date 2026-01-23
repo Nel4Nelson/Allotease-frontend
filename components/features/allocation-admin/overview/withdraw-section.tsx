@@ -1,7 +1,7 @@
 "use client";
-import React, { useEffect } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
-import { useProfileStore } from "@/stores/profile-store";
+import { useProfileData } from "@/hooks/use-profile";
 import { FallbackImage } from "@/components/ui/fallback-image";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
@@ -11,48 +11,40 @@ interface WithdrawSectionProps {
 }
 
 export function WithdrawSection({ onWithdraw }: WithdrawSectionProps) {
-  const { profile, isLoading, getFullName, getAvatarUrl, fetchProfile } =
-    useProfileStore();
-
-  // Fetch profile on mount if needed
-  useEffect(() => {
-    if (!profile && !isLoading) {
-      fetchProfile();
-    }
-  }, [profile, isLoading, fetchProfile]);
+  const { fullName, avatarUrl, isLoading } = useProfileData();
 
   const handleWithdrawClick = () => {
     onWithdraw?.();
   };
 
   return (
-    <div className="absolute -bottom-[35px] left-1/2 transform -translate-x-1/2">
-      <div className="flex justify-between items-center bg-white rounded-lg border border-gray-100 w-[444px] px-6 py-5">
+    <div className="absolute -bottom-[35px] left-1/2 transform -translate-x-1/2 w-[calc(100%-2rem)] sm:w-[444px] max-w-[444px]">
+      <div className="flex justify-between items-center gap-2 bg-white rounded-lg border border-gray-100 px-3 sm:px-6 py-3 sm:py-5 shadow-sm">
         {/* Left Section: Avatar + Name */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
           {/* Avatar */}
-          <div className="flex justify-center items-center flex-shrink-0 rounded-full overflow-hidden">
+          <div className="w-[32px] h-[32px] sm:w-[35px] sm:h-[35px] flex justify-center items-center flex-shrink-0 rounded-full overflow-hidden">
             {isLoading ? (
-              <Skeleton circle width={35} height={35} />
+              <Skeleton circle width={32} height={32} className="sm:w-[35px] sm:h-[35px]" />
             ) : (
               <FallbackImage
-                src={getAvatarUrl()}
+                src={avatarUrl}
                 fallbackSrc="/icons/encircle-star-green-avatar.svg"
                 alt="Allocation Admin"
                 fallbackAlt="Default Admin Avatar"
                 width={35}
                 height={35}
-                className="w-full h-full object-cover"
+                className="object-cover w-full h-full"
               />
             )}
           </div>
 
           {/* Name */}
-          <div className="flex-1 overflow-hidden font-space-grotesk text-[14px] font-bold leading-[140%] tracking-[-0.28px] text-[#1F2024] line-clamp-1">
+          <div className="flex-1 min-w-0 overflow-hidden font-space-grotesk text-[13px] sm:text-[14px] font-bold leading-[140%] tracking-[-0.28px] text-[#1F2024] truncate">
             {isLoading ? (
-              <Skeleton width={120} height={16} />
+              <Skeleton width={100} height={16} />
             ) : (
-              getFullName() || "Allocation Admin"
+              fullName || "Allocation Admin"
             )}
           </div>
         </div>
@@ -63,6 +55,7 @@ export function WithdrawSection({ onWithdraw }: WithdrawSectionProps) {
           size="allotease-sm"
           onClick={handleWithdrawClick}
           disabled={isLoading}
+          className="whitespace-nowrap text-sm sm:text-base px-3 sm:px-4 flex-shrink-0"
         >
           Withdraw
         </Button>

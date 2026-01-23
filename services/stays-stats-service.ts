@@ -1,150 +1,166 @@
 import { apiClient } from "./api-client";
 
-// Stays Stats API Response Types
+export type TimeFrame = "day" | "week" | "month";
+export type Scope = "self" | "all";
+
 export interface StaysStatsResponse {
   status: string;
+  message?: string;
   data: {
-    totalReservations: {
+    totalReservations: {  // <- Changed to plural
       count: number;
-      percentChange: number;
+      percentChange: number;  // <- Changed to percentChange
     };
     checkIns: {
       count: number;
-      percentChange: number;
+      percentChange: number;  // <- Changed to percentChange
     };
     availableSpaces: {
       count: number;
-      percentChange: number;
+      percentChange: number;  // <- Changed to percentChange
     };
     revenue: {
       amount: number;
-      percentChange: number;
+      percentChange: number;  // <- Changed to percentChange
       currency: string;
     };
   };
-  message?: string;
 }
 
-export type TimeFrame = "day" | "week" | "month";
-
 export interface StaysStatsParams {
-  timeframe: TimeFrame;
+  timeframe?: TimeFrame;
+  scope?: Scope;
+}
+
+export interface ProcessedStatValue {
+  value: string;
+  percentage: string;
 }
 
 export interface ProcessedStatsData {
-  totalReservation: {
-    value: string;
-    percentage: string;
-  };
-  checkinsToday: {
-    value: string;
-    percentage: string;
-  };
-  availableSpaces: {
-    value: string;
-    percentage: string;
-  };
-  revenueThisMonth: {
-    value: string;
-    percentage: string;
-  };
+  totalReservation: ProcessedStatValue;
+  checkinsToday: ProcessedStatValue;
+  availableSpaces: ProcessedStatValue;
+  revenueThisMonth: ProcessedStatValue;
 }
 
-// Stays Stats API Service
 export class StaysStatsService {
   private static readonly ENDPOINTS = {
-    GET_STATS: "/dashboard/stays/stats",
+    GET_STAYS_STATS: "/dashboard/stays/stats",
   } as const;
 
   /**
-   * Get stays stats for a specific timeframe
+   * Get stays statistics for allocation admin
    */
-  static async getStaysStats(params: StaysStatsParams): Promise<StaysStatsResponse> {
+  static async getStaysStats(params: StaysStatsParams = {}): Promise<StaysStatsResponse> {
     try {
+      const { timeframe = "day", scope = "self" } = params;
+
       const response = await apiClient.get<StaysStatsResponse>(
-        this.ENDPOINTS.GET_STATS,
-        params
+        this.ENDPOINTS.GET_STAYS_STATS,
+        { timeframe, scope }
       );
 
       return response;
     } catch (error) {
-      console.error(`Get stays stats failed for timeframe ${params.timeframe}:`, error);
+      console.error("Get stays stats failed:", error);
       throw error;
     }
   }
 
   /**
-   * Format percentage change
-   */
-  static formatPercentageChange(percentChange: number): string {
-    const sign = percentChange >= 0 ? "+" : "";
-    return `${sign}${Math.round(percentChange)}%`;
-  }
-
-  /**
-   * Format currency amount
-   */
-  static formatCurrency(amount: number, currency: string = "NGN"): string {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  }
-
-  /**
-   * Format count number
+   * Format a number as a count string
+   * Example: 1234 → "1,234"
    */
   static formatCount(count: number): string {
-    return new Intl.NumberFormat('en-NG').format(count);
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'decimal',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(count);
+    } catch (error) {
+      console.error("Count formatting error:", error);
+      return `${count}`;
+    }
   }
 
   /**
-   * Process stats data for display using optimal 2-call approach
-   * - Daily stats: for "Check-ins today" 
-   * - Monthly stats: for "Total reservations", "Available spaces", and "Revenue this month"
+   * Format revenue amount in Naira
+   * Example: 3915000 → "N3,915,000"
+   */
+  static formatRevenue(amount: number): string {
+    try {
+      const formatted = new Intl.NumberFormat('en-NG', {
+        style: 'decimal',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(amount);
+
+      return `N${formatted}`;
+    } catch (error) {
+      console.error("Revenue formatting error:", error);
+      return `N${amount}`;
+    }
+  }
+
+  /**
+   * Format percentage change
+   * Example: 12.5 → "+12.5%", -5.3 → "-5.3%"
+   */
+  static formatPercentage(percentage: number): string {
+    try {
+      if (percentage === 0) return "0%";
+
+      const sign = percentage > 0 ? "+" : "";
+      const formatted = percentage.toFixed(1);
+
+      return `${sign}${formatted}%`;
+    } catch (error) {
+      console.error("Percentage formatting error:", error);
+      return "--";
+    }
+  }
+
+  /**
+   * Process stats data from API response
    */
   static processStatsData(
-    dailyStats: StaysStatsResponse | null,
-    monthlyStats: StaysStatsResponse | null
+    statsResponse: StaysStatsResponse | null
   ): ProcessedStatsData {
+    // Default fallback values
+    const defaultValue: ProcessedStatValue = {
+      value: "--",
+      percentage: "--",
+    };
+
+    if (!statsResponse?.data) {
+      return {
+        totalReservation: defaultValue,
+        checkinsToday: defaultValue,
+        availableSpaces: defaultValue,
+        revenueThisMonth: defaultValue,
+      };
+    }
+
+    const { data } = statsResponse;
+
     return {
-      // From monthly stats
       totalReservation: {
-        value: monthlyStats?.data?.totalReservations?.count !== undefined
-          ? this.formatCount(monthlyStats.data.totalReservations.count)
-          : "--",
-        percentage: monthlyStats?.data?.totalReservations?.percentChange !== undefined
-          ? this.formatPercentageChange(monthlyStats.data.totalReservations.percentChange)
-          : "--",
+        value: this.formatCount(data.totalReservations.count),  // <- plural
+        percentage: this.formatPercentage(data.totalReservations.percentChange),  // <- percentChange
       },
-      // From daily stats  
       checkinsToday: {
-        value: (dailyStats?.data?.checkIns && typeof dailyStats.data.checkIns.count === 'number')
-          ? this.formatCount(dailyStats.data.checkIns.count)
-          : "--",
-        percentage: (dailyStats?.data?.checkIns && typeof dailyStats.data.checkIns.percentChange === 'number')
-          ? this.formatPercentageChange(dailyStats.data.checkIns.percentChange)
-          : "--",
+        value: this.formatCount(data.checkIns.count),
+        percentage: this.formatPercentage(data.checkIns.percentChange),  // <- percentChange
       },
-      // From monthly stats
       availableSpaces: {
-        value: monthlyStats?.data?.availableSpaces?.count !== undefined
-          ? this.formatCount(monthlyStats.data.availableSpaces.count)
-          : "--",
-        percentage: monthlyStats?.data?.availableSpaces?.percentChange !== undefined
-          ? this.formatPercentageChange(monthlyStats.data.availableSpaces.percentChange)
-          : "--",
+        value: this.formatCount(data.availableSpaces.count),
+        percentage: this.formatPercentage(data.availableSpaces.percentChange),  // <- percentChange
       },
-      // From monthly stats
       revenueThisMonth: {
-        value: monthlyStats?.data?.revenue?.amount !== undefined
-          ? this.formatCurrency(monthlyStats.data.revenue.amount, monthlyStats.data.revenue.currency)
-          : "--",
-        percentage: monthlyStats?.data?.revenue?.percentChange !== undefined
-          ? this.formatPercentageChange(monthlyStats.data.revenue.percentChange)
-          : "--",
+        value: this.formatRevenue(data.revenue.amount),
+        percentage: this.formatPercentage(data.revenue.percentChange),  // <- percentChange
       },
     };
   }

@@ -9,7 +9,7 @@ export const balanceKeys = {
 };
 
 /**
- * Hook to fetch user's current balance with smart caching
+ * Hook to fetch allocation admin's current balance with smart caching
  */
 export function useBalance() {
   const { isAuthenticated } = useAuthStore();
@@ -53,6 +53,7 @@ export function useRefreshBalance() {
 export function useFormattedBalance() {
   const balanceQuery = useBalance();
   
+  // Extract balance from response (allocation admin uses 'balance' field)
   const balance = balanceQuery.data?.data?.balance ?? 0;
   
   return {

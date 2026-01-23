@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-
 import React, { useState } from "react";
 import { FallbackImage } from "@/components/ui/fallback-image";
 import { cn } from "@/lib/utils";
@@ -265,25 +264,25 @@ export function DataTable({
           <TruncatedId
             fullId={value}
             prefix="RES-"
-            className="text-[#71727A] font-source-sans text-base font-normal leading-6 tracking-[-0.32px]"
+            className="text-[#71727A] font-source-sans text-sm lg:text-base font-normal leading-6 tracking-[-0.32px]"
           />
         );
 
       case "guest":
         return (
           <div className="flex items-center gap-2">
-            <div className="flex justify-center items-center flex-shrink-0 rounded-full overflow-hidden p-1">
+            <div className="w-[18px] h-[18px] lg:w-[24px] lg:h-[24px] flex-shrink-0 rounded-full overflow-hidden bg-gray-100">
               <FallbackImage
                 src={row.avatar || "/icons/encircle-star-green-avatar.svg"}
                 fallbackSrc="/icons/encircle-star-green-avatar.svg"
                 alt={`${value} avatar`}
                 fallbackAlt="Guest Avatar"
-                width={18}
-                height={18}
+                width={24}
+                height={24}
                 className="w-full h-full object-cover"
               />
             </div>
-            <span className="text-[#1F2024] font-source-sans text-base font-semibold leading-6 tracking-[-0.32px]">
+            <span className="text-[#1F2024] font-source-sans text-sm lg:text-base font-semibold leading-6 tracking-[-0.32px] whitespace-nowrap">
               {value}
             </span>
           </div>
@@ -326,7 +325,7 @@ export function DataTable({
       case "text":
       default:
         return (
-          <span className="text-[#71727A] font-source-sans text-base font-normal leading-6 tracking-[-0.32px]">
+          <span className="text-[#71727A] font-source-sans text-sm lg:text-base font-normal leading-6 tracking-[-0.32px] whitespace-nowrap">
             {value}
           </span>
         );
@@ -349,31 +348,31 @@ export function DataTable({
       )}
     >
       {/* Table Header */}
-      <div className="flex flex-col items-start gap-6 self-stretch pt-5 px-5">
-        <h3 className="text-[#1F2024] font-space-grotesk text-xl font-bold leading-[140%] tracking-[-0.4px]">
+      <div className="flex flex-col items-start gap-4 lg:gap-6 self-stretch pt-5 px-4 lg:px-5">
+        <h3 className="text-[#1F2024] font-space-grotesk text-lg lg:text-xl font-bold leading-[140%] tracking-[-0.4px]">
           {title}
         </h3>
 
-        {/* Search, Sort, and Export Row - Only show if any option is enabled */}
+        {/* Search, Sort, and Export Row */}
         {(showSearch || showSort || showExport) && (
-          <div className="flex items-center justify-between w-full gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between w-full gap-3 sm:gap-4">
             {/* Search Bar */}
             {showSearch && (
-              <div className="flex items-center gap-3 h-10 max-w-[250px] px-3 flex-1 rounded-full border border-gray-300/20 bg-gray-100/50">
+              <div className="flex items-center gap-3 h-10 w-full sm:max-w-[300px] px-3 flex-1 rounded-full border border-gray-300/20 bg-gray-100/50">
                 <SearchIcon />
                 <input
                   type="text"
                   placeholder={searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 bg-transparent border-none outline-none text-gray-600 font-source-sans text-base placeholder:text-gray-500"
+                  className="flex-1 h-10 bg-transparent border-none outline-none text-gray-600 font-source-sans text-sm sm:text-base placeholder:text-gray-500"
                   style={{ color: "#71727A" }}
                 />
               </div>
             )}
 
             {/* Sort and Export Controls */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
               {/* Sort Filter */}
               {showSort && (
                 <TimeSortFilter
@@ -387,9 +386,9 @@ export function DataTable({
                 <button
                   onClick={handleExport}
                   disabled={isLoading}
-                  className="flex items-center gap-2 px-3 py-2 rounded-full border border-gray-300/20 bg-gray-100/50 hover:bg-gray-200/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center gap-2 px-3 py-2 rounded-full border border-gray-300/20 bg-gray-100/50 hover:bg-gray-200/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-sm sm:text-base"
                 >
-                  <span className="text-[#1F3A3A)] font-source-sans text-base font-semibold">
+                  <span className="text-[#1F3A3A)] font-source-sans font-semibold">
                     Export Table
                   </span>
                   <ExportIcon />
@@ -411,42 +410,73 @@ export function DataTable({
         </div>
       ) : (
         <>
-          {/* Column Headers */}
-          <div className="flex flex-col justify-center items-center gap-2.5 self-stretch py-4 border-b border-[rgba(138,174,164,0.20)] bg-[rgba(242,244,247,0.80)]">
-            <div className="flex items-center w-full px-5">
-              {columns.map((column, index) => (
-                <div
-                  key={column.key}
-                  className={cn(
-                    "text-left",
-                    index === 0
-                      ? "flex-[0.8]"
-                      : index === 1
-                        ? "flex-[1.2]"
-                        : index === columns.length - 1
-                          ? "flex-[1] text-center"
-                          : "flex-1"
-                  )}
-                >
-                  <span className="text-[#20232A] font-space-grotesk text-base font-medium leading-6 tracking-[-0.32px]">
-                    {column.label}
-                  </span>
+          {/* Mobile Layout - Horizontal Scroll */}
+          <div className="lg:hidden w-full overflow-x-auto scrollbar-hide">
+            <div className="min-w-[800px]">
+              {/* Column Headers - Mobile */}
+              <div className="flex flex-col justify-center items-center gap-2.5 py-4 border-b border-[rgba(138,174,164,0.20)] bg-[rgba(242,244,247,0.80)]">
+                <div className="flex items-center w-full px-4">
+                  {columns.map((column, index) => (
+                    <div
+                      key={column.key}
+                      className={cn(
+                        "text-left",
+                        index === 0
+                          ? "flex-[0.8]"
+                          : index === 1
+                            ? "flex-[1.2]"
+                            : index === columns.length - 1
+                              ? "flex-[1] text-center"
+                              : "flex-1"
+                      )}
+                    >
+                      <span className="text-[#20232A] font-space-grotesk text-sm font-medium leading-6 tracking-[-0.32px]">
+                        {column.label}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              {/* Table Body - Mobile */}
+              <div className="flex flex-col justify-center items-center gap-4 px-4 pt-4">
+                {filteredData.map((row, rowIndex) => (
+                  <div
+                    key={rowIndex}
+                    className={cn(
+                      "flex items-center w-full",
+                      onRowClick && "cursor-pointer hover:bg-gray-50/50 rounded-lg transition-colors px-2 -mx-2 py-2"
+                    )}
+                    onClick={() => onRowClick?.(row)}
+                  >
+                    {columns.map((column, index) => (
+                      <div
+                        key={column.key}
+                        className={cn(
+                          "text-left",
+                          index === 0
+                            ? "flex-[0.8]"
+                            : index === 1
+                              ? "flex-[1.2]"
+                              : index === columns.length - 1
+                                ? "flex-[1] flex justify-center"
+                                : "flex-1"
+                        )}
+                      >
+                        {renderCell(column, row[column.key], row)}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Table Body */}
-          <div className="flex flex-col justify-center items-center gap-6 self-stretch px-5">
-            {filteredData.map((row, rowIndex) => (
-              <div 
-                key={rowIndex} 
-                className={cn(
-                  "flex items-center w-full",
-                  onRowClick && "cursor-pointer hover:bg-gray-50/50 rounded-lg transition-colors px-2 -mx-2 py-2"
-                )}
-                onClick={() => onRowClick?.(row)}
-              >
+          {/* Desktop Layout */}
+          <div className="hidden lg:block w-full">
+            {/* Column Headers - Desktop */}
+            <div className="flex flex-col justify-center items-center gap-2.5 self-stretch py-4 border-b border-[rgba(138,174,164,0.20)] bg-[rgba(242,244,247,0.80)]">
+              <div className="flex items-center w-full px-5">
                 {columns.map((column, index) => (
                   <div
                     key={column.key}
@@ -457,15 +487,49 @@ export function DataTable({
                         : index === 1
                           ? "flex-[1.2]"
                           : index === columns.length - 1
-                            ? "flex-[1] flex justify-center"
+                            ? "flex-[1] text-center"
                             : "flex-1"
                     )}
                   >
-                    {renderCell(column, row[column.key], row)}
+                    <span className="text-[#20232A] font-space-grotesk text-base font-medium leading-6 tracking-[-0.32px]">
+                      {column.label}
+                    </span>
                   </div>
                 ))}
               </div>
-            ))}
+            </div>
+
+            {/* Table Body - Desktop */}
+            <div className="flex flex-col justify-center items-center gap-6 self-stretch px-5 pt-3">
+              {filteredData.map((row, rowIndex) => (
+                <div
+                  key={rowIndex}
+                  className={cn(
+                    "flex items-center w-full",
+                    onRowClick && "cursor-pointer hover:bg-gray-50/50 rounded-lg transition-colors px-2 -mx-2 py-2"
+                  )}
+                  onClick={() => onRowClick?.(row)}
+                >
+                  {columns.map((column, index) => (
+                    <div
+                      key={column.key}
+                      className={cn(
+                        "text-left",
+                        index === 0
+                          ? "flex-[0.8]"
+                          : index === 1
+                            ? "flex-[1.2]"
+                            : index === columns.length - 1
+                              ? "flex-[1] flex justify-center"
+                              : "flex-1"
+                      )}
+                    >
+                      {renderCell(column, row[column.key], row)}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         </>
       )}

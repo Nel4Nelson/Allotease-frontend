@@ -2,28 +2,28 @@ import { useQuery } from "@tanstack/react-query";
 import { 
   StaysStatsService, 
   StaysStatsResponse, 
-  StaysStatsParams,
-  ProcessedStatsData
+  TimeFrame,
 } from "@/services/stays-stats-service";
 import { useAuthStore } from "@/stores/auth-store";
+import { getStatTitles } from "@/lib/stat-titles";
 
 // Query keys
 export const staysStatsKeys = {
   all: ["staysStats"] as const,
-  byTimeframe: (timeframe: string) => [...staysStatsKeys.all, timeframe] as const,
+  byTimeframe: (timeframe: TimeFrame) => [...staysStatsKeys.all, timeframe, "self"] as const,
 };
 
 /**
- * Hook to fetch stays stats for a specific timeframe
+ * Hook to fetch stays stats for allocation admin (scope=self)
  */
-export function useStaysStats(timeframe: "day" | "month") {
+export function useStaysStats(timeframe: TimeFrame) {
   const { isAuthenticated } = useAuthStore();
 
   return useQuery<StaysStatsResponse>({
     queryKey: staysStatsKeys.byTimeframe(timeframe),
-    queryFn: () => StaysStatsService.getStaysStats({ timeframe }),
-    enabled: isAuthenticated, // Only fetch if user is authenticated
-    staleTime: timeframe === "day" ? 2 * 60 * 1000 : 5 * 60 * 1000, // 2min for daily, 5min for monthly
+    queryFn: () => StaysStatsService.getStaysStats({ timeframe, scope: "self" }),
+    enabled: isAuthenticated,
+    staleTime: timeframe === "day" ? 2 * 60 * 1000 : 5 * 60 * 1000, // 2min for daily, 5min for others
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: timeframe === "day", // Refetch daily stats on focus
     refetchOnMount: true,
@@ -33,61 +33,44 @@ export function useStaysStats(timeframe: "day" | "month") {
 }
 
 /**
- * Optimized hook that fetches both daily and monthly stats (2 calls only)
- * - Daily: for check-ins today
- * - Monthly: for total reservations, available spaces, and revenue this month
+ * Hook that processes stats for a single timeframe with dynamic titles
  */
-export function useProcessedStaysStats() {
+export function useProcessedStaysStats(timeframe: TimeFrame = "day") {
   const { isAuthenticated } = useAuthStore();
 
-  // Fetch daily stats (for check-ins today only)
-  const dailyStatsQuery = useStaysStats("day");
-  
-  // Fetch monthly stats (for reservations, available spaces, and revenue)
-  const monthlyStatsQuery = useStaysStats("month");
+  // Fetch stats for the selected timeframe
+  const statsQuery = useStaysStats(timeframe);
 
-  // Determine overall loading state
-  const isLoading = dailyStatsQuery.isLoading || monthlyStatsQuery.isLoading;
-  
-  // Determine if there are any errors
-  const hasError = dailyStatsQuery.isError || monthlyStatsQuery.isError;
-  
-  // Get error details
-  const error = dailyStatsQuery.error || monthlyStatsQuery.error;
-  
-  // Check if one query failed but the other succeeded
-  const isPartialError = 
-    (dailyStatsQuery.isError && !monthlyStatsQuery.isError) ||
-    (!dailyStatsQuery.isError && monthlyStatsQuery.isError);
+  // Get dynamic titles based on timeframe
+  const titles = getStatTitles(timeframe);
 
-  // Process the data using our optimized approach
+  // Process the data using single timeframe
   const processedStats = StaysStatsService.processStatsData(
-    dailyStatsQuery.data || null,
-    monthlyStatsQuery.data || null
+    statsQuery.data || null
   );
 
   // Format stats as array for easy mapping in components
   const statsArray = [
     {
-      title: "Total reservation",
+      title: titles.totalReservation,
       value: processedStats.totalReservation.value,
       percentage: processedStats.totalReservation.percentage,
       isFirstCard: true,
     },
     {
-      title: "Check-ins today", 
+      title: titles.checkins,
       value: processedStats.checkinsToday.value,
       percentage: processedStats.checkinsToday.percentage,
       isFirstCard: false,
     },
     {
-      title: "Available spaces",
+      title: titles.availableSpaces,
       value: processedStats.availableSpaces.value,
       percentage: processedStats.availableSpaces.percentage,
       isFirstCard: false,
     },
     {
-      title: "Revenue this month",
+      title: titles.revenue,
       value: processedStats.revenueThisMonth.value,
       percentage: processedStats.revenueThisMonth.percentage,
       isFirstCard: false,
@@ -100,43 +83,28 @@ export function useProcessedStaysStats() {
     processedStats,
     
     // Loading states
-    isLoading,
-    isDailyLoading: dailyStatsQuery.isLoading,
-    isMonthlyLoading: monthlyStatsQuery.isLoading,
+    isLoading: statsQuery.isLoading,
     
     // Error states
-    hasError,
-    isPartialError,
-    error,
-    dailyError: dailyStatsQuery.error,
-    monthlyError: monthlyStatsQuery.error,
+    hasError: statsQuery.isError,
+    error: statsQuery.error,
     
-    // Success states
-    isDailySuccess: dailyStatsQuery.isSuccess,
-    isMonthlySuccess: monthlyStatsQuery.isSuccess,
-    isBothSuccess: dailyStatsQuery.isSuccess && monthlyStatsQuery.isSuccess,
+    // Success state
+    isSuccess: statsQuery.isSuccess,
     
-    // Refetch functions
-    refetchDaily: dailyStatsQuery.refetch,
-    refetchMonthly: monthlyStatsQuery.refetch,
-    refetchAll: async () => {
-      await Promise.all([
-        dailyStatsQuery.refetch(),
-        monthlyStatsQuery.refetch()
-      ]);
-    },
+    // Refetch function
+    refetch: statsQuery.refetch,
     
-    // Individual query states for debugging
-    dailyStatsQuery,
-    monthlyStatsQuery,
+    // Query state for debugging
+    statsQuery,
   };
 }
 
 /**
  * Hook for manual refresh of stays stats
  */
-export function useRefreshStaysStats() {
-  const { refetchAll } = useProcessedStaysStats();
+export function useRefreshStaysStats(timeframe: TimeFrame = "day") {
+  const { refetch } = useProcessedStaysStats(timeframe);
   
-  return { refreshStaysStats: refetchAll };
+  return { refreshStaysStats: refetch };
 }

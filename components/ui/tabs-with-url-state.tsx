@@ -12,9 +12,10 @@ export interface TabConfig {
 interface TabsWithUrlStateProps {
   tabs: TabConfig[];
   defaultTab: string;
-  basePath: string; // e.g., "/allocation-admin/create" or "/"
+  basePath: string; // e.g., "/super-admin/create" or "/"
   queryParam?: string; // defaults to "type"
   className?: string;
+  renderHeader?: (tabsList: ReactNode) => ReactNode; // Optional custom header renderer
 }
 
 export function CustomTabsContent({
@@ -23,6 +24,7 @@ export function CustomTabsContent({
   basePath,
   queryParam = "type",
   className = "",
+  renderHeader,
 }: TabsWithUrlStateProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -50,18 +52,24 @@ export function CustomTabsContent({
     router.push(newUrl);
   };
 
+  // Render the tabs list
+  const tabsList = (
+    <TabsList>
+      {tabs.map((tab) => (
+        <TabsTrigger key={tab.value} value={tab.value}>
+          {tab.label}
+        </TabsTrigger>
+      ))}
+    </TabsList>
+  );
+
   // Render immediately with default tab to prevent layout shift
   // The actual tab content will handle its own loading states
   return (
     <div className={className}>
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList>
-          {tabs.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        {/* Render custom header if provided, otherwise render tabs list directly */}
+        {renderHeader ? renderHeader(tabsList) : tabsList}
 
         {tabs.map((tab) => (
           <TabsContent key={tab.value} value={tab.value} className="mt-8">
